@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم الاحترافية - الدعم الفني</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Tajawal:wght@400;700&family=Almarai:wght@400;700&display=swap');
+        body { font-family: 'Cairo', sans-serif; background: #f0f4f8; color: #1e293b; }
+        .admin-card { background: white; border-radius: 1.5rem; padding: 1.5rem; border: 1px solid #e2e8f0; margin-bottom: 1.2rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .hidden { display: none !important; }
+        .active-tab { background: #2563eb !important; color: white !important; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4); }
+        input, select, textarea { width: 100%; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #cbd5e1; outline: none; background: #f8fafc; transition: 0.3s; font-family: inherit; }
+        input:focus { border-color: #2563eb; }
+        label { font-size: 0.75rem; font-weight: 700; color: #64748b; margin-bottom: 0.5rem; display: block; }
+        .system-select-btn { border: 2px solid #e2e8f0; padding: 1rem; border-radius: 1rem; cursor: pointer; transition: 0.3s; text-align: center; background: white; }
+        .system-select-btn.active { border-color: #2563eb; background: #eff6ff; color: #2563eb; }
+        .customer-row { cursor: pointer; transition: 0.2s; }
+        .customer-row:active { background-color: #f1f5f9; transform: scale(0.98); }
+        .contact-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; border-radius: 12px; font-weight: bold; font-size: 13px; transition: 0.3s; }
+        .wa-sa { background: #e8f5e9; color: #2e7d32; }
+        .wa-sy { background: #f3e5f5; color: #7b1fa2; }
+    </style>
+</head>
+<body class="max-w-2xl mx-auto pb-24 px-4">
+
+    <div id="login-screen" class="p-8 text-center mt-20 bg-white rounded-[2.5rem] shadow-2xl border">
+        <div class="w-20 h-20 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-200">
+            <i class="fas fa-shield-alt text-3xl"></i>
+        </div>
+        <h2 class="text-2xl font-black mb-6 text-slate-800">دخول الإدارة</h2>
+        <div class="space-y-4">
+            <input type="text" id="admin-user-input" placeholder="اسم المستخدم">
+            <input type="password" id="admin-pass-input" placeholder="كلمة المرور">
+            <button onclick="login()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-bold transition-all shadow-lg">تسجيل الدخول</button>
+        </div>
+    </div>
+
+    <div id="main-admin" class="hidden mt-6 animate-in fade-in duration-500">
+        
+        <div class="bg-slate-900 text-white p-4 rounded-2xl mb-6 flex justify-between items-center shadow-xl">
+            <div>
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">الوقت المتبقي للاشتراك</p>
+                <div id="countdown-timer" class="text-xl font-mono font-bold text-emerald-400 leading-none mt-1">--:--:--</div>
+            </div>
+            <div class="text-left">
+                <h1 id="display-cafe-name" class="font-black text-lg italic text-blue-400 leading-none">--</h1>
+                <button onclick="location.reload()" class="text-[10px] text-red-400 mt-1 underline">خروج</button>
+            </div>
+        </div>
+
+        <div class="flex gap-2 mb-6 overflow-x-auto no-scrollbar py-2">
+            <button onclick="showSection('scan')" id="tab-scan" class="tab-btn active-tab bg-white border px-5 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1">المسح / التحكم</button>
+            <button onclick="showSection('branding')" id="tab-branding" class="tab-btn bg-white border px-5 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1">التخصيص</button>
+            <button onclick="showSection('customers')" id="tab-customers" class="tab-btn bg-white border px-5 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1">العملاء</button>
+            <button onclick="showSection('billing')" id="tab-billing" class="tab-btn bg-white border px-5 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 text-emerald-600">الاشتراك</button>
+        </div>
+
+        <div id="section-scan" class="section-content">
+            <div class="admin-card text-center">
+                <div id="reader" class="mb-4 overflow-hidden rounded-xl"></div>
+                <button id="start-scan-btn" onclick="startScanner()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-200"><i class="fas fa-qrcode ml-2"></i> مسح كود الزبون</button>
+                
+                <div id="user-actions" class="p-6 bg-slate-50 rounded-2xl hidden border-2 border-dashed border-blue-200 mt-4 animate-in slide-in-from-top duration-300">
+                    <div class="flex justify-between items-start mb-4">
+                        <button onclick="closeUserActions()" class="text-slate-400 hover:text-red-500"><i class="fas fa-times-circle text-xl"></i></button>
+                        <div class="text-right">
+                            <h2 id="cur-name" class="font-black text-xl text-blue-900 leading-tight"></h2>
+                            <p id="cur-phone-display" class="text-[10px] font-mono text-slate-400"></p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white p-4 rounded-xl shadow-sm mb-6 border border-blue-50">
+                        <p id="cur-points" class="text-2xl font-black text-blue-600"></p>
+                        <p id="points-label-view" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest"></p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="updatePoints(1)" class="bg-emerald-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-emerald-100 flex flex-col items-center">
+                            <i class="fas fa-plus mb-1"></i>
+                            <span>إضافة</span>
+                        </button>
+                        <button onclick="updatePoints(-1)" class="bg-red-500 text-white py-4 rounded-xl font-bold shadow-lg shadow-red-100 flex flex-col items-center">
+                            <i class="fas fa-minus mb-1"></i>
+                            <span>خصم</span>
+                        </button>
+                    </div>
+                    <button onclick="resetPoints()" class="w-full mt-3 py-3 text-xs font-bold text-orange-600 bg-orange-50 rounded-xl border border-orange-100">تصفير الحساب / تسليم الهدية</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-branding" class="section-content hidden">
+            <div class="admin-card">
+                <h3 class="font-black text-blue-600 mb-6 border-r-4 border-blue-600 pr-3">تخصيص نظام الولاء والهوية</h3>
+                
+                <div class="space-y-6">
+                    <div>
+                        <label>اختر نوع البرنامج</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div id="btn-sys-stamps" onclick="selectSystem('stamps')" class="system-select-btn active">
+                                <i class="fas fa-stamp text-2xl mb-2"></i>
+                                <p class="font-bold text-xs">نظام الأختام</p>
+                            </div>
+                            <div id="btn-sys-points" onclick="selectSystem('points')" class="system-select-btn">
+                                <i class="fas fa-coins text-2xl mb-2"></i>
+                                <p class="font-bold text-xs">نظام النقاط</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="area-stamps" class="p-4 bg-blue-50 rounded-2xl space-y-4">
+                        <p class="text-[10px] font-bold text-blue-400 uppercase">إعدادات الأختام</p>
+                        <input type="number" id="set-max-stamps" placeholder="عدد الأختام للهدية">
+                        <input type="text" id="label-stamps" placeholder="مسمى رصيد الأختام (مثلاً: أختامك)">
+                    </div>
+
+                    <div id="area-points" class="p-4 bg-amber-50 rounded-2xl space-y-4 hidden">
+                        <p class="text-[10px] font-bold text-amber-500 uppercase">إعدادات النقاط</p>
+                        <input type="text" id="label-points-unit" placeholder="مسمى العملة (نقطة، ريال...)">
+                        <input type="text" id="label-points-title" placeholder="عنوان الرصيد">
+                    </div>
+
+                    <hr class="border-slate-100">
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label>اسم المنشأة</label>
+                            <input type="text" id="set-brand-name">
+                        </div>
+                        <div>
+                            <label>اللون الرئيسي</label>
+                            <input type="color" id="set-theme-color" class="h-12 p-1">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label>رابط اللوغو (Logo)</label>
+                        <input type="text" id="set-logo-url">
+                    </div>
+
+                    <div>
+                        <label>رابط صورة الخلفية (صفحة العميل)</label>
+                        <input type="text" id="set-bg-url">
+                    </div>
+
+                    <div class="p-4 bg-slate-50 rounded-xl space-y-3">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase">نصوص الواجهة</p>
+                        <input type="text" id="set-msg-welcome" placeholder="رسالة الترحيب">
+                        <input type="text" id="set-msg-bye" placeholder="كلمة الوداع">
+                    </div>
+
+                    <button onclick="saveBranding()" class="w-full bg-slate-800 text-white py-4 rounded-xl font-bold shadow-xl">حفظ جميع الإعدادات</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-customers" class="section-content hidden">
+            <div class="admin-card">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-slate-700 text-xs">قائمة العملاء (اضغط للتعديل)</h3>
+                    <span id="customer-count" class="bg-blue-600 text-white text-[10px] px-2 py-1 rounded-full font-bold">0</span>
+                </div>
+                <div id="customers-list" class="space-y-2 max-h-80 overflow-y-auto"></div>
+            </div>
+            <div class="admin-card text-center">
+                <div id="qrcode-container" class="flex justify-center p-4 bg-white border rounded-2xl mx-auto w-fit mb-3"></div>
+                <p class="text-[10px] text-slate-400 mb-2">كود QR الخاص بمحلك لدخول الزبائن</p>
+                <button onclick="downloadQR()" class="text-[10px] text-blue-600 font-bold underline">تحميل الصورة للطباعة</button>
+            </div>
+        </div>
+
+        <div id="section-billing" class="section-content hidden">
+            <div class="admin-card bg-emerald-50 border-emerald-200">
+                <h3 class="font-bold text-emerald-800 mb-2 italic"><i class="fas fa-clock ml-1"></i> معلومات الاشتراك</h3>
+                <p class="text-xs text-emerald-600 mb-6">تاريخ الانتهاء الحالي: <span id="expiry-date-text" class="font-bold underline">--</span></p>
+                
+                <div class="bg-white p-5 rounded-3xl border border-emerald-100 shadow-sm">
+                    <h4 class="text-sm font-black text-slate-700 mb-3">تجديد الاشتراك</h4>
+                    <p class="text-[11px] text-slate-500 mb-4 leading-relaxed">يرجى التحويل إلى الحساب أدناه، ثم إرسال صورة التحويل عبر واتساب **الدعم الفني** لتفعيل الحساب.</p>
+                    
+                    <div class="relative mb-6">
+                        <p class="text-[9px] font-bold text-emerald-600 mb-1 uppercase tracking-tighter">حساب الدفع المعتمد:</p>
+                        <img id="admin-bank-img" src="" class="w-full rounded-2xl border-2 border-slate-50 shadow-md bg-slate-50 min-h-[120px] object-contain" alt="جاري تحميل معلومات البنك...">
+                    </div>
+
+                    <div class="space-y-3">
+                        <p class="text-[10px] font-black text-slate-400 text-center uppercase tracking-widest">للتواصل مع الدعم الفني</p>
+                        <a href="https://wa.me/966555179976" target="_blank" class="contact-btn wa-sa">
+                            <i class="fab fa-whatsapp text-lg"></i>
+                            واتساب السعودية: 0555179976
+                        </a>
+                        <a href="https://wa.me/963985896931" target="_blank" class="contact-btn wa-sy">
+                            <i class="fab fa-whatsapp text-lg"></i>
+                            واتساب سوريا: 0985896931
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="mt-4 p-4 bg-slate-900 rounded-2xl text-center">
+                    <p class="text-white text-[10px] font-bold italic">نحن هنا لخدمتك على مدار الساعة</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        const firebaseConfig = { 
+            apiKey: "AIzaSyCCBwr2b_9In1_gpqxkT3qKJ9ua-D80ZuE", 
+            authDomain: "mywarehouseapp-e0132.firebaseapp.com", 
+            projectId: "mywarehouseapp-e0132", 
+            storageBucket: "mywarehouseapp-e0132.firebasestorage.app", 
+            messagingSenderId: "720074658896", 
+            appId: "1:720074658896:web:09d084916b9dbc28556d55" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let currentCafeID = "";
+        let selectedSystem = "stamps";
+        let html5QrCode = null;
+        let expiryDateGlobal = null;
+        let activeUserPhone = "";
+
+        async function login() {
+            const user = document.getElementById('admin-user-input').value;
+            const pass = document.getElementById('admin-pass-input').value;
+            const doc = await db.collection("cafes").doc(user).get();
+            if(doc.exists && doc.data().password === pass) {
+                currentCafeID = user;
+                expiryDateGlobal = doc.data().expiryDate.toDate();
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('main-admin').classList.remove('hidden');
+                initCafe();
+            } else { alert("بيانات الدخول غير صحيحة"); }
+        }
+
+        async function loadAdminBankInfo() {
+            try {
+                const doc = await db.collection("admin_settings").doc("global_config").get();
+                if(doc.exists) {
+                    document.getElementById('admin-bank-img').src = doc.data().bankImageUrl || "";
+                }
+            } catch(e) { console.log("خطأ في جلب بيانات الإدارة"); }
+        }
+
+        function selectSystem(sys) {
+            selectedSystem = sys;
+            document.getElementById('btn-sys-stamps').classList.toggle('active', sys === 'stamps');
+            document.getElementById('btn-sys-points').classList.toggle('active', sys === 'points');
+            document.getElementById('area-stamps').classList.toggle('hidden', sys !== 'stamps');
+            document.getElementById('area-points').classList.toggle('hidden', sys !== 'points');
+        }
+
+        async function saveBranding() {
+            const data = {
+                systemType: selectedSystem,
+                brandName: document.getElementById('set-brand-name').value,
+                logo: document.getElementById('set-logo-url').value,
+                bgImage: document.getElementById('set-bg-url').value,
+                color: document.getElementById('set-theme-color').value,
+                maxStamps: document.getElementById('set-max-stamps').value,
+                labelStamps: document.getElementById('label-stamps').value,
+                labelPointsUnit: document.getElementById('label-points-unit').value,
+                labelPointsTitle: document.getElementById('label-points-title').value,
+                msgWelcome: document.getElementById('set-msg-welcome').value,
+                msgBye: document.getElementById('set-msg-bye').value
+            };
+            await db.collection("cafes").doc(currentCafeID).collection("settings").doc("branding").set(data, {merge: true});
+            alert("تم حفظ التعديلات بنجاح!");
+        }
+
+        async function loadCafeBranding() {
+            const doc = await db.collection("cafes").doc(currentCafeID).collection("settings").doc("branding").get();
+            if(doc.exists) {
+                const b = doc.data();
+                document.getElementById('set-brand-name').value = b.brandName || "";
+                document.getElementById('set-logo-url').value = b.logo || "";
+                document.getElementById('set-bg-url').value = b.bgImage || "";
+                document.getElementById('set-theme-color').value = b.color || "#2563eb";
+                document.getElementById('set-max-stamps').value = b.maxStamps || 6;
+                document.getElementById('label-stamps').value = b.labelStamps || "أختامك الحالية";
+                document.getElementById('label-points-unit').value = b.labelPointsUnit || "نقطة";
+                document.getElementById('label-points-title').value = b.labelPointsTitle || "إجمالي النقاط";
+                document.getElementById('set-msg-welcome').value = b.msgWelcome || "";
+                document.getElementById('set-msg-bye').value = b.msgBye || "";
+                selectSystem(b.systemType || "stamps");
+            }
+        }
+
+        function initCafe() {
+            loadCafeBranding();
+            loadCustomers();
+            generateCafeQR();
+            startTimer();
+            loadAdminBankInfo();
+            db.collection("cafes").doc(currentCafeID).get().then(doc => {
+                document.getElementById('expiry-date-text').innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
+                document.getElementById('display-cafe-name').innerText = doc.data().cafeName;
+            });
+        }
+
+        function startScanner() {
+            html5QrCode = new Html5Qrcode("reader");
+            document.getElementById('start-scan-btn').classList.add('hidden');
+            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
+                activeUserPhone = txt;
+                fetchUserData(txt);
+                html5QrCode.stop();
+                document.getElementById('start-scan-btn').classList.remove('hidden');
+            }).catch(() => {
+                alert("تأكد من إذن الكاميرا");
+                document.getElementById('start-scan-btn').classList.remove('hidden');
+            });
+        }
+
+        function editCustomerDirectly(phone) {
+            activeUserPhone = phone;
+            fetchUserData(phone);
+            showSection('scan');
+        }
+
+        async function fetchUserData(phone) {
+            const doc = await db.collection("cafes").doc(currentCafeID).collection("customers").doc(phone).get();
+            if(doc.exists) {
+                const data = doc.data();
+                document.getElementById('user-actions').classList.remove('hidden');
+                document.getElementById('cur-name').innerText = data.name;
+                document.getElementById('cur-phone-display').innerText = phone;
+                const label = selectedSystem === 'stamps' ? 'ختم' : (document.getElementById('label-points-unit').value || 'نقطة');
+                document.getElementById('cur-points').innerText = data.points || 0;
+                document.getElementById('points-label-view').innerText = label;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else { alert("زبون غير مسجل في محلك"); }
+        }
+
+        function closeUserActions() {
+            document.getElementById('user-actions').classList.add('hidden');
+            activeUserPhone = "";
+        }
+
+        async function updatePoints(amt) {
+            if(!activeUserPhone) return;
+            try {
+                await db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone).update({
+                    points: firebase.firestore.FieldValue.increment(amt)
+                });
+                fetchUserData(activeUserPhone);
+                loadCustomers();
+            } catch(e) { alert("حدث خطأ أثناء التحديث"); }
+        }
+
+        async function resetPoints() {
+            if(!activeUserPhone) return;
+            if(confirm("هل تم تسليم الهدية وتصفير الرصيد؟")) {
+                await db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone).update({ points: 0 });
+                fetchUserData(activeUserPhone);
+                loadCustomers();
+            }
+        }
+
+        async function loadCustomers() {
+            const list = document.getElementById('customers-list');
+            const snap = await db.collection("cafes").doc(currentCafeID).collection("customers").orderBy("name").get();
+            list.innerHTML = "";
+            document.getElementById('customer-count').innerText = snap.size;
+            snap.forEach(doc => {
+                const u = doc.data();
+                list.innerHTML += `
+                <div onclick="editCustomerDirectly('${doc.id}')" class="customer-row flex justify-between items-center p-4 bg-white rounded-xl border mb-2 shadow-sm hover:border-blue-300">
+                    <div class="text-right">
+                        <div class="font-bold text-sm text-slate-800">${u.name}</div>
+                        <div class="text-[10px] text-slate-400 font-mono">${doc.id}</div>
+                    </div>
+                    <div class="bg-blue-50 text-blue-600 px-4 py-1 rounded-lg font-black text-sm">
+                        ${u.points || 0}
+                    </div>
+                </div>`;
+            });
+        }
+
+        function generateCafeQR() {
+            const qrC = document.getElementById("qrcode-container");
+            qrC.innerHTML = "";
+            const customerUrl = window.location.href.replace('admin.html', 'index.html') + `?id=${currentCafeID}`;
+            new QRCode(qrC, { text: customerUrl, width: 140, height: 140 });
+        }
+
+        function startTimer() {
+            setInterval(() => {
+                const now = new Date().getTime();
+                const diff = expiryDateGlobal - now;
+                if (diff < 0) { document.getElementById('countdown-timer').innerText = "منتهي"; return; }
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const secs = Math.floor((diff % (1000 * 60)) / 1000);
+                document.getElementById('countdown-timer').innerText = `${days}d ${hours}:${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function showSection(id) {
+            document.querySelectorAll('.section-content').forEach(s => s.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-tab'));
+            document.getElementById('section-'+id).classList.remove('hidden');
+            document.getElementById('tab-'+id).classList.add('active-tab');
+            if(html5QrCode && id !== 'scan') html5QrCode.stop().catch(()=>{});
+        }
+
+        function downloadQR() {
+            const img = document.querySelector("#qrcode-container img");
+            if(!img) return;
+            const a = document.createElement("a");
+            a.href = img.src; a.download = `QR-Cafe-${currentCafeID}.png`; a.click();
+        }
+    </script>
+</body>
+</html>
