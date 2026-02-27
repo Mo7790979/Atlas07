@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة المنصة العليا - Super Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+        body { font-family: 'Cairo', sans-serif; background: #070b14; color: #f8fafc; }
+        .dev-card { background: #111827; border-radius: 1.2rem; padding: 1.5rem; border: 1px solid #1f2937; margin-bottom: 1.5rem; }
+        .hidden { display: none !important; }
+        input, select { background: #030712; border: 1px solid #374151; color: white; outline: none; transition: 0.2s; width: 100%; padding: 0.75rem; border-radius: 0.75rem; font-size: 0.85rem; }
+        input:focus { border-color: #3b82f6; }
+        .section-title { font-size: 11px; color: #3b82f6; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem; display: block; border-right: 3px solid #3b82f6; padding-right: 8px; }
+        .cafe-row { border-bottom: 1px solid #1f2937; padding: 12px 0; }
+        .cafe-row:last-child { border: none; }
+        .btn-action { font-size: 9px; padding: 6px 10px; border-radius: 8px; transition: 0.3s; font-weight: bold; }
+        .search-container { position: sticky; top: 0; z-index: 10; background: #070b14; padding: 10px 0; }
+    </style>
+</head>
+<body class="max-w-2xl mx-auto p-4 min-h-screen">
+
+    <div id="dev-login" class="dev-card text-center mt-20 shadow-2xl">
+        <div class="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i class="fas fa-user-shield text-2xl text-blue-400"></i>
+        </div>
+        <h2 class="text-xl font-black mb-6 text-blue-400">Super Admin Access</h2>
+        <div class="space-y-3">
+            <input type="text" id="dev-user-input" class="text-center" placeholder="اسم مستخدم الإدارة">
+            <input type="password" id="dev-pass-input" class="text-center" placeholder="كلمة المرور">
+            <button onclick="checkDevAuth()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold transition-all">دخول النظام</button>
+        </div>
+    </div>
+
+    <div id="dev-panel" class="hidden animate-in fade-in duration-500">
+        
+        <header class="flex justify-between items-center mb-6 px-2">
+            <div>
+                <h1 class="text-xl font-black">إدارة المنصة <span class="text-blue-500 text-xs">V3.1</span></h1>
+                <p class="text-[10px] text-slate-500">مرحباً بك في لوحة التحكم المطلقة</p>
+            </div>
+            <button onclick="location.reload()" class="bg-red-900/20 text-red-500 p-3 rounded-xl"><i class="fas fa-power-off"></i></button>
+        </header>
+
+        <div class="dev-card bg-slate-900/50 border-dashed">
+            <span class="section-title">إعدادات الإدارة العليا</span>
+            <div class="grid grid-cols-2 gap-3">
+                <input type="text" id="new-dev-user" placeholder="اسم مستخدم جديد">
+                <input type="text" id="new-dev-pass" placeholder="كلمة مرور جديدة">
+            </div>
+            <button onclick="updateDevAuth()" class="w-full bg-slate-700 hover:bg-slate-600 text-white mt-3 py-2 rounded-xl text-xs font-bold transition-all">
+                تحديث بيانات الدخول الخاصة بك
+            </button>
+        </div>
+
+        <div class="dev-card border-blue-500/50 shadow-blue-900/10 shadow-xl">
+            <span class="section-title">تحديث صورة البنك الموحدة</span>
+            <div class="space-y-3">
+                <input type="text" id="global-bank-url" placeholder="رابط صورة البنك الجديد...">
+                <button onclick="updateGlobalBankImage()" id="global-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-black text-sm">
+                    تحديث عند جميع المشتركين
+                </button>
+            </div>
+        </div>
+
+        <div class="dev-card">
+            <span class="section-title">إنشاء حساب جديد للمحل</span>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <input type="text" id="cafe-name" placeholder="اسم الكافيه">
+                <input type="text" id="cafe-username" placeholder="اسم المستخدم (Login)">
+                <input type="text" id="cafe-password" placeholder="كلمة المرور">
+                <input type="date" id="cafe-expiry" title="تاريخ انتهاء الاشتراك">
+            </div>
+            <button onclick="addNewCafe()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white mt-4 py-3 rounded-xl font-bold">
+                تفعيل نظام المحل الجديد
+            </button>
+        </div>
+
+        <div class="dev-card">
+            <div class="flex justify-between items-center mb-4">
+                <span class="section-title mb-0">المشتركين</span>
+                <div class="relative w-1/2">
+                    <input type="text" id="cafe-search" onkeyup="filterCafes()" placeholder="بحث بالـ ID..." class="!py-1.5 !text-[10px] !bg-slate-800">
+                    <i class="fas fa-search absolute left-3 top-2.5 text-slate-500 text-[10px]"></i>
+                </div>
+            </div>
+            <div id="cafes-list" class="space-y-4 text-right">
+                <p class="text-center text-slate-500 text-sm italic">جاري تحميل القائمة...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="date-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-6 z-[100]">
+        <div class="bg-[#111827] w-full max-w-xs p-6 rounded-2xl border border-blue-500/30">
+            <h3 class="text-blue-400 font-bold mb-4 text-center">تجديد الاشتراك</h3>
+            <input type="date" id="new-custom-date" class="mb-4">
+            <div class="flex gap-2">
+                <button id="confirm-date-btn" class="flex-1 bg-emerald-600 py-2 rounded-lg text-xs font-bold">تأكيد</button>
+                <button onclick="closeDateModal()" class="flex-1 bg-slate-700 py-2 rounded-lg text-xs font-bold">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        const firebaseConfig = { 
+            apiKey: "AIzaSyCCBwr2b_9In1_gpqxkT3qKJ9ua-D80ZuE", 
+            authDomain: "mywarehouseapp-e0132.firebaseapp.com", 
+            projectId: "mywarehouseapp-e0132", 
+            storageBucket: "mywarehouseapp-e0132.firebasestorage.app", 
+            messagingSenderId: "720074658896", 
+            appId: "1:720074658896:web:09d084916b9dbc28556d55" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let allCafes = []; // لتخزين البيانات محلياً لسرعة البحث
+        let selectedCafeId = "";
+
+        // التحقق من الدخول
+        async function checkDevAuth() {
+            const user = document.getElementById('dev-user-input').value;
+            const pass = document.getElementById('dev-pass-input').value;
+            const doc = await db.collection("admin_settings").doc("dev_auth").get();
+            const authData = doc.exists ? doc.data() : { user: "admin", pass: "DEV99" };
+
+            if(user === authData.user && pass === authData.pass) {
+                document.getElementById('dev-login').classList.add('hidden');
+                document.getElementById('dev-panel').classList.remove('hidden');
+                loadCafes();
+                fetchGlobalBankInfo();
+            } else { alert("بيانات الدخول غير صحيحة"); }
+        }
+
+        async function updateDevAuth() {
+            const user = document.getElementById('new-dev-user').value;
+            const pass = document.getElementById('new-dev-pass').value;
+            if(!user || !pass) return alert("يرجى ملء الحقلين");
+            await db.collection("admin_settings").doc("dev_auth").set({ user, pass });
+            alert("تم التحديث");
+        }
+
+        async function updateGlobalBankImage() {
+            const url = document.getElementById('global-bank-url').value;
+            await db.collection("admin_settings").doc("global_config").set({ bankImageUrl: url }, { merge: true });
+            alert("تم التحديث بنجاح");
+        }
+
+        async function fetchGlobalBankInfo() {
+            const doc = await db.collection("admin_settings").doc("global_config").get();
+            if(doc.exists) document.getElementById('global-bank-url').value = doc.data().bankImageUrl || "";
+        }
+
+        async function addNewCafe() {
+            const name = document.getElementById('cafe-name').value;
+            const user = document.getElementById('cafe-username').value;
+            const pass = document.getElementById('cafe-password').value;
+            const expiry = document.getElementById('cafe-expiry').value;
+            if(!name || !user || !pass || !expiry) return alert("يرجى إكمال البيانات");
+
+            await db.collection("cafes").doc(user).set({
+                cafeName: name, username: user, password: pass,
+                expiryDate: firebase.firestore.Timestamp.fromDate(new Date(expiry)),
+                status: "active", createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            alert("تم إنشاء الحساب");
+            loadCafes();
+        }
+
+        async function loadCafes() {
+            const listDiv = document.getElementById('cafes-list');
+            listDiv.innerHTML = "<p class='text-center text-slate-500'>جاري التحميل...</p>";
+            const snap = await db.collection("cafes").orderBy("createdAt", "desc").get();
+            allCafes = [];
+            snap.forEach(doc => allCafes.push({id: doc.id, ...doc.data()}));
+            renderCafes(allCafes);
+        }
+
+        function renderCafes(dataArray) {
+            const listDiv = document.getElementById('cafes-list');
+            listDiv.innerHTML = "";
+            if(dataArray.length === 0) {
+                listDiv.innerHTML = "<p class='text-center text-slate-500 text-xs py-4'>لا توجد نتائج</p>";
+                return;
+            }
+            dataArray.forEach(data => {
+                const isExpired = data.expiryDate.toDate() < new Date();
+                listDiv.innerHTML += `
+                    <div class="cafe-row animate-in fade-in">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h4 class="font-bold text-blue-400 text-sm">${data.cafeName}</h4>
+                                <p class="text-[9px] text-slate-500">ID: <span class="text-blue-300">${data.username}</span> | Pass: ${data.password}</p>
+                            </div>
+                            <span class="text-[9px] px-2 py-1 rounded ${isExpired ? 'bg-red-900/30 text-red-500' : 'bg-emerald-900/30 text-emerald-500'}">
+                                ينتهي: ${data.expiryDate.toDate().toLocaleDateString('ar-EG')}
+                            </span>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="openDateModal('${data.username}')" class="btn-action bg-emerald-600 text-white"><i class="fas fa-calendar-plus ml-1"></i>تجديد</button>
+                            <button onclick="changeCafePass('${data.username}')" class="btn-action bg-blue-600 text-white">تغيير السر</button>
+                            <button onclick="toggleStatus('${data.username}', '${data.status}')" class="btn-action bg-slate-700 text-white">${data.status === 'active' ? 'تعطيل' : 'تفعيل'}</button>
+                            <button onclick="deleteCafe('${data.username}')" class="btn-action bg-red-900 text-white">حذف</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // ميزة البحث
+        function filterCafes() {
+            const val = document.getElementById('cafe-search').value.toLowerCase();
+            const filtered = allCafes.filter(c => c.username.toLowerCase().includes(val) || c.cafeName.toLowerCase().includes(val));
+            renderCafes(filtered);
+        }
+
+        // ميزة تجديد الاشتراك المخصص
+        function openDateModal(id) {
+            selectedCafeId = id;
+            document.getElementById('date-modal').classList.remove('hidden');
+            // تعيين التاريخ الحالي في المدخل كخيار افتراضي
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('new-custom-date').value = today;
+        }
+
+        function closeDateModal() {
+            document.getElementById('date-modal').classList.add('hidden');
+        }
+
+        document.getElementById('confirm-date-btn').onclick = async function() {
+            const newDate = document.getElementById('new-custom-date').value;
+            if(!newDate) return alert("اختر التاريخ");
+            
+            await db.collection("cafes").doc(selectedCafeId).update({
+                expiryDate: firebase.firestore.Timestamp.fromDate(new Date(newDate))
+            });
+            alert("تم تحديث تاريخ الاشتراك");
+            closeDateModal();
+            loadCafes();
+        };
+
+        async function changeCafePass(id) {
+            const newPass = prompt("أدخل كلمة المرور الجديدة للمحل:");
+            if(newPass) {
+                await db.collection("cafes").doc(id).update({ password: newPass });
+                loadCafes();
+            }
+        }
+
+        async function toggleStatus(id, current) {
+            const next = current === 'active' ? 'suspended' : 'active';
+            await db.collection("cafes").doc(id).update({ status: next });
+            loadCafes();
+        }
+
+        async function deleteCafe(id) {
+            if(confirm("حذف المقهى نهائياً؟")) { await db.collection("cafes").doc(id).delete(); loadCafes(); }
+        }
+    </script>
+</body>
+</html>
