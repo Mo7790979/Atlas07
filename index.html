@@ -23,7 +23,6 @@
         #bg-overlay { position: fixed; inset: 0; z-index: -1; background-size: cover; background-position: center; filter: brightness(0.7); }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .animate-slide-up { animation: slideUp 0.5s ease-out; }
-        /* ستايل المنيو الجديد */
         #menu-modal { transition: 0.3s; }
     </style>
 </head>
@@ -64,9 +63,20 @@
             <p class="text-[10px] text-slate-400 font-bold">أبرز الكود للموظف عند الدفع</p>
         </div>
 
-        <button id="view-menu-btn" onclick="toggleMenu(true)" class="hidden w-full py-4 mb-3 bg-slate-800 text-white rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all">
-            <i class="fas fa-utensils"></i> عرض المنيو
+        <!-- أزرار المنيو، السلة، ونداء النادل -->
+        <button id="view-menu-btn" onclick="toggleMenu(true)" class="w-full py-3 mb-3 bg-slate-800 text-white rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all text-xs">
+            <i class="fas fa-utensils"></i> تصفح المنيو التفاعلي والطلب
         </button>
+
+        <div class="grid grid-cols-2 gap-2 mb-3">
+            <button onclick="toggleCartModal(true)" class="py-3 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2 text-xs relative">
+                <i class="fas fa-shopping-cart"></i> سلة المشتريات
+                <span id="cart-badge" class="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold hidden">0</span>
+            </button>
+            <button onclick="callWaiter()" class="py-3 bg-amber-500 text-white rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2 text-xs">
+                <i class="fas fa-bell"></i> نداء النادل
+            </button>
+        </div>
 
         <button onclick="showInstallGuide()" class="flex items-center justify-center gap-2 w-full py-3 bg-white/40 border border-white/60 rounded-2xl text-xs font-bold text-slate-600 mb-4">
             <i class="fas fa-download"></i> تثبيت التطبيق على الجوال
@@ -75,10 +85,41 @@
         <p id="bye-msg" class="text-xs text-slate-400 italic">شكراً لزيارتك!</p>
     </div>
 
-    <div id="menu-modal" class="hidden fixed inset-0 bg-black/90 z-[1000] flex flex-col p-4" onclick="toggleMenu(false)">
-        <button class="self-end text-white text-3xl mb-2">&times;</button>
-        <div class="flex-1 flex items-center justify-center overflow-auto">
-            <img id="menu-img-display" src="" class="max-w-full max-h-full rounded-lg shadow-2xl" onclick="event.stopPropagation()">
+    <!-- نافذة المنيو التفاعلي -->
+    <div id="menu-modal" class="hidden fixed inset-0 bg-black/90 z-[1000] flex flex-col p-4">
+        <div class="flex justify-between items-center text-white mb-4">
+            <h2 class="text-lg font-black"><i class="fas fa-utensils ml-1"></i> قائمة الطعام التفاعلية</h2>
+            <button onclick="toggleMenu(false)" class="text-white text-3xl">&times;</button>
+        </div>
+        <div id="interactive-menu-list" class="flex-1 overflow-auto space-y-3 pb-20">
+            <!-- يتم تعبئة المنتجات هنا تلقائياً -->
+        </div>
+        <div class="absolute bottom-4 left-4 right-4 max-w-sm mx-auto">
+            <button onclick="toggleMenu(false); toggleCartModal(true);" class="w-full py-3 bg-emerald-600 text-white rounded-2xl font-bold shadow-xl flex items-center justify-center gap-2">
+                <i class="fas fa-shopping-cart"></i> عرض السلة وإتمام الطلب
+            </button>
+        </div>
+    </div>
+
+    <!-- نافذة سلة المشتريات -->
+    <div id="cart-modal" class="hidden fixed inset-0 bg-black/70 z-[1001] flex items-end">
+        <div class="w-full bg-white rounded-t-[2.5rem] p-6 max-h-[80vh] overflow-y-auto animate-slide-up">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-black text-slate-800">سلة المشتريات</h3>
+                <button onclick="toggleCartModal(false)" class="text-slate-400 text-2xl">&times;</button>
+            </div>
+            <div class="mb-4">
+                <label class="text-xs font-bold text-slate-500 mb-1">رقم الطاولة أو المكان</label>
+                <input type="text" id="table-number-input" placeholder="مثال: طاولة رقم 4" class="w-full p-3 border rounded-xl bg-slate-50 text-sm font-bold">
+            </div>
+            <div id="cart-items-list" class="space-y-3 mb-4 max-h-48 overflow-y-auto border-t border-b py-3">
+                <!-- عناصر السلة -->
+            </div>
+            <div class="flex justify-between items-center mb-6 font-black text-slate-800 text-base">
+                <span>المبلغ الإجمالي:</span>
+                <span id="cart-total-price" class="text-blue-600">0</span>
+            </div>
+            <button onclick="submitOrder()" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-lg">إرسال الطلب للمطعم</button>
         </div>
     </div>
 
@@ -140,12 +181,14 @@
 
         let cafeSettings = {};
         let userData = null;
+        let cart = [];
 
         if (!cafeID) {
             document.body.innerHTML = "<div class='text-center font-bold p-10'>خطأ: الرابط غير صحيح.</div>";
         } else {
             checkExistingLogin();
             listenToCafeSettings();
+            loadInteractiveMenu();
         }
 
         function checkExistingLogin() {
@@ -174,14 +217,6 @@
             if(s.msgWelcome) document.getElementById('welcome-msg').innerText = s.msgWelcome;
             if(s.msgBye) document.getElementById('bye-msg').innerText = s.msgBye;
 
-            // ميزة المنيو: إظهار الزر إذا كان هناك رابط صورة
-            if(s.menuImage && s.menuImage.trim() !== "") {
-                document.getElementById('view-menu-btn').classList.remove('hidden');
-                document.getElementById('menu-img-display').src = s.menuImage;
-            } else {
-                document.getElementById('view-menu-btn').classList.add('hidden');
-            }
-
             if(userData) renderStatus(userData);
         }
 
@@ -193,6 +228,132 @@
             } else {
                 modal.classList.add('hidden');
                 document.body.style.overflow = 'auto';
+            }
+        }
+
+        async function loadInteractiveMenu() {
+            const menuContainer = document.getElementById('interactive-menu-list');
+            const snap = await db.collection("cafes").doc(cafeID).collection("products").get();
+            menuContainer.innerHTML = "";
+            if(snap.empty) {
+                menuContainer.innerHTML = '<p class="text-white text-center py-10">لا توجد منتجات مضافة حالياً في القائمة</p>';
+                return;
+            }
+            snap.forEach(doc => {
+                const p = doc.data();
+                menuContainer.innerHTML += `
+                <div class="bg-white/90 p-4 rounded-2xl flex justify-between items-center shadow-md">
+                    <div class="flex items-center gap-3">
+                        <img src="${p.image || 'https://via.placeholder.com/60'}" class="w-14 h-14 object-cover rounded-xl">
+                        <div>
+                            <h4 class="font-black text-slate-800 text-sm">${p.name}</h4>
+                            <p class="text-[10px] text-slate-500">${p.description || ''}</p>
+                            <span class="text-xs font-black text-blue-600">${p.price}</span>
+                        </div>
+                    </div>
+                    <button onclick="addToCart('${doc.id}', '${p.name}', ${p.price})" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow"><i class="fas fa-plus"></i> إضافة</button>
+                </div>`;
+            });
+        }
+
+        function addToCart(id, name, price) {
+            const existing = cart.find(item => item.id === id);
+            if(existing) {
+                existing.qty += 1;
+            } else {
+                cart.push({ id, name, price, qty: 1 });
+            }
+            updateCartUI();
+            alert("تمت الإضافة إلى السلة");
+        }
+
+        function updateCartUI() {
+            const badge = document.getElementById('cart-badge');
+            const list = document.getElementById('cart-items-list');
+            const totalPriceEl = document.getElementById('cart-total-price');
+            
+            const totalCount = cart.reduce((sum, item) => sum + item.qty, 0);
+            if(totalCount > 0) {
+                badge.innerText = totalCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+
+            list.innerHTML = "";
+            let total = 0;
+            if(cart.length === 0) {
+                list.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">السلة فارغة</p>';
+            } else {
+                cart.forEach((item, index) => {
+                    total += item.price * item.qty;
+                    list.innerHTML += `
+                    <div class="flex justify-between items-center py-2">
+                        <div>
+                            <div class="font-bold text-xs text-slate-800">${item.name}</div>
+                            <div class="text-[10px] text-slate-500">${item.price} × ${item.qty}</div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="changeQty(${index}, 1)" class="w-6 h-6 bg-slate-100 rounded-full font-bold text-xs">+</button>
+                            <span class="text-xs font-bold">${item.qty}</span>
+                            <button onclick="changeQty(${index}, -1)" class="w-6 h-6 bg-slate-100 rounded-full font-bold text-xs">-</button>
+                        </div>
+                    </div>`;
+                });
+            }
+            totalPriceEl.innerText = total;
+        }
+
+        function changeQty(index, delta) {
+            cart[index].qty += delta;
+            if(cart[index].qty <= 0) {
+                cart.splice(index, 1);
+            }
+            updateCartUI();
+        }
+
+        function toggleCartModal(show) {
+            const modal = document.getElementById('cart-modal');
+            if(show) modal.classList.remove('hidden');
+            else modal.classList.add('hidden');
+        }
+
+        async function submitOrder() {
+            const table = document.getElementById('table-number-input').value;
+            if(!table) { alert("يرجى إدخال رقم الطاولة"); return; }
+            if(cart.length === 0) { alert("السلة فارغة"); return; }
+
+            const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            const detailsText = cart.map(i => `${i.name} (عدد: ${i.qty})`).join('، ');
+
+            try {
+                await db.collection("cafes").doc(cafeID).collection("invoices").add({
+                    target: table,
+                    details: detailsText,
+                    amount: total,
+                    date: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert("تم إرسال الطلب بنجاح إلى المطعم!");
+                cart = [];
+                updateCartUI();
+                toggleCartModal(false);
+            } catch(e) {
+                alert("حدث خطأ أثناء إرسال الطلب");
+            }
+        }
+
+        async function callWaiter() {
+            const table = prompt("أدخل رقم الطاولة لنداء النادل:");
+            if(!table) return;
+            try {
+                await db.collection("cafes").doc(cafeID).collection("waiter_calls").add({
+                    table: `طاولة ${table}`,
+                    status: 'pending',
+                    time: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert("تم إرسال النداء بنجاح، سيحضر النادل إليك قريباً!");
+            } catch(e) {
+                alert("حدث خطأ أثناء إرسال النداء");
             }
         }
 
