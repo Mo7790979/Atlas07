@@ -584,7 +584,6 @@
             loadAdminBankInfo();
             generateNewSerial();
             
-            // ترك القائمة فارغة بشكل نظيف عند البدء دون إجبار بند افتراضي
             invoiceInteractiveItems = [];
             renderInvoiceItemsBuilder();
 
@@ -1037,6 +1036,9 @@
             window.activeCartIdToResolve = null;
         }
 
+        // ==========================================
+        // دالة إصدار وحفظ الفاتورة المصححة بالكامل
+        // ==========================================
         async function issueInvoice() {
             const target = document.getElementById('invoice-target').value.trim();
             const subtotal = Number(document.getElementById('invoice-subtotal').innerText) || 0;
@@ -1045,9 +1047,21 @@
             const amount = Number(document.getElementById('invoice-amount').innerText) || 0;
             const serial = document.getElementById('invoice-serial').innerText;
 
-            if(!target || amount <= 0 || invoiceInteractiveItems.length === 0) { 
-                alert("يرجى إدخال اسم الطاولة/الزبون وبنود صحيحة للفاتورة"); 
-                return; 
+            // التحقق من صحة المدخلات بناءً على المصفوفة التفاعلية
+            if(!target) {
+                alert("يرجى إدخال اسم الطاولة أو اسم الزبون");
+                return;
+            }
+            if(invoiceInteractiveItems.length === 0) {
+                alert("يرجى إضافة بند واحد على الأقل للفاتورة");
+                return;
+            }
+            // التأكد من أن كل بند يحتوي على اسم وسعر صحيح
+            for(let i = 0; i < invoiceInteractiveItems.length; i++) {
+                if(!invoiceInteractiveItems[i].name || invoiceInteractiveItems[i].name.trim() === "") {
+                    alert(`يرجى كتابة اسم البند رقم (${i + 1})`);
+                    return;
+                }
             }
 
             const detailsSummary = invoiceInteractiveItems.map(i => `${i.qty}x ${i.name} (${i.price})`).join(' - ');
