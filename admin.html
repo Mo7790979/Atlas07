@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- مكتبة الطباعة وتصدير PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Tajawal:wght@400;700&family=Almarai:wght@400;700&display=swap');
@@ -168,31 +170,40 @@
         <!-- النظام المحاسبي الاحترافي وربطه بسلة العميل -->
         <div id="section-pos" class="section-content hidden">
             
-            <!-- سلال العملاء الواردة من المنيو التفاعلي -->
+            <!-- قائمة الطلبات الواردة من الطاولات (مستقلة تماماً) -->
             <div class="admin-card border-blue-200 bg-blue-50/30">
-                <h3 class="font-black text-blue-800 mb-3"><i class="fas fa-shopping-cart ml-1"></i> طلبات وسلال العملاء المعلقة (اضغط لتحميلها للفاتورة)</h3>
+                <h3 class="font-black text-blue-800 mb-3"><i class="fas fa-utensils ml-1"></i> الفواتير والطلبات الواردة من الطاولات (قائمة منفصلة)</h3>
                 <div id="customer-carts-list" class="space-y-2 max-h-60 overflow-y-auto">
-                    <p class="text-xs text-slate-400 text-center py-4">لا توجد طلبات جديدة معلقة حالياً</p>
+                    <p class="text-xs text-slate-400 text-center py-4">لا توجد طلبات جديدة من الطاولات حالياً</p>
                 </div>
             </div>
 
-            <!-- إعدادات الضريبة المخصصة -->
+            <!-- إعدادات النظام الضريبي المتقدمة (إضافة وحذف وتعديل مرن) -->
             <div class="admin-card border-purple-200 bg-purple-50/20">
-                <h3 class="font-black text-purple-800 mb-3"><i class="fas fa-percent ml-1"></i> إعدادات نظام الضرائب والخدمة الثابتة</h3>
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-black text-purple-800"><i class="fas fa-percent ml-1"></i> إدارة النظام الضريبي والرسوم</h3>
+                    <button onclick="openTaxManager()" class="bg-purple-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold">إدارة وحفظ الضرائب</button>
+                </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label>مسمى بند الضريبة/الخدمة</label>
-                        <input type="text" id="tax-custom-name" placeholder="مثال: ضريبة استهلاك المكان" oninput="calculateTotal()">
+                        <label>اختر بند الضريبة/الخدمة المعتمد</label>
+                        <select id="active-tax-select" onchange="applySelectedTax()" class="text-xs font-bold text-purple-900">
+                            <option value="0">بدون ضريبة</option>
+                        </select>
                     </div>
                     <div>
-                        <label>النسبة المئوية (%)</label>
-                        <input type="number" id="tax-custom-rate" placeholder="مثال: 10" oninput="calculateTotal()" value="0">
+                        <label>النسبة المئوية الحالية (%)</label>
+                        <input type="number" id="tax-custom-rate" readonly class="bg-slate-100 font-bold text-purple-700" value="0">
                     </div>
                 </div>
             </div>
 
             <div class="admin-card">
-                <h3 class="font-black text-emerald-600 mb-4 border-r-4 border-emerald-600 pr-3">النظام المحاسبي الاحترافي - إصدار وتعديل الفاتورة</h3>
+                <div class="flex justify-between items-center mb-4 border-r-4 border-emerald-600 pr-3">
+                    <h3 class="font-black text-emerald-600">النظام المحاسبي - إصدار وتعديل الفاتورة التفاعلية</h3>
+                    <button onclick="printCurrentPOSInvoicePDF()" class="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow"><i class="fas fa-file-pdf ml-1"></i> تصدير PDF للطباعة</button>
+                </div>
+                
                 <div class="space-y-4">
                     <div class="grid grid-cols-2 gap-3">
                         <div>
@@ -204,15 +215,22 @@
                             <input type="text" id="invoice-serial" readonly class="bg-slate-100 font-mono text-center font-bold text-emerald-700">
                         </div>
                     </div>
-                    <div>
-                        <label>بنود الطلبات والأسعار (قابلة للتعديل)</label>
-                        <textarea id="invoice-details" rows="3" placeholder="تفاصيل الطلبات (مثلاً: 2 قهوة تركية - 15)"></textarea>
+
+                    <!-- بنود الفاتورة التفاعلية (تشبه المنيو مع إمكانية الإضافة والحذف والتعديل) -->
+                    <div class="p-4 bg-slate-50 rounded-2xl border space-y-3">
+                        <div class="flex justify-between items-center">
+                            <label class="text-xs font-bold text-slate-700">بنود الفاتورة التفاعلية (أضف أو احذف مثل المنيو)</label>
+                            <button onclick="addInvoiceItemRow()" class="bg-emerald-600 text-white px-2.5 py-1 rounded-lg text-xs font-bold"><i class="fas fa-plus ml-1"></i> إضافة بند</button>
+                        </div>
+                        <div id="invoice-items-builder" class="space-y-2 max-h-48 overflow-y-auto">
+                            <!-- سيتم تعبئة البنود تفاعلياً هنا -->
+                        </div>
                     </div>
                     
                     <div class="grid grid-cols-3 gap-2 p-3 bg-slate-50 rounded-xl border">
                         <div>
                             <label>المبلغ الفرعي</label>
-                            <input type="number" id="invoice-subtotal" placeholder="0.00" oninput="calculateTotal()">
+                            <input type="number" id="invoice-subtotal" placeholder="0.00" readonly class="bg-slate-100 font-bold">
                         </div>
                         <div>
                             <label id="dynamic-tax-label">قيمة الضريبة / الخدمة</label>
@@ -225,16 +243,25 @@
                     </div>
 
                     <div class="flex gap-2">
-                        <button onclick="issueInvoice()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold shadow-lg">حفظ وإصدار الفاتورة</button>
+                        <button onclick="issueInvoice()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold shadow-lg">حفظ وإصدار الفاتورة للنظام المحاسبي</button>
                         <button onclick="clearInvoiceForm()" class="bg-slate-200 text-slate-700 px-4 py-3 rounded-xl font-bold">مسح النموذج</button>
                     </div>
                 </div>
             </div>
 
-            <!-- سجل الفواتير مع البحث (تفاعلية عند الضغط) -->
+            <!-- قسم تقرير مبيعات اليوم المفصل -->
+            <div class="admin-card bg-slate-900 text-white">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-black text-amber-400"><i class="fas fa-chart-line ml-1"></i> تقرير مبيعات اليوم المفصل</h3>
+                    <button onclick="generateDailySalesReport()" class="bg-amber-500 text-slate-900 px-4 py-2 rounded-xl text-xs font-black shadow-lg">إصدار التقرير المفصل الآن</button>
+                </div>
+                <p class="text-[11px] text-slate-300">يصدر تقريراً كاملاً بعدد وكميات كل منتج تم بيعه اليوم، إجمالي المبيعات، الضرائب، وصافي الأرباح.</p>
+            </div>
+
+            <!-- سجل الفواتير والمبيعات المصدرة (قائمة مستقلة بعد الإصدار) -->
             <div class="admin-card">
                 <div class="flex flex-col md:flex-row justify-between items-center gap-3 mb-4">
-                    <h3 class="font-bold text-slate-700 text-xs">سجل الفواتير والمبيعات السابقة (اضغط على الفاتورة لتحميلها للنظام المحاسبي)</h3>
+                    <h3 class="font-bold text-slate-700 text-xs">سجل الفواتير الصادرة (اضغط لتحميلها أو تصديرها PDF)</h3>
                     <div class="w-full md:w-1/2">
                         <input type="text" id="invoice-search-input" placeholder="بحث برقم الفاتورة التسلسلي أو رقم الطاولة..." oninput="filterInvoices()" class="text-xs py-2">
                     </div>
@@ -362,6 +389,79 @@
         </div>
     </div>
 
+    <!-- نافذة منبثقة لإدارة الضرائب (Modal) -->
+    <div id="tax-manager-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <h3 class="font-black text-lg text-purple-800">إدارة الضرائب والخدمات</h3>
+            <div class="space-y-3">
+                <div>
+                    <label>اسم الضريبة أو الخدمة</label>
+                    <input type="text" id="new-tax-name" placeholder="مثال: ضريبة القيمة المضافة / خدمة محل">
+                </div>
+                <div>
+                    <label>النسبة المئوية (%)</label>
+                    <input type="number" id="new-tax-rate" placeholder="مثال: 15 أو 5">
+                </div>
+                <button onclick="saveNewTaxConfig()" class="w-full bg-purple-600 text-white py-3 rounded-xl font-bold">إضافة وحفظ الضريبة</button>
+            </div>
+            <div class="border-t pt-3">
+                <label class="text-xs font-bold text-slate-600 mb-2">الضرائب المضافة مسبقاً:</label>
+                <div id="taxes-list-modal" class="space-y-2 max-h-36 overflow-y-auto"></div>
+            </div>
+            <button onclick="closeTaxManager()" class="w-full bg-slate-200 text-slate-700 py-2.5 rounded-xl font-bold">إغلاق</button>
+        </div>
+    </div>
+
+    <!-- قالب مخفي لتصدير الفاتورة إلى PDF -->
+    <div id="pdf-invoice-template" class="hidden p-8 bg-white text-slate-800 font-sans max-w-lg mx-auto" dir="rtl">
+        <div class="text-center border-b pb-4 mb-4">
+            <h2 id="pdf-cafe-name" class="text-2xl font-black text-blue-600">اسم المنشأة</h2>
+            <p class="text-xs text-slate-500">فاتورة ضريبية / مبيعات</p>
+        </div>
+        <div class="flex justify-between text-xs mb-4 font-bold">
+            <div>الرقم التسلسلي: <span id="pdf-serial" class="font-mono">--</span></div>
+            <div>التاريخ: <span id="pdf-date">--</span></div>
+        </div>
+        <div class="mb-4 text-xs font-bold">
+            العميل / الطاولة: <span id="pdf-target" class="text-blue-700">--</span>
+        </div>
+        <table class="w-full text-xs border-collapse mb-4">
+            <thead>
+                <tr class="bg-slate-100 border-b">
+                    <th class="p-2 text-right">المنتج / البند</th>
+                    <th class="p-2 text-center">الكمية</th>
+                    <th class="p-2 text-center">السعر</th>
+                    <th class="p-2 text-left">الإجمالي</th>
+                </tr>
+            </thead>
+            <tbody id="pdf-items-tbody">
+                <!-- البنود -->
+            </tbody>
+        </table>
+        <div class="border-t pt-3 space-y-1 text-xs">
+            <div class="flex justify-between"><span>المبلغ الفرعي:</span> <span id="pdf-subtotal">0.00</span></div>
+            <div class="flex justify-between"><span id="pdf-tax-label">الضريبة:</span> <span id="pdf-tax">0.00</span></div>
+            <div class="flex justify-between font-black text-sm border-t pt-2 text-emerald-700"><span>الإجمالي النهائي:</span> <span id="pdf-total">0.00</span></div>
+        </div>
+        <div class="text-center mt-8 text-[10px] text-slate-400 border-t pt-4">
+            شكراً لتزيينكم محلنا بزيارتكم! نتشرف بخدمتكم دائماً.
+        </div>
+    </div>
+
+    <!-- نافذة تقرير مبيعات اليوم المفصل المنبثقة -->
+    <div id="sales-report-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-black text-lg text-slate-800"><i class="fas fa-file-invoice-dollar text-amber-600 ml-1"></i> تقرير مبيعات اليوم المفصل</h3>
+                <button onclick="closeSalesReportModal()" class="text-slate-400 hover:text-red-500 font-bold text-xl">&times;</button>
+            </div>
+            <div id="sales-report-content" class="space-y-4 text-xs">
+                <!-- محتوى التقرير -->
+            </div>
+            <button onclick="closeSalesReportModal()" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold">إغلاق التقرير</button>
+        </div>
+    </div>
+
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-firestore-compat.js"></script>
 
@@ -383,6 +483,8 @@
         let expiryDateGlobal = null;
         let activeUserPhone = "";
         let allInvoicesCache = [];
+        let globalProductsCache = [];
+        let invoiceInteractiveItems = []; // بنود الفاتورة التفاعلية الحالية
 
         async function login() {
             const user = document.getElementById('admin-user-input').value;
@@ -427,9 +529,7 @@
                 labelPointsUnit: document.getElementById('label-points-unit').value,
                 labelPointsTitle: document.getElementById('label-points-title').value,
                 msgWelcome: document.getElementById('set-msg-welcome').value,
-                msgBye: document.getElementById('set-msg-bye').value,
-                taxName: document.getElementById('tax-custom-name').value,
-                taxRate: document.getElementById('tax-custom-rate').value
+                msgBye: document.getElementById('set-msg-bye').value
             };
             await db.collection("cafes").doc(currentCafeID).collection("settings").doc("branding").set(data, {merge: true});
             alert("تم حفظ التعديلات بنجاح!");
@@ -450,10 +550,7 @@
                 document.getElementById('label-points-title').value = b.labelPointsTitle || "إجمالي النقاط";
                 document.getElementById('set-msg-welcome').value = b.msgWelcome || "";
                 document.getElementById('set-msg-bye').value = b.msgBye || "";
-                document.getElementById('tax-custom-name').value = b.taxName || "ضريبة القيمة المضافة";
-                document.getElementById('tax-custom-rate').value = b.taxRate || 0;
                 selectSystem(b.systemType || "stamps");
-                calculateTotal();
             }
         }
 
@@ -464,11 +561,13 @@
             loadWaiters();
             listenToWaiterCalls();
             listenToCustomerCarts();
+            loadTaxesDropdown();
             loadInvoices();
             generateCafeQR();
             startTimer();
             loadAdminBankInfo();
             generateNewSerial();
+            addInvoiceItemRow(); // بدء بند افتراضي فارغ بالفاتورة التفاعلية
             db.collection("cafes").doc(currentCafeID).get().then(doc => {
                 document.getElementById('expiry-date-text').innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
                 document.getElementById('display-cafe-name').innerText = doc.data().cafeName;
@@ -504,9 +603,11 @@
             const list = document.getElementById('products-list');
             const snap = await db.collection("cafes").doc(currentCafeID).collection("products").orderBy("createdAt", "desc").get();
             list.innerHTML = "";
+            globalProductsCache = [];
             if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد منتجات مضافة بعد</p>'; return; }
             snap.forEach(doc => {
-                const p = doc.data();
+                const p = { id: doc.id, ...doc.data() };
+                globalProductsCache.push(p);
                 list.innerHTML += `
                 <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm">
                     <div class="flex items-center gap-3">
@@ -519,6 +620,7 @@
                     <button onclick="deleteProduct('${doc.id}')" class="text-red-500 hover:text-red-700 text-xs px-2 py-1"><i class="fas fa-trash"></i></button>
                 </div>`;
             });
+            updateInteractiveItemProductOptions();
         }
 
         async function deleteProduct(id) {
@@ -604,7 +706,7 @@
                 const list = document.getElementById('customer-carts-list');
                 list.innerHTML = "";
                 if(snap.empty) {
-                    list.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">لا توجد طلبات جديدة معلقة حالياً</p>';
+                    list.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">لا توجد طلبات جديدة من الطاولات حالياً</p>';
                     return;
                 }
                 snap.forEach(doc => {
@@ -623,53 +725,191 @@
 
         function loadCartToInvoice(cart, cartId) {
             document.getElementById('invoice-target').value = cart.table || 'طاولة الزبون';
-            document.getElementById('invoice-details').value = cart.itemsSummary || '';
-            document.getElementById('invoice-subtotal').value = cart.total || 0;
-            calculateTotal();
+            // تفكيك أو تحميل بنود السلة التفاعلية إذا وجدت
+            if(cart.items && Array.isArray(cart.items)) {
+                invoiceInteractiveItems = cart.items.map(i => ({ name: i.name, qty: i.qty || 1, price: i.price || 0 }));
+            } else {
+                invoiceInteractiveItems = [{ name: cart.itemsSummary || 'طلب طاولة', qty: 1, price: Number(cart.total) || 0 }];
+            }
+            renderInvoiceItemsBuilder();
             showSection('pos');
             window.activeCartIdToResolve = cartId;
         }
 
-        // حساب الإجمالي والضريبة تلقائياً بناءً على النسبة المئوية المحددة
-        function calculateTotal() {
-            const sub = Number(document.getElementById('invoice-subtotal').value) || 0;
-            const taxRate = Number(document.getElementById('tax-custom-rate').value) || 0;
-            const taxName = document.getElementById('tax-custom-name').value || "الضريبة";
-            
-            document.getElementById('dynamic-tax-label').innerText = `${taxName} (${taxRate}%)`;
-            
-            const taxValue = (sub * taxRate) / 100;
-            const total = sub + taxValue;
+        // إدارة النظام الضريبي المتقدم
+        async function openTaxManager() {
+            document.getElementById('tax-manager-modal').classList.remove('hidden');
+            loadTaxesModalList();
+        }
+        function closeTaxManager() {
+            document.getElementById('tax-manager-modal').classList.add('hidden');
+        }
 
+        async function saveNewTaxConfig() {
+            const name = document.getElementById('new-tax-name').value;
+            const rate = Number(document.getElementById('new-tax-rate').value);
+            if(!name || isNaN(rate)) { alert("يرجى إدخال اسم الضريبة والنسبة المئوية بشكل صحيح"); return; }
+            
+            await db.collection("cafes").doc(currentCafeID).collection("taxes").add({
+                name, rate, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            document.getElementById('new-tax-name').value = "";
+            document.getElementById('new-tax-rate').value = "";
+            loadTaxesDropdown();
+            loadTaxesModalList();
+            alert("تم إضافة الضريبة بنجاح!");
+        }
+
+        async function loadTaxesDropdown() {
+            const select = document.getElementById('active-tax-select');
+            const snap = await db.collection("cafes").doc(currentCafeID).collection("taxes").get();
+            select.innerHTML = '<option value="0" data-name="بدون ضريبة">بدون ضريبة (0%)</option>';
+            snap.forEach(doc => {
+                const t = doc.data();
+                select.innerHTML += `<option value="${t.rate}" data-name="${t.name}">${t.name} (${t.rate}%)</option>`;
+            });
+            applySelectedTax();
+        }
+
+        async function loadTaxesModalList() {
+            const list = document.getElementById('taxes-list-modal');
+            const snap = await db.collection("cafes").doc(currentCafeID).collection("taxes").get();
+            list.innerHTML = "";
+            if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400">لا توجد ضرائب مضافة بعد</p>'; return; }
+            snap.forEach(doc => {
+                const t = doc.data();
+                list.innerHTML += `
+                <div class="flex justify-between items-center p-2 bg-slate-50 rounded-lg border text-xs">
+                    <span>${t.name} (${t.rate}%)</span>
+                    <button onclick="deleteTax('${doc.id}')" class="text-red-500 font-bold px-2">حذف</button>
+                </div>`;
+            });
+        }
+
+        async function deleteTax(id) {
+            if(confirm("هل أنت متأكد من حذف هذه الضريبة؟")) {
+                await db.collection("cafes").doc(currentCafeID).collection("taxes").doc(id).delete();
+                loadTaxesDropdown();
+                loadTaxesModalList();
+            }
+        }
+
+        function applySelectedTax() {
+            const select = document.getElementById('active-tax-select');
+            const rate = Number(select.value) || 0;
+            document.getElementById('tax-custom-rate').value = rate;
+            const selectedOption = select.options[select.selectedIndex];
+            window.activeTaxName = selectedOption ? selectedOption.getAttribute('data-name') : 'ضريبة';
+            document.getElementById('dynamic-tax-label').innerText = `${window.activeTaxName} (${rate}%)`;
+            calculateInvoiceTotals();
+        }
+
+        // بنود الفاتورة التفاعلية (إضافة وتعديل وحذف مثل المنيو)
+        function addInvoiceItemRow() {
+            invoiceInteractiveItems.push({ name: '', qty: 1, price: 0 });
+            renderInvoiceItemsBuilder();
+        }
+
+        function removeInvoiceItemRow(index) {
+            invoiceInteractiveItems.splice(index, 1);
+            renderInvoiceItemsBuilder();
+        }
+
+        function updateItemFromMenuSelect(index, productName) {
+            const prod = globalProductsCache.find(p => p.name === productName);
+            if(prod) {
+                invoiceInteractiveItems[index].name = prod.name;
+                invoiceInteractiveItems[index].price = prod.price;
+            } else {
+                invoiceInteractiveItems[index].name = productName;
+            }
+            renderInvoiceItemsBuilder();
+        }
+
+        function updateItemField(index, field, val) {
+            invoiceInteractiveItems[index][field] = field === 'qty' || field === 'price' ? Number(val) : val;
+            calculateInvoiceTotals();
+        }
+
+        function renderInvoiceItemsBuilder() {
+            const container = document.getElementById('invoice-items-builder');
+            container.innerHTML = "";
+            if(invoiceInteractiveItems.length === 0) {
+                container.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد بنود مضافة، اضغط إضافة بند</p>';
+                calculateInvoiceTotals();
+                return;
+            }
+
+            invoiceInteractiveItems.forEach((item, index) => {
+                let optionsHtml = '<option value="">اختر من المنيو أو اكتب يدوياً</option>';
+                globalProductsCache.forEach(p => {
+                    optionsHtml += `<option value="${p.name}" ${p.name === item.name ? 'selected' : ''}>${p.name} (${p.price})</option>`;
+                });
+
+                container.innerHTML += `
+                <div class="flex gap-2 items-center bg-white p-2 rounded-xl border shadow-sm">
+                    <div class="flex-1">
+                        <select onchange="updateItemFromMenuSelect(${index}, this.value)" class="text-xs py-1">
+                            ${optionsHtml}
+                        </select>
+                        <input type="text" value="${item.name}" oninput="updateItemField(${index}, 'name', this.value)" placeholder="اسم البند" class="text-xs mt-1 py-1">
+                    </div>
+                    <div class="w-16">
+                        <label class="text-[9px]">الكمية</label>
+                        <input type="number" value="${item.qty}" min="1" oninput="updateItemField(${index}, 'qty', this.value); calculateInvoiceTotals();" class="text-xs py-1 text-center font-bold">
+                    </div>
+                    <div class="w-20">
+                        <label class="text-[9px]">السعر</label>
+                        <input type="number" value="${item.price}" oninput="updateItemField(${index}, 'price', this.value); calculateInvoiceTotals();" class="text-xs py-1 text-center font-bold">
+                    </div>
+                    <button onclick="removeInvoiceItemRow(${index})" class="text-red-500 hover:text-red-700 px-2 mt-4"><i class="fas fa-trash text-xs"></i></button>
+                </div>`;
+            });
+            calculateInvoiceTotals();
+        }
+
+        function calculateInvoiceTotals() {
+            let subtotal = 0;
+            invoiceInteractiveItems.forEach(item => {
+                subtotal += (Number(item.qty) || 0) * (Number(item.price) || 0);
+            });
+            const taxRate = Number(document.getElementById('tax-custom-rate').value) || 0;
+            const taxValue = (subtotal * taxRate) / 100;
+            const total = subtotal + taxValue;
+
+            document.getElementById('invoice-subtotal').value = subtotal.toFixed(2);
             document.getElementById('invoice-tax').value = taxValue.toFixed(2);
             document.getElementById('invoice-amount').value = total.toFixed(2);
         }
 
         function clearInvoiceForm() {
             document.getElementById('invoice-target').value = "";
-            document.getElementById('invoice-details').value = "";
-            document.getElementById('invoice-subtotal').value = "";
-            document.getElementById('invoice-tax').value = "0.00";
-            document.getElementById('invoice-amount').value = "0.00";
+            invoiceInteractiveItems = [];
+            addInvoiceItemRow();
             generateNewSerial();
             window.activeCartIdToResolve = null;
         }
 
         async function issueInvoice() {
             const target = document.getElementById('invoice-target').value;
-            const details = document.getElementById('invoice-details').value;
             const subtotal = Number(document.getElementById('invoice-subtotal').value) || 0;
             const tax = Number(document.getElementById('invoice-tax').value) || 0;
-            const taxNameUsed = document.getElementById('tax-custom-name').value || "ضريبة";
+            const taxNameUsed = window.activeTaxName || "ضريبة";
             const amount = Number(document.getElementById('invoice-amount').value) || 0;
             const serial = document.getElementById('invoice-serial').value;
 
-            if(!target || !amount) { alert("يرجى إدخال اسم الطاولة/الزبون والمبلغ الإجمالي"); return; }
+            if(!target || amount <= 0 || invoiceInteractiveItems.length === 0) { 
+                alert("يرجى إدخال اسم الطاولة/الزبون وبنود صحيحة للفاتورة"); 
+                return; 
+            }
+
+            const detailsSummary = invoiceInteractiveItems.map(i => `${i.qty}x ${i.name} (${i.price})`).join(' - ');
 
             await db.collection("cafes").doc(currentCafeID).collection("invoices").add({
                 serial,
                 target,
-                details,
+                items: invoiceInteractiveItems,
+                details: detailsSummary,
                 subtotal,
                 tax,
                 taxNameUsed,
@@ -682,7 +922,7 @@
                 window.activeCartIdToResolve = null;
             }
 
-            alert("تم إصدار وحفظ الفاتورة بنجاح!");
+            alert("تم إصدار وحفظ الفاتورة بنجاح في النظام المحاسبي!");
             clearInvoiceForm();
             loadInvoices();
         }
@@ -701,31 +941,32 @@
             list.innerHTML = "";
             if(invoices.length === 0) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد فواتير مسجلة مطابقة</p>'; return; }
             invoices.forEach(inv => {
-                // جعل الفواتير السابقة تفاعلية بالضغط عليها لتحميلها للنظام المحاسبي والتعديل عليها
                 list.innerHTML += `
-                <div onclick='loadInvoiceToPOS(${JSON.stringify(inv).replace(/'/g, "&#39;")})' class="interactive-item flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm hover:bg-slate-50">
-                    <div class="text-right">
+                <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm hover:bg-slate-50">
+                    <div onclick='loadInvoiceToPOS(${JSON.stringify(inv).replace(/'/g, "&#39;")})' class="customer-row text-right flex-1">
                         <div class="font-bold text-xs text-slate-800">
                             <span class="text-blue-600 font-mono">${inv.serial || 'INV-000'}</span> - ${inv.target} 
                             <span class="text-emerald-600 font-bold mr-2">(${inv.amount})</span>
                         </div>
                         <div class="text-[10px] text-slate-500">${inv.details || 'بدون تفاصيل'} ${inv.tax > 0 ? `| ${inv.taxNameUsed || 'ضريبة'}: ${inv.tax}` : ''}</div>
                     </div>
-                    <span class="text-[10px] text-slate-400">${inv.date ? new Date(inv.date.toDate()).toLocaleTimeString('ar-EG') : ''}</span>
+                    <div class="flex items-center gap-2">
+                        <button onclick='printSpecificInvoicePDF(${JSON.stringify(inv).replace(/'/g, "&#39;")})' class="bg-blue-600 text-white px-2.5 py-1.5 rounded-lg text-xs shadow"><i class="fas fa-file-pdf"></i></button>
+                        <span class="text-[10px] text-slate-400">${inv.date ? new Date(inv.date.toDate()).toLocaleTimeString('ar-EG') : ''}</span>
+                    </div>
                 </div>`;
             });
         }
 
-        // دالة لتحميل الفاتورة السابقة إلى لوحة المحاسبة لتعديلها أو إعادة إصدارها
         function loadInvoiceToPOS(inv) {
             document.getElementById('invoice-serial').value = inv.serial || 'INV-' + Math.floor(100000 + Math.random() * 900000);
             document.getElementById('invoice-target').value = inv.target || '';
-            document.getElementById('invoice-details').value = inv.details || '';
-            document.getElementById('invoice-subtotal').value = inv.subtotal || inv.amount || 0;
-            if(inv.taxNameUsed) {
-                document.getElementById('tax-custom-name').value = inv.taxNameUsed;
+            if(inv.items && Array.isArray(inv.items)) {
+                invoiceInteractiveItems = inv.items;
+            } else {
+                invoiceInteractiveItems = [{ name: inv.details || 'بند الفاتورة', qty: 1, price: inv.subtotal || inv.amount || 0 }];
             }
-            calculateTotal();
+            renderInvoiceItemsBuilder();
             showSection('pos');
         }
 
@@ -740,6 +981,146 @@
                 (inv.target && inv.target.toLowerCase().includes(query))
             );
             renderInvoicesList(filtered);
+        }
+
+        // تصدير الفاتورة إلى PDF
+        async function printCurrentPOSInvoicePDF() {
+            const target = document.getElementById('invoice-target').value;
+            const serial = document.getElementById('invoice-serial').value;
+            const subtotal = document.getElementById('invoice-subtotal').value;
+            const tax = document.getElementById('invoice-tax').value;
+            const total = document.getElementById('invoice-amount').value;
+            const cafeName = document.getElementById('display-cafe-name').innerText;
+
+            if(!target || invoiceInteractiveItems.length === 0) {
+                alert("يرجى إدخال البيانات وبنود الفاتورة أولاً");
+                return;
+            }
+
+            document.getElementById('pdf-cafe-name').innerText = cafeName;
+            document.getElementById('pdf-serial').innerText = serial;
+            document.getElementById('pdf-date').innerText = new Date().toLocaleString('ar-EG');
+            document.getElementById('pdf-target').innerText = target;
+            document.getElementById('pdf-subtotal').innerText = subtotal;
+            document.getElementById('pdf-tax').innerText = tax;
+            document.getElementById('pdf-total').innerText = total;
+            document.getElementById('pdf-tax-label').innerText = (window.activeTaxName || "الضريبة") + ":";
+
+            let tbody = document.getElementById('pdf-items-tbody');
+            tbody.innerHTML = "";
+            invoiceInteractiveItems.forEach(i => {
+                tbody.innerHTML += `
+                <tr class="border-b">
+                    <td class="p-2">${i.name}</td>
+                    <td class="p-2 text-center">${i.qty}</td>
+                    <td class="p-2 text-center">${i.price}</td>
+                    <td class="p-2 text-left">${(i.qty * i.price).toFixed(2)}</td>
+                </tr>`;
+            });
+
+            const element = document.getElementById('pdf-invoice-template');
+            element.classList.remove('hidden');
+            await html2pdf().from(element).set({
+                margin: 10,
+                filename: `Invoice-${serial}.pdf`,
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a5', orientation: 'portrait' }
+            }).save();
+            element.classList.add('hidden');
+        }
+
+        async function printSpecificInvoicePDF(inv) {
+            const cafeName = document.getElementById('display-cafe-name').innerText;
+            document.getElementById('pdf-cafe-name').innerText = cafeName;
+            document.getElementById('pdf-serial').innerText = inv.serial || 'INV-000';
+            document.getElementById('pdf-date').innerText = inv.date ? new Date(inv.date.toDate()).toLocaleString('ar-EG') : new Date().toLocaleString('ar-EG');
+            document.getElementById('pdf-target').innerText = inv.target || '--';
+            document.getElementById('pdf-subtotal').innerText = inv.subtotal || inv.amount || 0;
+            document.getElementById('pdf-tax').innerText = inv.tax || 0;
+            document.getElementById('pdf-total').innerText = inv.amount || 0;
+            document.getElementById('pdf-tax-label').innerText = (inv.taxNameUsed || "الضريبة") + ":";
+
+            let tbody = document.getElementById('pdf-items-tbody');
+            tbody.innerHTML = "";
+            let itemsToPrint = inv.items || [{ name: inv.details || 'تفاصيل الفاتورة', qty: 1, price: inv.subtotal || inv.amount || 0 }];
+            itemsToPrint.forEach(i => {
+                tbody.innerHTML += `
+                <tr class="border-b">
+                    <td class="p-2">${i.name}</td>
+                    <td class="p-2 text-center">${i.qty}</td>
+                    <td class="p-2 text-center">${i.price}</td>
+                    <td class="p-2 text-left">${(i.qty * i.price).toFixed(2)}</td>
+                </tr>`;
+            });
+
+            const element = document.getElementById('pdf-invoice-template');
+            element.classList.remove('hidden');
+            await html2pdf().from(element).set({
+                margin: 10,
+                filename: `Invoice-${inv.serial || 'INV'}.pdf`,
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a5', orientation: 'portrait' }
+            }).save();
+            element.classList.add('hidden');
+        }
+
+        // تقرير مبيعات اليوم المفصل
+        async function generateDailySalesReport() {
+            const todayStr = new Date().toDateString();
+            let todayInvoices = allInvoicesCache.filter(inv => {
+                if(!inv.date) return false;
+                return new Date(inv.date.toDate()).toDateString() === todayStr;
+            });
+
+            let totalSales = 0;
+            let totalTaxes = 0;
+            let totalSub = 0;
+            let productSalesSummary = {};
+
+            todayInvoices.forEach(inv => {
+                totalSub += Number(inv.subtotal) || Number(inv.amount) || 0;
+                totalTaxes += Number(inv.tax) || 0;
+                totalSales += Number(inv.amount) || 0;
+
+                let items = inv.items || [{ name: inv.details || 'مبيعات عامة', qty: 1, price: inv.amount || 0 }];
+                items.forEach(i => {
+                    if(!productSalesSummary[i.name]) {
+                        productSalesSummary[i.name] = { qty: 0, total: 0 };
+                    }
+                    productSalesSummary[i.name].qty += Number(i.qty) || 1;
+                    productSalesSummary[i.name].total += (Number(i.qty) || 1) * (Number(i.price) || 0);
+                });
+            });
+
+            let productsRowsHtml = '';
+            for(let prodName in productSalesSummary) {
+                productsRowsHtml += `
+                <div class="flex justify-between border-b py-1.5">
+                    <span>${prodName} (الكمية: ${productSalesSummary[prodName].qty})</span>
+                    <span class="font-bold text-emerald-700">${productSalesSummary[prodName].total.toFixed(2)}</span>
+                </div>`;
+            }
+
+            const content = document.getElementById('sales-report-content');
+            content.innerHTML = `
+            <div class="bg-blue-50 p-4 rounded-xl border border-blue-200 space-y-2">
+                <div class="flex justify-between font-bold"><span>إجمالي عدد الفواتير اليوم:</span> <span class="text-blue-700">${todayInvoices.length}</span></div>
+                <div class="flex justify-between font-bold"><span>المبلغ الفرعي للمبيعات:</span> <span>${totalSub.toFixed(2)}</span></div>
+                <div class="flex justify-between font-bold"><span>إجمالي الضرائب والخدمات:</span> <span class="text-purple-700">${totalTaxes.toFixed(2)}</span></div>
+                <div class="flex justify-between font-black text-sm border-t pt-2 text-emerald-700"><span>إجمالي المبيعات النهائية:</span> <span>${totalSales.toFixed(2)}</span></div>
+            </div>
+            <div>
+                <h4 class="font-bold text-slate-700 mb-2 mt-4">تفصيل المنتجات المباعة اليوم:</h4>
+                <div class="bg-slate-50 p-3 rounded-xl border max-h-48 overflow-y-auto space-y-1">
+                    ${productsRowsHtml || '<p class="text-slate-400 text-center">لا توجد مبيعات مسجلة اليوم حتى الآن</p>'}
+                </div>
+            </div>`;
+
+            document.getElementById('sales-report-modal').classList.remove('hidden');
+        }
+
+        function closeSalesReportModal() {
+            document.getElementById('sales-report-modal').classList.add('hidden');
         }
 
         function startScanner() {
