@@ -64,18 +64,18 @@
             </div>
         </div>
 
-        <!-- Main Navigation Tabs -->
-        <div class="flex gap-2 mb-6 overflow-x-auto no-scrollbar py-1">
-            <button onclick="NavigationManager.showSection('pos')" id="tab-pos" class="tab-btn active-tab bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">الكاشير (POS)</button>
-            <button onclick="NavigationManager.showSection('scan')" id="tab-scan" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">المسح / التحكم</button>
-            <button onclick="NavigationManager.showSection('products')" id="tab-products" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">المنيو</button>
-            <button onclick="NavigationManager.showSection('waiters')" id="tab-waiters" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">النُدل والنداء</button>
-            <button onclick="NavigationManager.showSection('branding')" id="tab-branding" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">التخصيص</button>
-            <button onclick="NavigationManager.showSection('customers')" id="tab-customers" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">العملاء</button>
-            <button onclick="NavigationManager.showSection('billing')" id="tab-billing" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 text-emerald-600 cursor-pointer">الاشتراك</button>
+        <!-- Main Navigation Tabs - تم ترتيب الأزرار ليكون الكاشير في البداية -->
+        <div class="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-6 py-1">
+            <button onclick="NavigationManager.showSection('pos')" id="tab-pos" class="tab-btn active-tab bg-white border p-3 rounded-xl font-bold text-xs shadow-sm cursor-pointer text-center">الكاشير (POS)</button>
+            <button onclick="NavigationManager.showSection('scan')" id="tab-scan" class="tab-btn bg-white border p-3 rounded-xl font-bold text-xs shadow-sm cursor-pointer text-center">المسح / التحكم</button>
+            <button onclick="NavigationManager.showSection('products')" id="tab-products" class="tab-btn bg-white border p-3 rounded-xl font-bold text-xs shadow-sm cursor-pointer text-center">المنيو</button>
+            <button onclick="NavigationManager.showSection('waiters')" id="tab-waiters" class="tab-btn bg-white border p-3 rounded-xl font-bold text-xs shadow-sm cursor-pointer text-center">النُدل والنداء</button>
+            <button onclick="NavigationManager.showSection('branding')" id="tab-branding" class="tab-btn bg-white border p-3 rounded-xl font-bold text-xs shadow-sm cursor-pointer text-center">التخصيص</button>
+            <button onclick="NavigationManager.showSection('customers')" id="tab-customers" class="tab-btn bg-white border p-3 rounded-xl font-bold text-xs shadow-sm cursor-pointer text-center">العملاء</button>
+            <button onclick="NavigationManager.showSection('billing')" id="tab-billing" class="tab-btn bg-white border p-3 rounded-xl font-bold text-xs shadow-sm cursor-pointer text-center text-emerald-600">الاشتراك</button>
         </div>
 
-        <!-- قسم الكاشير ونقاط البيع الجديد (POS) -->
+        <!-- قسم الكاشير ونقاط البيع (POS) - القسم الافتراضي -->
         <div id="section-pos" class="section-content">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- قائمة المنتجات السريعة -->
@@ -472,7 +472,6 @@
                 const phone = document.getElementById('pos-customer-phone').value.trim();
                 
                 try {
-                    // تسجيل الطلب في قاعدة البيانات
                     await db.collection("cafes").doc(AppState.currentCafeID).collection("orders").add({
                         items: AppState.posCart,
                         total: AppState.posCart.reduce((sum, i) => sum + (i.price * i.qty), 0),
@@ -480,14 +479,12 @@
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
 
-                    // إذا وُجد رقم هاتف، قم بزيادة رصيد الزبون (ختم واحد أو نقاط حسب النظام)
                     if(phone) {
                         const custRef = db.collection("cafes").doc(AppState.currentCafeID).collection("customers").doc(phone);
                         const custDoc = await custRef.get();
                         if(custDoc.exists) {
                             await custRef.update({ points: firebase.firestore.FieldValue.increment(1) });
                         } else {
-                            // إذا لم يكن مسجلاً، نسجل له حساباً افتراضياً بالرقم
                             await custRef.set({ name: "زبون كاشير", points: 1 });
                         }
                     }
@@ -575,27 +572,29 @@
             async loadProducts() {
                 const list = document.getElementById('products-list');
                 const snap = await db.collection("cafes").doc(AppState.currentCafeID).collection("products").orderBy("createdAt", "desc").get();
-                list.innerHTML = "";
+                if(list) list.innerHTML = "";
                 AppState.posProducts = [];
                 if(snap.empty) { 
-                    list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد منتجات مضافة بعد</p>'; 
+                    if(list) list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد منتجات مضافة بعد</p>'; 
                     POSManager.renderPOSProducts();
                     return; 
                 }
                 snap.forEach(doc => {
                     const p = { id: doc.id, ...doc.data() };
                     AppState.posProducts.push(p);
-                    list.innerHTML += `
-                    <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm">
-                        <div class="flex items-center gap-3">
-                            <img src="${p.image || 'https://via.placeholder.com/50'}" class="w-10 h-10 object-cover rounded-lg">
-                            <div>
-                                <div class="font-bold text-xs text-slate-800">${p.name}</div>
-                                <div class="text-[10px] text-blue-600 font-bold">${p.price} - ${p.category}</div>
+                    if(list) {
+                        list.innerHTML += `
+                        <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm">
+                            <div class="flex items-center gap-3">
+                                <img src="${p.image || 'https://via.placeholder.com/50'}" class="w-10 h-10 object-cover rounded-lg">
+                                <div>
+                                    <div class="font-bold text-xs text-slate-800">${p.name}</div>
+                                    <div class="text-[10px] text-blue-600 font-bold">${p.price} - ${p.category}</div>
+                                </div>
                             </div>
-                        </div>
-                        <button onclick="ProductsManager.deleteProduct('${doc.id}')" class="text-red-500 hover:text-red-700 text-xs px-2 py-1 cursor-pointer bg-transparent border-none"><i class="fas fa-trash"></i></button>
-                    </div>`;
+                            <button onclick="ProductsManager.deleteProduct('${doc.id}')" class="text-red-500 hover:text-red-700 text-xs px-2 py-1 cursor-pointer bg-transparent border-none"><i class="fas fa-trash"></i></button>
+                        </div>`;
+                    }
                 });
                 POSManager.renderPOSProducts();
             },
@@ -627,6 +626,7 @@
             async loadWaiters() {
                 const list = document.getElementById('waiters-list');
                 const snap = await db.collection("cafes").doc(AppState.currentCafeID).collection("waiters").get();
+                if(!list) return;
                 list.innerHTML = "";
                 if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد حسابات نُدل مضافة</p>'; return; }
                 snap.forEach(doc => {
@@ -652,6 +652,7 @@
                   .where("status", "==", "pending")
                   .onSnapshot(snap => {
                     const list = document.getElementById('waiter-calls-list');
+                    if(!list) return;
                     list.innerHTML = "";
                     if(snap.empty) {
                         list.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">لا توجد نداءات جديدة حالياً</p>';
@@ -736,6 +737,7 @@
             async loadCustomers() {
                 const list = document.getElementById('customers-list');
                 const snap = await db.collection("cafes").doc(AppState.currentCafeID).collection("customers").orderBy("name").get();
+                if(!list) return;
                 list.innerHTML = "";
                 document.getElementById('customer-count').innerText = snap.size;
                 snap.forEach(doc => {
@@ -754,6 +756,7 @@
             },
             generateCafeQR() {
                 const qrC = document.getElementById("qrcode-container");
+                if(!qrC) return;
                 qrC.innerHTML = "";
                 const customerUrl = window.location.href.replace('admin.html', 'index.html') + `?id=${AppState.currentCafeID}`;
                 new QRCode(qrC, { text: customerUrl, width: 140, height: 140 });
@@ -771,7 +774,7 @@
             initCafe() {
                 BrandingManager.loadBranding();
                 CustomersManager.loadCustomers();
-                ProductsManager.loadProducts();
+                ProductsManager.loadProducts(); // يجلب المنتجات تلقائياً لتظهر فوراً في الكاشير
                 WaitersManager.loadWaiters();
                 WaitersManager.listenToWaiterCalls();
                 CustomersManager.generateCafeQR();
