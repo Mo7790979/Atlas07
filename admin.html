@@ -453,13 +453,13 @@
                     <label>النسبة المئوية (%)</label>
                     <input type="number" id="new-tax-rate" placeholder="مثال: 15 أو 5">
                 </div>
-                <button onclick="saveNewTaxConfig()" class="w-full bg-purple-600 text-white py-3 rounded-xl font-bold">إضافة وحفظ الضريبة</button>
+                <button onclick="saveNewTaxConfig()" class="w-full bg-purple-600 text-white py-3 rounded-xl font-bold shadow hover:bg-purple-700 transition-all">إضافة وحفظ الضريبة</button>
             </div>
             <div class="border-t pt-3">
                 <label class="text-xs font-bold text-slate-600 mb-2">الضرائب المضافة مسبقاً:</label>
                 <div id="taxes-list-modal" class="space-y-2 max-h-36 overflow-y-auto"></div>
             </div>
-            <button onclick="closeTaxManager()" class="w-full bg-slate-200 text-slate-700 py-2.5 rounded-xl font-bold">إغلاق</button>
+            <button onclick="closeTaxManager()" class="w-full bg-slate-200 text-slate-700 py-2.5 rounded-xl font-bold hover:bg-slate-300 transition-all">إغلاق</button>
         </div>
     </div>
 
@@ -496,7 +496,7 @@
         let globalProductsCache = [];
         let invoiceInteractiveItems = [];
         let currentPOSCategory = "all";
-        let cachedTaxesList = []; // لتخزين الضرائب المتاحة
+        let cachedTaxesList = []; 
 
         async function login() {
             const user = document.getElementById('admin-user-input').value.trim();
@@ -850,7 +850,7 @@
         }
 
         async function saveNewTaxConfig() {
-            const name = document.getElementById('new-tax-name').value;
+            const name = document.getElementById('new-tax-name').value.trim();
             const rate = Number(document.getElementById('new-tax-rate').value);
             if(!name || isNaN(rate)) { alert("يرجى إدخال اسم الضريبة والنسبة المئوية بشكل صحيح"); return; }
             
@@ -864,9 +864,9 @@
             alert("تم إضافة الضريبة بنجاح!");
         }
 
-        // تحميل الضرائب على شكل مربعات اختيار (Checkboxes) للسماح بتحديد أكثر من ضريبة في نفس الوقت
         async function loadTaxesCheckboxes() {
             const container = document.getElementById('taxes-checkboxes-container');
+            if(!container) return;
             const snap = await db.collection("cafes").doc(currentCafeID).collection("taxes").get();
             cachedTaxesList = [];
             container.innerHTML = "";
@@ -894,6 +894,7 @@
 
         async function loadTaxesModalList() {
             const list = document.getElementById('taxes-list-modal');
+            if(!list) return;
             const snap = await db.collection("cafes").doc(currentCafeID).collection("taxes").get();
             list.innerHTML = "";
             if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400">لا توجد ضرائب مضافة بعد</p>'; return; }
@@ -902,7 +903,7 @@
                 list.innerHTML += `
                 <div class="flex justify-between items-center p-2 bg-slate-50 rounded-lg border text-xs">
                     <span>${t.name} (${t.rate}%)</span>
-                    <button onclick="deleteTax('${doc.id}')" class="text-red-500 font-bold px-2">حذف</button>
+                    <button onclick="deleteTax('${doc.id}')" class="text-red-500 font-bold px-2 py-1 bg-red-50 hover:bg-red-100 rounded transition-all">حذف</button>
                 </div>`;
             });
         }
@@ -960,14 +961,12 @@
             calculateInvoiceTotals();
         }
 
-        // حساب الإجماليات مع دعم الضرائب المتعددة المحددة في نفس الوقت
         function calculateInvoiceTotals() {
             let subtotal = 0;
             invoiceInteractiveItems.forEach(item => {
                 subtotal += (Number(item.qty) || 0) * (Number(item.price) || 0);
             });
 
-            // جمع كافة الضرائب المحددة
             const checkboxes = document.querySelectorAll('.pos-tax-checkbox:checked');
             let totalTaxValue = 0;
             let appliedTaxesArray = [];
@@ -984,7 +983,6 @@
 
             const total = subtotal + totalTaxValue;
 
-            // تحديث واجهة العرض
             document.getElementById('invoice-subtotal').value = subtotal.toFixed(2);
             document.getElementById('invoice-total-tax-val').innerText = totalTaxValue.toFixed(2);
             document.getElementById('invoice-amount').value = total.toFixed(2);
@@ -994,7 +992,6 @@
                 badgeLabel.innerText = badgeNames.length > 0 ? badgeNames.join(' + ') : 'بدون ضريبة';
             }
 
-            // تفصيل الضرائب تحت بعضها
             const breakdownContainer = document.getElementById('applied-taxes-breakdown');
             if(breakdownContainer) {
                 if(appliedTaxesArray.length === 0) {
@@ -1016,7 +1013,6 @@
                 }
             }
 
-            // حفظ بيانات الضرائب المطبقة في الذاكرة لتسهيل إصدار الفاتورة وحفظها
             window.activeAppliedTaxes = appliedTaxesArray;
         }
 
@@ -1051,7 +1047,7 @@
                 details: detailsSummary,
                 subtotal,
                 tax,
-                appliedTaxes, // حفظ قائمة الضرائب المتعددة المطبقة
+                appliedTaxes,
                 amount,
                 date: firebase.firestore.FieldValue.serverTimestamp()
             });
@@ -1085,7 +1081,6 @@
             invoices.forEach(inv => {
                 window._tempInvoices[inv.id] = inv;
                 
-                // صياغة عرض الضرائب المتعددة في السجل
                 let taxDesc = '';
                 if(inv.appliedTaxes && inv.appliedTaxes.length > 0) {
                     taxDesc = ` | ` + inv.appliedTaxes.map(t => `${t.name}: ${t.value.toFixed(2)}`).join(', ');
@@ -1122,7 +1117,6 @@
                 invoiceInteractiveItems = [{ name: inv.details || 'بند الفاتورة', qty: 1, price: inv.subtotal || inv.amount || 0 }];
             }
 
-            // تحديد الضرائب التي كانت مطبقة في الفاتورة السابقة إن وجدت
             document.querySelectorAll('.pos-tax-checkbox').forEach(cb => {
                 const name = cb.getAttribute('data-name');
                 const matched = inv.appliedTaxes && inv.appliedTaxes.some(t => t.name === name);
@@ -1161,7 +1155,6 @@
                 `;
             });
 
-            // توليد HTML للضرائب المتعددة في نافذة الطباعة
             let taxesRowsHTML = '';
             if(invoiceData.appliedTaxes && invoiceData.appliedTaxes.length > 0) {
                 invoiceData.appliedTaxes.forEach(t => {
