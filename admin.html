@@ -412,38 +412,38 @@
         </div>
     </div>
 
-    <!-- قالب مخفي لتصدير الفاتورة إلى PDF -->
-    <div id="pdf-invoice-template" class="hidden p-8 bg-white text-slate-800 font-sans max-w-lg mx-auto" dir="rtl">
-        <div class="text-center border-b pb-4 mb-4">
-            <h2 id="pdf-cafe-name" class="text-2xl font-black text-blue-600">اسم المنشأة</h2>
-            <p class="text-xs text-slate-500">فاتورة ضريبية / مبيعات</p>
+    <!-- قالب مخفي لتصدير الفاتورة إلى PDF (محدث بتنسيقات مباشرة لتفادي مشكلة الصفحة البيضاء الفارغة) -->
+    <div id="pdf-invoice-template" style="display: none; padding: 20px; background: #ffffff; color: #1e293b; font-family: 'Cairo', sans-serif; direction: rtl; width: 100%; max-width: 450px; box-sizing: border-box;">
+        <div style="text-align: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 15px;">
+            <h2 id="pdf-cafe-name" style="font-size: 20px; font-weight: 900; color: #2563eb; margin: 0 0 5px 0;">اسم المنشأة</h2>
+            <p style="font-size: 11px; color: #64748b; margin: 0;">فاتورة ضريبية / مبيعات</p>
         </div>
-        <div class="flex justify-between text-xs mb-4 font-bold">
-            <div>الرقم التسلسلي: <span id="pdf-serial" class="font-mono">--</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 10px;">
+            <div>الرقم التسلسلي: <span id="pdf-serial" style="font-family: monospace;">--</span></div>
             <div>التاريخ: <span id="pdf-date">--</span></div>
         </div>
-        <div class="mb-4 text-xs font-bold">
-            العميل / الطاولة: <span id="pdf-target" class="text-blue-700">--</span>
+        <div style="margin-bottom: 12px; font-size: 11px; font-weight: bold;">
+            العميل / الطاولة: <span id="pdf-target" style="color: #2563eb;">--</span>
         </div>
-        <table class="w-full text-xs border-collapse mb-4">
+        <table style="width: 100%; font-size: 11px; border-collapse: collapse; margin-bottom: 15px;">
             <thead>
-                <tr class="bg-slate-100 border-b">
-                    <th class="p-2 text-right">المنتج / البند</th>
-                    <th class="p-2 text-center">الكمية</th>
-                    <th class="p-2 text-center">السعر</th>
-                    <th class="p-2 text-left">الإجمالي</th>
+                <tr style="background-color: #f1f5f9; border-bottom: 1px solid #cbd5e1;">
+                    <th style="padding: 6px; text-align: right;">المنتج / البند</th>
+                    <th style="padding: 6px; text-align: center;">الكمية</th>
+                    <th style="padding: 6px; text-align: center;">السعر</th>
+                    <th style="padding: 6px; text-align: left;">الإجمالي</th>
                 </tr>
             </thead>
             <tbody id="pdf-items-tbody">
                 <!-- البنود -->
             </tbody>
         </table>
-        <div class="border-t pt-3 space-y-1 text-xs">
-            <div class="flex justify-between"><span>المبلغ الفرعي:</span> <span id="pdf-subtotal">0.00</span></div>
-            <div class="flex justify-between"><span id="pdf-tax-label">الضريبة:</span> <span id="pdf-tax">0.00</span></div>
-            <div class="flex justify-between font-black text-sm border-t pt-2 text-emerald-700"><span>الإجمالي النهائي:</span> <span id="pdf-total">0.00</span></div>
+        <div style="border-top: 1px solid #cbd5e1; padding-top: 10px; font-size: 11px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>المبلغ الفرعي:</span> <span id="pdf-subtotal">0.00</span></div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span id="pdf-tax-label">الضريبة:</span> <span id="pdf-tax">0.00</span></div>
+            <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13px; border-top: 1px dashed #cbd5e1; padding-top: 6px; color: #059669;"><span>الإجمالي النهائي:</span> <span id="pdf-total">0.00</span></div>
         </div>
-        <div class="text-center mt-8 text-[10px] text-slate-400 border-t pt-4">
+        <div style="text-align: center; margin-top: 25px; font-size: 10px; color: #94a3b8; border-top: 1px solid #f1f5f9; pt-10px;">
             شكراً لتزيينكم محلنا بزيارتكم! نتشرف بخدمتكم دائماً.
         </div>
     </div>
@@ -982,7 +982,7 @@
             renderInvoicesList(filtered);
         }
 
-        // تصدير الفاتورة إلى PDF
+        // تصدير الفاتورة إلى PDF (محدث لضمان عدم ظهور الملف فارغاً)
         async function printCurrentPOSInvoicePDF() {
             const target = document.getElementById('invoice-target').value;
             const serial = document.getElementById('invoice-serial').value;
@@ -1009,23 +1009,27 @@
             tbody.innerHTML = "";
             invoiceInteractiveItems.forEach(i => {
                 tbody.innerHTML += `
-                <tr class="border-b">
-                    <td class="p-2">${i.name}</td>
-                    <td class="p-2 text-center">${i.qty}</td>
-                    <td class="p-2 text-center">${i.price}</td>
-                    <td class="p-2 text-left">${(i.qty * i.price).toFixed(2)}</td>
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 6px; text-align: right;">${i.name}</td>
+                    <td style="padding: 6px; text-align: center;">${i.qty}</td>
+                    <td style="padding: 6px; text-align: center;">${i.price}</td>
+                    <td style="padding: 6px; text-align: left;">${(i.qty * i.price).toFixed(2)}</td>
                 </tr>`;
             });
 
             const element = document.getElementById('pdf-invoice-template');
-            element.classList.remove('hidden');
-            await html2pdf().from(element).set({
-                margin: 10,
-                filename: `Invoice-${serial}.pdf`,
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'mm', format: 'a5', orientation: 'portrait' }
-            }).save();
-            element.classList.add('hidden');
+            element.style.display = 'block';
+
+            // مهلة زمنية بسيطة لضمان تحديث الـ DOM وتفادي ملفات الـ PDF الفارغة
+            setTimeout(async () => {
+                await html2pdf().from(element).set({
+                    margin: 10,
+                    filename: `Invoice-${serial}.pdf`,
+                    html2canvas: { scale: 2, useCORS: true },
+                    jsPDF: { unit: 'mm', format: 'a5', orientation: 'portrait' }
+                }).save();
+                element.style.display = 'none';
+            }, 300);
         }
 
         async function printSpecificInvoicePDF(inv) {
@@ -1044,23 +1048,26 @@
             let itemsToPrint = inv.items || [{ name: inv.details || 'تفاصيل الفاتورة', qty: 1, price: inv.subtotal || inv.amount || 0 }];
             itemsToPrint.forEach(i => {
                 tbody.innerHTML += `
-                <tr class="border-b">
-                    <td class="p-2">${i.name}</td>
-                    <td class="p-2 text-center">${i.qty}</td>
-                    <td class="p-2 text-center">${i.price}</td>
-                    <td class="p-2 text-left">${(i.qty * i.price).toFixed(2)}</td>
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 6px; text-align: right;">${i.name}</td>
+                    <td style="padding: 6px; text-align: center;">${i.qty}</td>
+                    <td style="padding: 6px; text-align: center;">${i.price}</td>
+                    <td style="padding: 6px; text-align: left;">${(i.qty * i.price).toFixed(2)}</td>
                 </tr>`;
             });
 
             const element = document.getElementById('pdf-invoice-template');
-            element.classList.remove('hidden');
-            await html2pdf().from(element).set({
-                margin: 10,
-                filename: `Invoice-${inv.serial || 'INV'}.pdf`,
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'mm', format: 'a5', orientation: 'portrait' }
-            }).save();
-            element.classList.add('hidden');
+            element.style.display = 'block';
+
+            setTimeout(async () => {
+                await html2pdf().from(element).set({
+                    margin: 10,
+                    filename: `Invoice-${inv.serial || 'INV'}.pdf`,
+                    html2canvas: { scale: 2, useCORS: true },
+                    jsPDF: { unit: 'mm', format: 'a5', orientation: 'portrait' }
+                }).save();
+                element.style.display = 'none';
+            }, 300);
         }
 
         // تقرير مبيعات اليوم المفصل
