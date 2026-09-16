@@ -1032,7 +1032,6 @@
             window.activeCartIdToResolve = null;
         }
 
-        // تم إزالة أي شرط للضرائب هنا لتتم الفاتورة طبيعياً حتى لو كانت قيمة الضريبة 0
         async function issueInvoice() {
             const target = document.getElementById('invoice-target').value.trim();
             const subtotal = Number(document.getElementById('invoice-subtotal').innerText) || 0;
@@ -1249,9 +1248,8 @@
             printWindow.document.close();
         }
 
-        // تم إزالة أي شرط للضرائب لتتم الطباعة مباشرة بغض النظر عن قيمة الضريبة
         function printCurrentPOSInvoicePrintView() {
-            const target = document.getElementById('invoice-target').value;
+            const target = document.getElementById('invoice-target').value.trim();
             const serial = document.getElementById('invoice-serial').innerText;
             const subtotal = Number(document.getElementById('invoice-subtotal').innerText) || 0;
             const tax = Number(document.getElementById('invoice-total-tax-val').innerText) || 0;
@@ -1409,7 +1407,7 @@
         async function resetPoints() {
             if(!activeUserPhone) return;
             if(confirm("هل تم تسليم الهدية وتصفير الرصيد؟")) {
-                await db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone).update({ points: 0 });
+                await db.location("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone).update({ points: 0 });
                 fetchUserData(activeUserPhone);
                 loadCustomers();
             }
