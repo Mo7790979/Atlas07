@@ -583,7 +583,8 @@
             startTimer();
             loadAdminBankInfo();
             generateNewSerial();
-            if(invoiceInteractiveItems.length === 0) addInvoiceItemRow();
+            // تم إزالة استدعاء addInvoiceItemRow() لكي لا يظهر بند افتراضي عند الفتح
+            renderInvoiceItemsBuilder();
             db.collection("cafes").doc(currentCafeID).get().then(doc => {
                 document.getElementById('expiry-date-text').innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
                 document.getElementById('display-cafe-name').innerText = doc.data().cafeName;
@@ -921,8 +922,7 @@
 
         function removeInvoiceItemRow(index) {
             invoiceInteractiveItems.splice(index, 1);
-            if(invoiceInteractiveItems.length === 0) addInvoiceItemRow();
-            else renderInvoiceItemsBuilder();
+            renderInvoiceItemsBuilder();
         }
 
         function updateItemField(index, field, val) {
@@ -934,8 +934,10 @@
             const container = document.getElementById('invoice-items-builder');
             if(!container) return;
             container.innerHTML = "";
+            
             if(invoiceInteractiveItems.length === 0) {
-                addInvoiceItemRow();
+                container.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">لا توجد بنود مضافة للفاتورة. اضغط على (إضافة بند) أو اختر من المنيو.</p>';
+                calculateInvoiceTotals();
                 return;
             }
 
@@ -1027,7 +1029,7 @@
             document.getElementById('invoice-target').value = "";
             invoiceInteractiveItems = [];
             document.querySelectorAll('.pos-tax-checkbox').forEach(cb => cb.checked = false);
-            addInvoiceItemRow();
+            renderInvoiceItemsBuilder();
             generateNewSerial();
             window.activeCartIdToResolve = null;
         }
@@ -1470,3 +1472,4 @@
     </script>
 </body>
 </html>
+ 
