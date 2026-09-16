@@ -1407,7 +1407,7 @@
         async function resetPoints() {
             if(!activeUserPhone) return;
             if(confirm("هل تم تسليم الهدية وتصفير الرصيد؟")) {
-                await db.location("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone).update({ points: 0 });
+                await db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone).update({ points: 0 });
                 fetchUserData(activeUserPhone);
                 loadCustomers();
             }
