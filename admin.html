@@ -165,28 +165,65 @@
             </div>
         </div>
 
-        <!-- النظام المحاسبي البسيط وإصدار الفواتير -->
+        <!-- النظام المحاسبي الاحترافي وربطه بسلة العميل -->
         <div id="section-pos" class="section-content hidden">
-            <div class="admin-card">
-                <h3 class="font-black text-emerald-600 mb-4 border-r-4 border-emerald-600 pr-3">النظام المحاسبي - إصدار فاتورة جديدة</h3>
-                <div class="space-y-4">
-                    <div>
-                        <label>رقم الطاولة / اسم الزبون</label>
-                        <input type="text" id="invoice-target" placeholder="طاولة 4 أو اسم العميل">
-                    </div>
-                    <div>
-                        <label>قائمة الطلبات والمبلغ الإجمالي</label>
-                        <textarea id="invoice-details" placeholder="تفاصيل الطلبات (مثلاً: 2 قهوة، 1 كيكة)"></textarea>
-                    </div>
-                    <div>
-                        <label>المبلغ الإجمالي</label>
-                        <input type="number" id="invoice-amount" placeholder="0.00">
-                    </div>
-                    <button onclick="issueInvoice()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-lg">إصدار وحفظ الفاتورة</button>
+            
+            <!-- سلال العملاء الواردة من المنيو التفاعلي -->
+            <div class="admin-card border-blue-200 bg-blue-50/30">
+                <h3 class="font-black text-blue-800 mb-3"><i class="fas fa-shopping-cart ml-1"></i> طلبات وسلال العملاء المعلقة (اضغط لتحميلها للفاتورة)</h3>
+                <div id="customer-carts-list" class="space-y-2 max-h-60 overflow-y-auto">
+                    <p class="text-xs text-slate-400 text-center py-4">لا توجد طلبات جديدة معلقة حالياً</p>
                 </div>
             </div>
+
             <div class="admin-card">
-                <h3 class="font-bold text-slate-700 text-xs mb-3">سجل الفواتير والمبيعات</h3>
+                <h3 class="font-black text-emerald-600 mb-4 border-r-4 border-emerald-600 pr-3">النظام المحاسبي الاحترافي - إصدار وتعديل الفاتورة</h3>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label>رقم الطاولة / اسم الزبون</label>
+                            <input type="text" id="invoice-target" placeholder="طاولة 4 أو اسم العميل">
+                        </div>
+                        <div>
+                            <label>الرقم التسلسلي للفاتورة</label>
+                            <input type="text" id="invoice-serial" readonly class="bg-slate-100 font-mono text-center font-bold text-emerald-700">
+                        </div>
+                    </div>
+                    <div>
+                        <label>بنود الطلبات والأسعار (قابلة للتعديل)</label>
+                        <textarea id="invoice-details" rows="3" placeholder="تفاصيل الطلبات (مثلاً: 2 قهوة تركية - 15)"></textarea>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-2 p-3 bg-slate-50 rounded-xl border">
+                        <div>
+                            <label>المبلغ الفرعي</label>
+                            <input type="number" id="invoice-subtotal" placeholder="0.00" oninput="calculateTotal()">
+                        </div>
+                        <div>
+                            <label>قيمة الضريبة / الخدمة</label>
+                            <input type="number" id="invoice-tax" placeholder="0.00" oninput="calculateTotal()" value="0">
+                        </div>
+                        <div>
+                            <label>الإجمالي النهائي</label>
+                            <input type="number" id="invoice-amount" placeholder="0.00" class="font-bold text-emerald-700 bg-emerald-50">
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button onclick="issueInvoice()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold shadow-lg">حفظ وإصدار الفاتورة</button>
+                        <button onclick="clearInvoiceForm()" class="bg-slate-200 text-slate-700 px-4 py-3 rounded-xl font-bold">مسح النموذج</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- سجل الفواتير مع البحث -->
+            <div class="admin-card">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-3 mb-4">
+                    <h3 class="font-bold text-slate-700 text-xs">سجل الفواتير والمبيعات السابقة</h3>
+                    <div class="w-full md:w-1/2">
+                        <input type="text" id="invoice-search-input" placeholder="بحث برقم الفاتورة التسلسلي أو رقم الطاولة..." oninput="filterInvoices()" class="text-xs py-2">
+                    </div>
+                </div>
                 <div id="invoices-list" class="space-y-2 max-h-80 overflow-y-auto"></div>
             </div>
         </div>
@@ -330,6 +367,7 @@
         let html5QrCode = null;
         let expiryDateGlobal = null;
         let activeUserPhone = "";
+        let allInvoicesCache = [];
 
         async function login() {
             const user = document.getElementById('admin-user-input').value;
@@ -405,14 +443,21 @@
             loadProducts();
             loadWaiters();
             listenToWaiterCalls();
+            listenToCustomerCarts();
             loadInvoices();
             generateCafeQR();
             startTimer();
             loadAdminBankInfo();
+            generateNewSerial();
             db.collection("cafes").doc(currentCafeID).get().then(doc => {
                 document.getElementById('expiry-date-text').innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
                 document.getElementById('display-cafe-name').innerText = doc.data().cafeName;
             });
+        }
+
+        function generateNewSerial() {
+            const serial = 'INV-' + Math.floor(100000 + Math.random() * 900000);
+            document.getElementById('invoice-serial').value = serial;
         }
 
         // دوال إدارة المنتجات للمنيو التفاعلي
@@ -534,39 +579,130 @@
             await db.collection("cafes").doc(currentCafeID).collection("waiter_calls").doc(callId).update({ status: 'resolved' });
         }
 
-        // دوال النظام المحاسبي البسيط والفواتير
+        // الاستماع لسلال العملاء الواردة من المنيو التفاعلي
+        function listenToCustomerCarts() {
+            db.collection("cafes").doc(currentCafeID).collection("customer_carts")
+              .where("status", "==", "pending")
+              .onSnapshot(snap => {
+                const list = document.getElementById('customer-carts-list');
+                list.innerHTML = "";
+                if(snap.empty) {
+                    list.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">لا توجد طلبات جديدة معلقة حالياً</p>';
+                    return;
+                }
+                snap.forEach(doc => {
+                    const cart = doc.data();
+                    list.innerHTML += `
+                    <div class="flex justify-between items-center p-3 bg-white rounded-xl border border-blue-200 shadow-sm">
+                        <div>
+                            <div class="font-bold text-xs text-blue-900"><i class="fas fa-utensils text-blue-500 ml-1"></i> ${cart.table || 'طاولة عامة'} - <span class="text-emerald-600">${cart.total}</span></div>
+                            <div class="text-[10px] text-slate-500 mt-1">${cart.itemsSummary || 'تفاصيل الطلبات'}</div>
+                        </div>
+                        <button onclick='loadCartToInvoice(${JSON.stringify(cart).replace(/'/g, "&#39;")}, "${doc.id}")' class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold">تحميل للفاتورة</button>
+                    </div>`;
+                });
+            });
+        }
+
+        function loadCartToInvoice(cart, cartId) {
+            document.getElementById('invoice-target').value = cart.table || 'طاولة الزبون';
+            document.getElementById('invoice-details').value = cart.itemsSummary || '';
+            document.getElementById('invoice-subtotal').value = cart.total || 0;
+            document.getElementById('invoice-tax').value = 0;
+            calculateTotal();
+            showSection('pos');
+            // حفظ مؤقت لمعرف السلة لربطها عند الإصدار
+            window.activeCartIdToResolve = cartId;
+        }
+
+        function calculateTotal() {
+            const sub = Number(document.getElementById('invoice-subtotal').value) || 0;
+            const tax = Number(document.getElementById('invoice-tax').value) || 0;
+            const total = sub + tax;
+            document.getElementById('invoice-amount').value = total;
+        }
+
+        function clearInvoiceForm() {
+            document.getElementById('invoice-target').value = "";
+            document.getElementById('invoice-details').value = "";
+            document.getElementById('invoice-subtotal').value = "";
+            document.getElementById('invoice-tax').value = "0";
+            document.getElementById('invoice-amount').value = "";
+            generateNewSerial();
+            window.activeCartIdToResolve = null;
+        }
+
+        // دوال النظام المحاسبي الاحترافي والفواتير
         async function issueInvoice() {
             const target = document.getElementById('invoice-target').value;
             const details = document.getElementById('invoice-details').value;
-            const amount = document.getElementById('invoice-amount').value;
+            const subtotal = Number(document.getElementById('invoice-subtotal').value) || 0;
+            const tax = Number(document.getElementById('invoice-tax').value) || 0;
+            const amount = Number(document.getElementById('invoice-amount').value) || 0;
+            const serial = document.getElementById('invoice-serial').value;
+
             if(!target || !amount) { alert("يرجى إدخال اسم الطاولة/الزبون والمبلغ الإجمالي"); return; }
 
             await db.collection("cafes").doc(currentCafeID).collection("invoices").add({
-                target, details, amount: Number(amount), date: firebase.firestore.FieldValue.serverTimestamp()
+                serial,
+                target,
+                details,
+                subtotal,
+                tax,
+                amount,
+                date: firebase.firestore.FieldValue.serverTimestamp()
             });
-            alert("تم اصدار وحفظ الفاتورة بنجاح!");
-            document.getElementById('invoice-target').value = "";
-            document.getElementById('invoice-details').value = "";
-            document.getElementById('invoice-amount').value = "";
+
+            // إذا كانت مرتبطة بسلة زبون معلقة، يتم تحديث حالتها كمكتملة
+            if(window.activeCartIdToResolve) {
+                await db.collection("cafes").doc(currentCafeID).collection("customer_carts").doc(window.activeCartIdToResolve).update({ status: 'billed' });
+                window.activeCartIdToResolve = null;
+            }
+
+            alert("تم إصدار وحفظ الفاتورة بنجاح!");
+            clearInvoiceForm();
             loadInvoices();
         }
 
         async function loadInvoices() {
-            const list = document.getElementById('invoices-list');
             const snap = await db.collection("cafes").doc(currentCafeID).collection("invoices").orderBy("date", "desc").get();
-            list.innerHTML = "";
-            if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد فواتير مسجلة</p>'; return; }
+            allInvoicesCache = [];
             snap.forEach(doc => {
-                const inv = doc.data();
+                allInvoicesCache.push({ id: doc.id, ...doc.data() });
+            });
+            renderInvoicesList(allInvoicesCache);
+        }
+
+        function renderInvoicesList(invoices) {
+            const list = document.getElementById('invoices-list');
+            list.innerHTML = "";
+            if(invoices.length === 0) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد فواتير مسجلة مطابقة</p>'; return; }
+            invoices.forEach(inv => {
                 list.innerHTML += `
                 <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm">
                     <div class="text-right">
-                        <div class="font-bold text-xs text-slate-800">${inv.target} - <span class="text-emerald-600">${inv.amount}</span></div>
-                        <div class="text-[10px] text-slate-400">${inv.details || 'بدون تفاصيل'}</div>
+                        <div class="font-bold text-xs text-slate-800">
+                            <span class="text-blue-600 font-mono">${inv.serial || 'INV-000'}</span> - ${inv.target} 
+                            <span class="text-emerald-600 font-bold mr-2">(${inv.amount})</span>
+                        </div>
+                        <div class="text-[10px] text-slate-500">${inv.details || 'بدون تفاصيل'} ${inv.tax > 0 ? `| ضريبة/خدمة: ${inv.tax}` : ''}</div>
                     </div>
                     <span class="text-[10px] text-slate-400">${inv.date ? new Date(inv.date.toDate()).toLocaleTimeString('ar-EG') : ''}</span>
                 </div>`;
             });
+        }
+
+        function filterInvoices() {
+            const query = document.getElementById('invoice-search-input').value.toLowerCase().trim();
+            if(!query) {
+                renderInvoicesList(allInvoicesCache);
+                return;
+            }
+            const filtered = allInvoicesCache.filter(inv => 
+                (inv.serial && inv.serial.toLowerCase().includes(query)) || 
+                (inv.target && inv.target.toLowerCase().includes(query))
+            );
+            renderInvoicesList(filtered);
         }
 
         function startScanner() {
