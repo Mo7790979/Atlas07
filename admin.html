@@ -30,15 +30,15 @@
         .wa-sa { background: #e8f5e9; color: #2e7d32; }
         .wa-sy { background: #f3e5f5; color: #7b1fa2; }
         
-        /* Modern POS Custom Styles */
+        /* Modern POS Custom Styles matching Customer Interactive Menu */
         .pos-container { display: grid; grid-template-columns: 1fr; gap: 1rem; }
         @media(min-width: 1024px) {
-            .pos-container { grid-template-columns: 380px 1fr; align-items: start; }
+            .pos-container { grid-template-columns: 420px 1fr; align-items: start; }
             body { max-width: 1400px !important; }
         }
-        .pos-product-card { background: white; border: 1px solid #e2e8f0; border-radius: 1rem; overflow: hidden; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .pos-product-card:hover { transform: translateY(-3px); border-color: #2563eb; box-shadow: 0 10px 15px -3px rgba(37,99,235,0.1); }
-        .pos-product-card:active { transform: scale(0.96); }
+        .pos-menu-card { background: white; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 10px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .pos-menu-card:hover { transform: translateY(-2px); border-color: #2563eb; box-shadow: 0 8px 12px -3px rgba(37,99,235,0.1); }
+        .pos-menu-card:active { transform: scale(0.97); }
         .top-action-bar-btn { background: #6366f1; color: white; padding: 8px 14px; border-radius: 0.75rem; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2); transition: 0.2s; }
         .top-action-bar-btn:hover { background: #4f46e5; transform: translateY(-1px); }
     </style>
@@ -121,7 +121,7 @@
             </div>
         </div>
 
-        <!-- قسم إدارة المنتجات والمنيو التفاعلي -->
+        <!-- قسم إدارة المنتجات والمنيو -->
         <div id="section-products" class="section-content hidden">
             <div class="admin-card">
                 <h3 class="font-black text-blue-600 mb-4 border-r-4 border-blue-600 pr-3">إضافة منتج جديد للمنيو التفاعلي</h3>
@@ -189,7 +189,7 @@
             </div>
         </div>
 
-        <!-- النظام المحاسبي الاحترافي وربطه بسلة العميل -->
+        <!-- النظام المحاسبي الاحترافي بالمنيو التفاعلي المطابق للعميل -->
         <div id="section-pos" class="section-content hidden">
             
             <!-- Top Interactive Action Bar -->
@@ -201,7 +201,7 @@
                     <button onclick="clearInvoiceForm()" class="top-action-bar-btn" style="background:#ef4444;"><i class="fas fa-redo"></i> <span>جديد</span></button>
                 </div>
                 <div class="text-xs font-bold text-emerald-400 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700">
-                    <i class="fas fa-cash-register ml-1 text-blue-400"></i> النظام المحاسبي - إصدار وتعديل الفاتورة التفاعلية
+                    <i class="fas fa-cash-register ml-1 text-blue-400"></i> نظام نقاط البيع (المنيو التفاعلي السريع)
                 </div>
             </div>
 
@@ -258,8 +258,8 @@
                         <!-- Interactive Invoice Items List -->
                         <div class="mb-3">
                             <div class="flex justify-between items-center mb-1.5">
-                                <label class="text-xs font-bold text-slate-700">بنود الفاتورة التفاعلية (أضف أو احذف مثل المنيو)</label>
-                                <button onclick="addInvoiceItemRow()" class="bg-emerald-600 text-white px-2 py-1 rounded-md text-[10px] font-bold"><i class="fas fa-plus ml-1"></i> إضافة بند</button>
+                                <label class="text-xs font-bold text-slate-700">بنود الفاتورة (تضاف بالضغط مباشرة من المنيو)</label>
+                                <button onclick="addInvoiceItemRow()" class="bg-emerald-600 text-white px-2 py-1 rounded-md text-[10px] font-bold"><i class="fas fa-plus ml-1"></i> إضافة يدوية</button>
                             </div>
                             <div id="invoice-items-builder" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
                         </div>
@@ -284,7 +284,7 @@
 
                         <div class="grid grid-cols-2 gap-2">
                             <button onclick="issueInvoice()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-emerald-200 text-xs flex items-center justify-center gap-1">
-                                <i class="fas fa-check-circle"></i> حفظ وإصدار الفاتورة للنظام المحاسبي
+                                <i class="fas fa-check-circle"></i> حفظ وإصدار الفاتورة
                             </button>
                             <button onclick="clearInvoiceForm()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1">
                                 <i class="fas fa-trash-alt"></i> مسح النموذج
@@ -293,20 +293,21 @@
                     </div>
                 </div>
 
-                <!-- Interactive POS Product Catalog -->
+                <!-- Interactive POS Product Catalog (Identical to Customer Menu) -->
                 <div class="space-y-4">
                     <div class="admin-card bg-white">
                         <div class="flex flex-col sm:flex-row justify-between items-center gap-3 mb-4">
                             <div class="w-full sm:w-2/3">
-                                <input type="text" id="pos-product-search" placeholder="بحث سريع عن منتج في المنيو..." oninput="filterPOSProducts()" class="text-xs">
+                                <input type="text" id="pos-product-search" placeholder="بحث سريع في المنيو التفاعلي..." oninput="filterPOSProducts()" class="text-xs">
                             </div>
                             <div class="flex gap-1.5 overflow-x-auto no-scrollbar w-full sm:w-auto" id="pos-categories-filter">
                                 <button onclick="filterPOSByCategory('all')" class="category-filter-btn px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold whitespace-nowrap">الكل</button>
                             </div>
                         </div>
 
-                        <div id="pos-products-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[550px] overflow-y-auto p-1">
-                            <p class="text-xs text-slate-400 text-center col-span-full py-8">جاري تحميل منتجات المنيو...</p>
+                        <!-- Same exact layout design as customer interactive menu -->
+                        <div id="pos-products-grid" class="space-y-2.5 max-h-[580px] overflow-y-auto p-1">
+                            <p class="text-xs text-slate-400 text-center py-8">جاري تحميل منتجات المنيو...</p>
                         </div>
                     </div>
                 </div>
@@ -678,6 +679,7 @@
             renderPOSProductsGrid();
         }
 
+        // دمج شكل المنيو التفاعلي الخاص بالعميل داخل قسم المحاسبة (POS)
         function renderPOSProductsGrid() {
             const grid = document.getElementById('pos-products-grid');
             if(!grid) return;
@@ -698,14 +700,17 @@
 
             filtered.forEach(p => {
                 grid.innerHTML += `
-                <div onclick='addPOSProductToInvoice("${p.name.replace(/"/g, '&quot;')}", ${p.price})' class="pos-product-card p-2.5 flex flex-col justify-between text-right">
-                    <div class="relative mb-2">
-                        <img src="${p.image || 'https://via.placeholder.com/150'}" class="w-full h-20 object-cover rounded-lg bg-slate-100">
-                        <span class="absolute top-1 left-1 bg-blue-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded shadow">${p.price}</span>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-xs text-slate-800 line-clamp-1 mb-0.5">${p.name}</h4>
-                        <p class="text-[9px] text-slate-400 line-clamp-1">${p.category || 'عام'}</p>
+                <div onclick='addPOSProductToInvoice("${p.name.replace(/"/g, '&quot;')}", ${p.price})' class="pos-menu-card">
+                    <img src="${p.image || 'https://via.placeholder.com/150'}" class="w-16 h-16 object-cover rounded-xl bg-slate-100 shrink-0">
+                    <div class="flex-1 text-right">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-xs text-slate-800 line-clamp-1 mb-0.5">${p.name}</h4>
+                            <span class="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow">${p.price}</span>
+                        </div>
+                        <p class="text-[10px] text-slate-500 line-clamp-1 mb-1.5">${p.description || p.category || 'مشروبات ومأكولات'}</p>
+                        <span class="bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white px-2.5 py-1 rounded-lg text-[10px] font-bold inline-flex items-center gap-1 transition-all">
+                            <i class="fas fa-plus"></i> إضافة للفاتورة
+                        </span>
                     </div>
                 </div>`;
             });
@@ -811,7 +816,6 @@
                 }
                 snap.forEach(doc => {
                     const cart = doc.data();
-                    // تخزين آمن لبيانات الكارت عبر الاستدعاء المباشر
                     window._tempCarts = window._tempCarts || {};
                     window._tempCarts[doc.id] = cart;
 
@@ -922,16 +926,6 @@
             else renderInvoiceItemsBuilder();
         }
 
-        function updateItemFromMenuSelect(index, productName) {
-            if(!productName) return;
-            const prod = globalProductsCache.find(p => p.name === productName);
-            if(prod) {
-                invoiceInteractiveItems[index].name = prod.name;
-                invoiceInteractiveItems[index].price = Number(prod.price) || 0;
-            }
-            renderInvoiceItemsBuilder();
-        }
-
         function updateItemField(index, field, val) {
             invoiceInteractiveItems[index][field] = field === 'qty' || field === 'price' ? Number(val) : val;
             calculateInvoiceTotals();
@@ -947,18 +941,10 @@
             }
 
             invoiceInteractiveItems.forEach((item, index) => {
-                let optionsHtml = '<option value="">اختر من المنيو...</option>';
-                globalProductsCache.forEach(p => {
-                    optionsHtml += `<option value="${p.name.replace(/"/g, '&quot;')}" ${p.name === item.name ? 'selected' : ''}>${p.name} (${p.price})</option>`;
-                });
-
                 container.innerHTML += `
                 <div class="flex gap-2 items-center bg-slate-50 p-2 rounded-xl border shadow-sm text-right">
                     <div class="flex-1">
-                        <select onchange="updateItemFromMenuSelect(${index}, this.value)" class="text-xs py-1 mb-1">
-                            ${optionsHtml}
-                        </select>
-                        <input type="text" value="${item.name || ''}" oninput="updateItemField(${index}, 'name', this.value)" placeholder="اسم البند يدوياً" class="text-xs py-1">
+                        <input type="text" value="${item.name || ''}" oninput="updateItemField(${index}, 'name', this.value)" placeholder="اسم البند" class="text-xs py-1 font-bold text-slate-800">
                     </div>
                     <div class="w-14">
                         <label class="text-[9px]">الكمية</label>
@@ -1047,7 +1033,6 @@
             list.innerHTML = "";
             if(invoices.length === 0) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد فواتير مسجلة مطابقة</p>'; return; }
             
-            // تخزين آمن مؤقت لتفادي أخطاء JSON في الـ HTML
             window._tempInvoices = window._tempInvoices || {};
 
             invoices.forEach(inv => {
