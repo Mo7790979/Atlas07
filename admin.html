@@ -412,8 +412,8 @@
         </div>
     </div>
 
-    <!-- قالب مخفي لتصدير الفاتورة إلى PDF (محدث بتنسيقات مباشرة لتفادي مشكلة الصفحة البيضاء الفارغة) -->
-    <div id="pdf-invoice-template" style="display: none; padding: 20px; background: #ffffff; color: #1e293b; font-family: 'Cairo', sans-serif; direction: rtl; width: 100%; max-width: 450px; box-sizing: border-box;">
+    <!-- قالب مخفي لتصدير الفاتورة إلى PDF (محدث بتنسيق آمن خارج الشاشة تماماً لتفادي مشكلة الصفحة البيضاء) -->
+    <div id="pdf-invoice-template" style="position: absolute; left: -9999px; top: 0; padding: 20px; background: #ffffff; color: #1e293b; font-family: 'Cairo', sans-serif; direction: rtl; width: 450px; box-sizing: border-box; z-index: -1000;">
         <div style="text-align: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 15px;">
             <h2 id="pdf-cafe-name" style="font-size: 20px; font-weight: 900; color: #2563eb; margin: 0 0 5px 0;">اسم المنشأة</h2>
             <p style="font-size: 11px; color: #64748b; margin: 0;">فاتورة ضريبية / مبيعات</p>
@@ -443,7 +443,7 @@
             <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span id="pdf-tax-label">الضريبة:</span> <span id="pdf-tax">0.00</span></div>
             <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13px; border-top: 1px dashed #cbd5e1; padding-top: 6px; color: #059669;"><span>الإجمالي النهائي:</span> <span id="pdf-total">0.00</span></div>
         </div>
-        <div style="text-align: center; margin-top: 25px; font-size: 10px; color: #94a3b8; border-top: 1px solid #f1f5f9; pt-10px;">
+        <div style="text-align: center; margin-top: 25px; font-size: 10px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 10px;">
             شكراً لتزيينكم محلنا بزيارتكم! نتشرف بخدمتكم دائماً.
         </div>
     </div>
@@ -982,7 +982,7 @@
             renderInvoicesList(filtered);
         }
 
-        // تصدير الفاتورة إلى PDF (محدث لضمان عدم ظهور الملف فارغاً)
+        // تصدير الفاتورة إلى PDF (محدث بنمط الآمن تماماً لضمان عدم ظهور الملف فارغاً)
         async function printCurrentPOSInvoicePDF() {
             const target = document.getElementById('invoice-target').value;
             const serial = document.getElementById('invoice-serial').value;
@@ -1018,9 +1018,8 @@
             });
 
             const element = document.getElementById('pdf-invoice-template');
-            element.style.display = 'block';
 
-            // مهلة زمنية بسيطة لضمان تحديث الـ DOM وتفادي ملفات الـ PDF الفارغة
+            // مهلة زمنية قصيرة لضمان تحديث الـ DOM وتفادي مشاكل الأبعاد
             setTimeout(async () => {
                 await html2pdf().from(element).set({
                     margin: 10,
@@ -1028,8 +1027,7 @@
                     html2canvas: { scale: 2, useCORS: true },
                     jsPDF: { unit: 'mm', format: 'a5', orientation: 'portrait' }
                 }).save();
-                element.style.display = 'none';
-            }, 300);
+            }, 200);
         }
 
         async function printSpecificInvoicePDF(inv) {
@@ -1057,7 +1055,6 @@
             });
 
             const element = document.getElementById('pdf-invoice-template');
-            element.style.display = 'block';
 
             setTimeout(async () => {
                 await html2pdf().from(element).set({
@@ -1066,8 +1063,7 @@
                     html2canvas: { scale: 2, useCORS: true },
                     jsPDF: { unit: 'mm', format: 'a5', orientation: 'portrait' }
                 }).save();
-                element.style.display = 'none';
-            }, 300);
+            }, 200);
         }
 
         // تقرير مبيعات اليوم المفصل
