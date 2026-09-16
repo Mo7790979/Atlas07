@@ -583,8 +583,11 @@
             startTimer();
             loadAdminBankInfo();
             generateNewSerial();
-            // تم إزالة استدعاء addInvoiceItemRow() لكي لا يظهر بند افتراضي عند الفتح
+            
+            // ترك القائمة فارغة بشكل نظيف عند البدء دون إجبار بند افتراضي
+            invoiceInteractiveItems = [];
             renderInvoiceItemsBuilder();
+
             db.collection("cafes").doc(currentCafeID).get().then(doc => {
                 document.getElementById('expiry-date-text').innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
                 document.getElementById('display-cafe-name').innerText = doc.data().cafeName;
