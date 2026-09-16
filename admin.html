@@ -196,7 +196,7 @@
             <div class="bg-slate-900 text-white p-3 rounded-2xl mb-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
                 <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
                     <button onclick="printCurrentPOSInvoicePrintView()" class="top-action-bar-btn"><i class="fas fa-print"></i> <span>طباعة / حفظ كـ PDF</span></button>
-                    <button onclick="openTaxManager()" class="top-action-bar-btn" style="background:#8b5cf6;"><i class="fas fa-percent"></i> <span>الضرائب</span></button>
+                    <button onclick="openTaxManager()" class="top-action-bar-btn" style="background:#8b5cf6;"><i class="fas fa-percent"></i> <span>إدارة الضرائب</span></button>
                     <button onclick="generateDailySalesReport()" class="top-action-bar-btn" style="background:#d97706;"><i class="fas fa-chart-line"></i> <span>التقرير اليومي</span></button>
                     <button onclick="clearInvoiceForm()" class="top-action-bar-btn" style="background:#ef4444;"><i class="fas fa-redo"></i> <span>جديد</span></button>
                 </div>
@@ -219,20 +219,12 @@
 
                 <div class="admin-card border-purple-200 bg-purple-50/30 mb-0">
                     <div class="flex justify-between items-center mb-2">
-                        <h3 class="font-black text-purple-900 text-xs"><i class="fas fa-sliders-h ml-1"></i> إعدادات الفاتورة السريعة</h3>
+                        <h3 class="font-black text-purple-900 text-xs"><i class="fas fa-sliders-h ml-1"></i> اختيار الضرائب المتعددة</h3>
                         <span class="text-[10px] text-purple-700 font-bold" id="active-tax-badge-label">بدون ضريبة</span>
                     </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="text-[10px]">الضريبة / الخدمة</label>
-                            <select id="active-tax-select" onchange="applySelectedTax()" class="text-xs font-bold text-purple-900 py-1.5">
-                                <option value="0">بدون ضريبة</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="text-[10px]">النسبة (%)</label>
-                            <input type="number" id="tax-custom-rate" readonly class="bg-slate-100 font-bold text-purple-700 py-1.5 text-center" value="0">
-                        </div>
+                    <!-- قائمة اختيار الضرائب المتعددة (تتيح تحديد أكثر من ضريبة بنفس الوقت) -->
+                    <div class="max-h-32 overflow-y-auto space-y-1 bg-white p-2 rounded-xl border border-purple-100" id="taxes-checkboxes-container">
+                        <p class="text-[11px] text-slate-400 text-center">لا توجد ضرائب معرفة، قم بإضافتها من إدارة الضرائب</p>
                     </div>
                 </div>
             </div>
@@ -272,11 +264,14 @@
                                 <span>المبلغ الفرعي:</span>
                                 <input type="number" id="invoice-subtotal" placeholder="0.00" readonly class="w-24 text-left bg-transparent border-none font-bold p-0 text-slate-800">
                             </div>
-                            <div class="flex justify-between text-purple-700">
-                                <span id="dynamic-tax-label">الضريبة / الخدمة:</span>
-                                <input type="number" id="invoice-tax" placeholder="0.00" readonly class="w-24 text-left bg-transparent border-none font-bold p-0 text-purple-700">
+                            <!-- منطقة عرض الضرائب المطبقة ديناميكياً -->
+                            <div id="applied-taxes-breakdown" class="space-y-1 text-purple-700 border-y py-1.5 my-1">
+                                <div class="flex justify-between">
+                                    <span>الضرائب والخدمات:</span>
+                                    <span id="invoice-total-tax-val">0.00</span>
+                                </div>
                             </div>
-                            <div class="flex justify-between font-black text-base text-emerald-700 border-t pt-1.5">
+                            <div class="flex justify-between font-black text-base text-emerald-700 pt-1">
                                 <span>الإجمالي النهائي:</span>
                                 <input type="number" id="invoice-amount" placeholder="0.00" readonly class="w-32 text-left bg-transparent border-none font-black text-base p-0 text-emerald-700">
                             </div>
@@ -452,7 +447,7 @@
             <div class="space-y-3">
                 <div>
                     <label>اسم الضريبة أو الخدمة</label>
-                    <input type="text" id="new-tax-name" placeholder="مثال: ضريبة القيمة المضافة / خدمة محل">
+                    <input type="text" id="new-tax-name" placeholder="مثال: ضريبة القيمة المضافة / ضريبة الرفاهية">
                 </div>
                 <div>
                     <label>النسبة المئوية (%)</label>
@@ -501,6 +496,7 @@
         let globalProductsCache = [];
         let invoiceInteractiveItems = [];
         let currentPOSCategory = "all";
+        let cachedTaxesList = []; // لتخزين الضرائب المتاحة
 
         async function login() {
             const user = document.getElementById('admin-user-input').value.trim();
@@ -583,7 +579,7 @@
             loadWaiters();
             listenToWaiterCalls();
             listenToCustomerCarts();
-            loadTaxesDropdown();
+            loadTaxesCheckboxes();
             loadInvoices();
             generateCafeQR();
             startTimer();
@@ -679,7 +675,6 @@
             renderPOSProductsGrid();
         }
 
-        // دمج شكل المنيو التفاعلي الخاص بالعميل داخل قسم المحاسبة (POS)
         function renderPOSProductsGrid() {
             const grid = document.getElementById('pos-products-grid');
             if(!grid) return;
@@ -864,20 +859,37 @@
             });
             document.getElementById('new-tax-name').value = "";
             document.getElementById('new-tax-rate').value = "";
-            loadTaxesDropdown();
+            loadTaxesCheckboxes();
             loadTaxesModalList();
             alert("تم إضافة الضريبة بنجاح!");
         }
 
-        async function loadTaxesDropdown() {
-            const select = document.getElementById('active-tax-select');
+        // تحميل الضرائب على شكل مربعات اختيار (Checkboxes) للسماح بتحديد أكثر من ضريبة في نفس الوقت
+        async function loadTaxesCheckboxes() {
+            const container = document.getElementById('taxes-checkboxes-container');
             const snap = await db.collection("cafes").doc(currentCafeID).collection("taxes").get();
-            select.innerHTML = '<option value="0" data-name="بدون ضريبة">بدون ضريبة (0%)</option>';
+            cachedTaxesList = [];
+            container.innerHTML = "";
+            
+            if(snap.empty) {
+                container.innerHTML = '<p class="text-[11px] text-slate-400 text-center py-1">لا توجد ضرائب معرفة، أضفها من إدارة الضرائب</p>';
+                calculateInvoiceTotals();
+                return;
+            }
+
             snap.forEach(doc => {
-                const t = doc.data();
-                select.innerHTML += `<option value="${t.rate}" data-name="${t.name}">${t.name} (${t.rate}%)</option>`;
+                const t = { id: doc.id, ...doc.data() };
+                cachedTaxesList.push(t);
+                container.innerHTML += `
+                <label class="flex items-center justify-between text-xs font-bold text-slate-700 p-1 hover:bg-slate-50 rounded cursor-pointer">
+                    <span class="flex items-center gap-1.5">
+                        <input type="checkbox" value="${t.id}" data-rate="${t.rate}" data-name="${t.name}" onchange="calculateInvoiceTotals()" class="pos-tax-checkbox w-3.5 h-3.5 text-blue-600 rounded">
+                        ${t.name}
+                    </span>
+                    <span class="text-purple-600 font-mono">${t.rate}%</span>
+                </label>`;
             });
-            applySelectedTax();
+            calculateInvoiceTotals();
         }
 
         async function loadTaxesModalList() {
@@ -898,21 +910,9 @@
         async function deleteTax(id) {
             if(confirm("هل أنت متأكد من حذف هذه الضريبة؟")) {
                 await db.collection("cafes").doc(currentCafeID).collection("taxes").doc(id).delete();
-                loadTaxesDropdown();
+                loadTaxesCheckboxes();
                 loadTaxesModalList();
             }
-        }
-
-        function applySelectedTax() {
-            const select = document.getElementById('active-tax-select');
-            const rate = Number(select.value) || 0;
-            document.getElementById('tax-custom-rate').value = rate;
-            const selectedOption = select.options[select.selectedIndex];
-            window.activeTaxName = selectedOption ? selectedOption.getAttribute('data-name') : 'ضريبة';
-            document.getElementById('dynamic-tax-label').innerText = `${window.activeTaxName}:`;
-            const badgeLabel = document.getElementById('active-tax-badge-label');
-            if(badgeLabel) badgeLabel.innerText = `${window.activeTaxName} (${rate}%)`;
-            calculateInvoiceTotals();
         }
 
         function addInvoiceItemRow() {
@@ -960,23 +960,70 @@
             calculateInvoiceTotals();
         }
 
+        // حساب الإجماليات مع دعم الضرائب المتعددة المحددة في نفس الوقت
         function calculateInvoiceTotals() {
             let subtotal = 0;
             invoiceInteractiveItems.forEach(item => {
                 subtotal += (Number(item.qty) || 0) * (Number(item.price) || 0);
             });
-            const taxRate = Number(document.getElementById('tax-custom-rate').value) || 0;
-            const taxValue = (subtotal * taxRate) / 100;
-            const total = subtotal + taxValue;
 
+            // جمع كافة الضرائب المحددة
+            const checkboxes = document.querySelectorAll('.pos-tax-checkbox:checked');
+            let totalTaxValue = 0;
+            let appliedTaxesArray = [];
+            let badgeNames = [];
+
+            checkboxes.forEach(cb => {
+                const rate = Number(cb.getAttribute('data-rate')) || 0;
+                const name = cb.getAttribute('data-name') || 'ضريبة';
+                const taxVal = (subtotal * rate) / 100;
+                totalTaxValue += taxVal;
+                appliedTaxesArray.push({ name, rate, value: taxVal });
+                badgeNames.push(`${name} (${rate}%)`);
+            });
+
+            const total = subtotal + totalTaxValue;
+
+            // تحديث واجهة العرض
             document.getElementById('invoice-subtotal').value = subtotal.toFixed(2);
-            document.getElementById('invoice-tax').value = taxValue.toFixed(2);
+            document.getElementById('invoice-total-tax-val').innerText = totalTaxValue.toFixed(2);
             document.getElementById('invoice-amount').value = total.toFixed(2);
+
+            const badgeLabel = document.getElementById('active-tax-badge-label');
+            if(badgeLabel) {
+                badgeLabel.innerText = badgeNames.length > 0 ? badgeNames.join(' + ') : 'بدون ضريبة';
+            }
+
+            // تفصيل الضرائب تحت بعضها
+            const breakdownContainer = document.getElementById('applied-taxes-breakdown');
+            if(breakdownContainer) {
+                if(appliedTaxesArray.length === 0) {
+                    breakdownContainer.innerHTML = `
+                    <div class="flex justify-between text-slate-400">
+                        <span>الضرائب والخدمات:</span>
+                        <span>0.00</span>
+                    </div>`;
+                } else {
+                    let html = '';
+                    appliedTaxesArray.forEach(t => {
+                        html += `
+                        <div class="flex justify-between text-purple-700 text-[11px]">
+                            <span>${t.name} (${t.rate}%):</span>
+                            <span>${t.value.toFixed(2)}</span>
+                        </div>`;
+                    });
+                    breakdownContainer.innerHTML = html;
+                }
+            }
+
+            // حفظ بيانات الضرائب المطبقة في الذاكرة لتسهيل إصدار الفاتورة وحفظها
+            window.activeAppliedTaxes = appliedTaxesArray;
         }
 
         function clearInvoiceForm() {
             document.getElementById('invoice-target').value = "";
             invoiceInteractiveItems = [];
+            document.querySelectorAll('.pos-tax-checkbox').forEach(cb => cb.checked = false);
             addInvoiceItemRow();
             generateNewSerial();
             window.activeCartIdToResolve = null;
@@ -985,8 +1032,8 @@
         async function issueInvoice() {
             const target = document.getElementById('invoice-target').value;
             const subtotal = Number(document.getElementById('invoice-subtotal').value) || 0;
-            const tax = Number(document.getElementById('invoice-tax').value) || 0;
-            const taxNameUsed = window.activeTaxName || "ضريبة";
+            const tax = Number(document.getElementById('invoice-total-tax-val').innerText) || 0;
+            const appliedTaxes = window.activeAppliedTaxes || [];
             const amount = Number(document.getElementById('invoice-amount').value) || 0;
             const serial = document.getElementById('invoice-serial').innerText;
 
@@ -1004,7 +1051,7 @@
                 details: detailsSummary,
                 subtotal,
                 tax,
-                taxNameUsed,
+                appliedTaxes, // حفظ قائمة الضرائب المتعددة المطبقة
                 amount,
                 date: firebase.firestore.FieldValue.serverTimestamp()
             });
@@ -1037,6 +1084,15 @@
 
             invoices.forEach(inv => {
                 window._tempInvoices[inv.id] = inv;
+                
+                // صياغة عرض الضرائب المتعددة في السجل
+                let taxDesc = '';
+                if(inv.appliedTaxes && inv.appliedTaxes.length > 0) {
+                    taxDesc = ` | ` + inv.appliedTaxes.map(t => `${t.name}: ${t.value.toFixed(2)}`).join(', ');
+                } else if(inv.tax > 0) {
+                    taxDesc = ` | الضريبة: ${inv.tax}`;
+                }
+
                 list.innerHTML += `
                 <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm hover:bg-slate-50 text-right">
                     <div class="flex items-center gap-2">
@@ -1048,7 +1104,7 @@
                             <span class="text-emerald-600 font-bold ml-2">(${inv.amount})</span> - ${inv.target} 
                             <span class="text-blue-600 font-mono mr-2">${inv.serial || 'INV-000'}</span>
                         </div>
-                        <div class="text-[10px] text-slate-500">${inv.details || 'بدون تفاصيل'} ${inv.tax > 0 ? `| ${inv.taxNameUsed || 'ضريبة'}: ${inv.tax}` : ''}</div>
+                        <div class="text-[10px] text-slate-500">${inv.details || 'بدون تفاصيل'}${taxDesc}</div>
                     </div>
                 </div>`;
             });
@@ -1065,6 +1121,14 @@
             } else {
                 invoiceInteractiveItems = [{ name: inv.details || 'بند الفاتورة', qty: 1, price: inv.subtotal || inv.amount || 0 }];
             }
+
+            // تحديد الضرائب التي كانت مطبقة في الفاتورة السابقة إن وجدت
+            document.querySelectorAll('.pos-tax-checkbox').forEach(cb => {
+                const name = cb.getAttribute('data-name');
+                const matched = inv.appliedTaxes && inv.appliedTaxes.some(t => t.name === name);
+                cb.checked = Boolean(matched);
+            });
+
             renderInvoiceItemsBuilder();
             showSection('pos');
         }
@@ -1096,6 +1160,16 @@
                     </tr>
                 `;
             });
+
+            // توليد HTML للضرائب المتعددة في نافذة الطباعة
+            let taxesRowsHTML = '';
+            if(invoiceData.appliedTaxes && invoiceData.appliedTaxes.length > 0) {
+                invoiceData.appliedTaxes.forEach(t => {
+                    taxesRowsHTML += `<div><span>${t.name} (${t.rate}%):</span> <span>${t.value.toFixed(2)}</span></div>`;
+                });
+            } else {
+                taxesRowsHTML += `<div><span>الضريبة:</span> <span>${invoiceData.tax.toFixed(2)}</span></div>`;
+            }
 
             const printWindow = window.open('', '_blank');
             printWindow.document.write(`
@@ -1148,7 +1222,7 @@
                     </table>
                     <div class="totals">
                         <div><span>المبلغ الفرعي:</span> <span>${invoiceData.subtotal.toFixed(2)}</span></div>
-                        <div><span>${invoiceData.taxNameUsed}:</span> <span>${invoiceData.tax.toFixed(2)}</span></div>
+                        ${taxesRowsHTML}
                         <div class="total-final"><span>الإجمالي النهائي:</span> <span>${invoiceData.amount.toFixed(2)}</span></div>
                     </div>
                     <div class="footer">
@@ -1168,8 +1242,8 @@
             const target = document.getElementById('invoice-target').value;
             const serial = document.getElementById('invoice-serial').innerText;
             const subtotal = Number(document.getElementById('invoice-subtotal').value) || 0;
-            const tax = Number(document.getElementById('invoice-tax').value) || 0;
-            const taxNameUsed = window.activeTaxName || "الضريبة";
+            const tax = Number(document.getElementById('invoice-total-tax-val').innerText) || 0;
+            const appliedTaxes = window.activeAppliedTaxes || [];
             const amount = Number(document.getElementById('invoice-amount').value) || 0;
 
             if(!target || invoiceInteractiveItems.length === 0) {
@@ -1183,7 +1257,7 @@
                 items: invoiceInteractiveItems,
                 subtotal,
                 tax,
-                taxNameUsed,
+                appliedTaxes,
                 amount,
                 dateStr: new Date().toLocaleString('ar-EG')
             });
@@ -1202,7 +1276,7 @@
                 items,
                 subtotal: Number(inv.subtotal) || Number(inv.amount) || 0,
                 tax: Number(inv.tax) || 0,
-                taxNameUsed: inv.taxNameUsed || 'الضريبة',
+                appliedTaxes: inv.appliedTaxes || [],
                 amount: Number(inv.amount) || 0,
                 dateStr
             });
@@ -1249,7 +1323,7 @@
             <div class="bg-blue-50 p-4 rounded-xl border border-blue-200 space-y-2">
                 <div class="flex justify-between font-bold"> <span class="text-blue-700">${todayInvoices.length}</span> <span>إجمالي عدد الفواتير اليوم:</span></div>
                 <div class="flex justify-between font-bold"> <span>${totalSub.toFixed(2)}</span> <span>المبلغ الفرعي للمبيعات:</span></div>
-                <div class="flex justify-between font-bold"> <span class="text-purple-700">${totalTaxes.toFixed(2)}</span> <span>إجمالي الضرائب والخدمات:</span></div>
+                <div class="flex justify-between font-bold"> <span class="text-purple-700">${totalTaxes.toFixed(2)}</span> <span>إجمالي الضرائب والخدمات المطبقة:</span></div>
                 <div class="flex justify-between font-black text-sm border-t pt-2 text-emerald-700"> <span class="text-emerald-700">${totalSales.toFixed(2)}</span> <span>إجمالي المبيعات النهائية:</span></div>
             </div>
             <div>
