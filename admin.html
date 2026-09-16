@@ -29,6 +29,13 @@
         .contact-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; border-radius: 12px; font-weight: bold; font-size: 13px; transition: 0.3s; }
         .wa-sa { background: #e8f5e9; color: #2e7d32; }
         .wa-sy { background: #f3e5f5; color: #7b1fa2; }
+        
+        /* طباعة الفاتورة */
+        @media print {
+            body * { visibility: hidden; }
+            #printable-invoice, #printable-invoice * { visibility: visible; }
+            #printable-invoice { position: absolute; left: 0; top: 0; width: 100%; }
+        }
     </style>
 </head>
 <body class="max-w-3xl mx-auto pb-24 px-3 sm:px-6">
@@ -64,7 +71,7 @@
             </div>
         </div>
 
-        <!-- Main Navigation Tabs - تم ترتيب الأزرار ليكون الكاشير في البداية -->
+        <!-- Main Navigation Tabs -->
         <div class="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-6 py-1">
             <button onclick="NavigationManager.showSection('pos')" id="tab-pos" class="tab-btn active-tab bg-white border p-3 rounded-xl font-bold text-xs shadow-sm cursor-pointer text-center">الكاشير (POS)</button>
             <button onclick="NavigationManager.showSection('scan')" id="tab-scan" class="tab-btn bg-white border p-3 rounded-xl font-bold text-xs shadow-sm cursor-pointer text-center">المسح / التحكم</button>
@@ -75,36 +82,73 @@
             <button onclick="NavigationManager.showSection('billing')" id="tab-billing" class="tab-btn bg-white border p-3 rounded-xl font-bold text-xs shadow-sm cursor-pointer text-center text-emerald-600">الاشتراك</button>
         </div>
 
-        <!-- قسم الكاشير ونقاط البيع (POS) - القسم الافتراضي -->
+        <!-- قسم الكاشير ونقاط البيع الاحترافي (POS) -->
         <div id="section-pos" class="section-content">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- قائمة المنتجات السريعة -->
+                <!-- قائمة المنتجات السريعة والتصنيفات -->
                 <div class="admin-card">
-                    <h3 class="font-black text-blue-600 mb-3 border-r-4 border-blue-600 pr-3">قائمة المنتجات (اختر للطلب)</h3>
-                    <div id="pos-products-grid" class="grid grid-cols-2 gap-2 max-h-[450px] overflow-y-auto p-1">
-                        <!-- يتم تعبئتها برمجياً -->
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-black text-blue-600 border-r-4 border-blue-600 pr-3">قائمة المنتجات السريعة</h3>
+                    </div>
+                    <!-- فلتر التصنيفات -->
+                    <div id="pos-categories-filter" class="flex gap-1 overflow-x-auto pb-2 mb-2 text-xs">
+                        <button onclick="POSManager.filterCategory('all')" class="bg-blue-600 text-white px-3 py-1 rounded-lg font-bold whitespace-nowrap cursor-pointer">الكل</button>
+                    </div>
+                    <div id="pos-products-grid" class="grid grid-cols-2 gap-2 max-h-[400px] overflow-y-auto p-1">
+                        <!-- تعبئة برمجية -->
                     </div>
                 </div>
-                <!-- سلة المشتريات والفاتورة -->
+
+                <!-- سلة المشتريات وخيارات الفاتورة المتقدمة -->
                 <div class="admin-card flex flex-col justify-between">
                     <div>
                         <h3 class="font-black text-slate-800 mb-3"><i class="fas fa-shopping-cart ml-1"></i> فاتورة الطلب الحالي</h3>
-                        <div id="pos-cart-items" class="space-y-2 max-h-56 overflow-y-auto mb-4 border-b pb-2">
+                        <div id="pos-cart-items" class="space-y-2 max-h-48 overflow-y-auto mb-4 border-b pb-2">
                             <p class="text-xs text-slate-400 text-center py-4">السلة فارغة</p>
                         </div>
                     </div>
-                    <div>
-                        <div class="bg-slate-50 p-3 rounded-xl mb-3 space-y-2">
+                    
+                    <div class="space-y-3">
+                        <!-- خيارات إضافية للكاشير الاحترافي -->
+                        <div class="grid grid-cols-2 gap-2">
                             <div>
-                                <label>رقم هاتف الزبون (اختياري لربط النقاط)</label>
-                                <input type="text" id="pos-customer-phone" placeholder="أدخل رقم الهاتف لتسجيل النقاط">
+                                <label>نوع الطلب</label>
+                                <select id="pos-order-type">
+                                    <option value="محلي">محلي (صالة)</option>
+                                    <option value="سفري">سفري (تغليف)</option>
+                                    <option value="توصيل">توصيل دليفري</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>طريقة الدفع</label>
+                                <select id="pos-payment-method">
+                                    <option value="نقدي">نقدي (كاش)</option>
+                                    <option value="شبكة">شبكة / إلكتروني</option>
+                                    <option value="آجل">قيد على الحساب</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label>رقم هاتف الزبون (اختياري لربط النقاط)</label>
+                            <input type="text" id="pos-customer-phone" placeholder="أدخل رقم الهاتف لتسجيل النقاط">
+                        </div>
+
+                        <div class="bg-slate-50 p-3 rounded-xl space-y-1">
+                            <div class="flex justify-between items-center text-xs text-slate-500">
+                               <span>المجموع الفرعي:</span>
+                               <span id="pos-subtotal">0</span>
                             </div>
                             <div class="flex justify-between items-center text-sm font-bold">
-                                <span>الإجمالي:</span>
+                                <span>الإجمالي النهائي:</span>
                                 <span id="pos-cart-total" class="text-blue-600 text-lg">0</span>
                             </div>
                         </div>
-                        <button onclick="POSManager.checkout()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-emerald-100 cursor-pointer border-none">إتمام الطلب وتدوين الأختام/النقاط</button>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="POSManager.checkout()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-emerald-100 cursor-pointer border-none text-xs">إتمام وتدوين النقاط</button>
+                            <button onclick="POSManager.printInvoice()" class="bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-xl font-bold shadow-lg cursor-pointer border-none text-xs"><i class="fas fa-print ml-1"></i> طباعة الفاتورة</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -147,7 +191,7 @@
         <!-- قسم إدارة المنتجات والمنيو -->
         <div id="section-products" class="section-content hidden">
             <div class="admin-card">
-                <h3 class="font-black text-blue-600 mb-4 border-r-4 border-blue-600 pr-3">إضافة منتج جديد للمنيو التفاعلي ونقاط البيع</h3>
+                <h3 class="font-black text-blue-600 mb-4 border-r-4 border-blue-600 pr-3">إضافة منتج جديد للمنيو ونقاط البيع</h3>
                 <div class="space-y-4">
                     <div>
                         <label>اسم المنتج</label>
@@ -331,6 +375,20 @@
         </div>
     </div>
 
+    <!-- حاوية مخفية لطباعة الفاتورة -->
+    <div id="printable-invoice" class="hidden p-6 text-right text-black bg-white">
+        <h2 class="text-center font-bold text-xl" id="inv-cafe-name">--</h2>
+        <p class="text-center text-xs mb-4" id="inv-date">--</p>
+        <hr class="my-2">
+        <div id="inv-items-list" class="space-y-1 text-xs"></div>
+        <hr class="my-2">
+        <div class="flex justify-between font-bold text-sm">
+            <span>الإجمالي:</span>
+            <span id="inv-total">0</span>
+        </div>
+        <p class="text-center text-[10px] mt-6">شكراً لزيارتكم!</p>
+    </div>
+
     <script>
         const firebaseConfig = { 
             apiKey: "AIzaSyCCBwr2b_9In1_gpqxkT3qKJ9ua-D80ZuE", 
@@ -343,7 +401,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // Global App State
         window.AppState = {
             currentCafeID: "",
             selectedSystem: "stamps",
@@ -351,10 +408,10 @@
             expiryDateGlobal: null,
             activeUserPhone: "",
             posCart: [],
-            posProducts: []
+            posProducts: [],
+            currentCategoryFilter: "all"
         };
 
-        // 1. Authentication Manager
         const AuthManager = {
             async login() {
                 const user = document.getElementById('admin-user-input').value.trim();
@@ -384,7 +441,6 @@
             }
         };
 
-        // 2. Navigation Manager
         const NavigationManager = {
             showSection(id) {
                 document.querySelectorAll('.section-content').forEach(s => s.classList.add('hidden'));
@@ -407,16 +463,37 @@
             }
         };
 
-        // 3. POS (نظام نقاط البيع والكاشير) Manager
+        // إدارة الكاشير ونقاط البيع المطورة
         const POSManager = {
+            filterCategory(cat) {
+                AppState.currentCategoryFilter = cat;
+                document.querySelectorAll('#pos-categories-filter button').forEach(b => {
+                    b.classList.toggle('bg-blue-600', b.innerText === cat || (cat === 'all' && b.innerText === 'الكل'));
+                    b.classList.toggle('text-white', b.innerText === cat || (cat === 'all' && b.innerText === 'الكل'));
+                    b.classList.toggle('bg-white', b.innerText !== cat && !(cat === 'all' && b.innerText === 'الكل'));
+                    b.classList.toggle('text-slate-600', b.innerText !== cat && !(cat === 'all' && b.innerText === 'الكل'));
+                });
+                POSManager.renderPOSProducts();
+            },
+            renderCategoriesFilter() {
+                const container = document.getElementById('pos-categories-filter');
+                const categories = ['all', ...new Set(AppState.posProducts.map(p => p.category || 'عام'))];
+                container.innerHTML = `<button onclick="POSManager.filterCategory('all')" class="px-3 py-1 rounded-lg font-bold whitespace-nowrap cursor-pointer ${AppState.currentCategoryFilter === 'all' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 border'}">الكل</button>`;
+                categories.forEach(c => {
+                    if(c !== 'all') {
+                        container.innerHTML += `<button onclick="POSManager.filterCategory('${c}')" class="px-3 py-1 rounded-lg font-bold whitespace-nowrap cursor-pointer ${AppState.currentCategoryFilter === c ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 border'}">${c}</button>`;
+                    }
+                });
+            },
             renderPOSProducts() {
                 const grid = document.getElementById('pos-products-grid');
                 grid.innerHTML = "";
-                if(AppState.posProducts.length === 0) {
-                    grid.innerHTML = '<p class="text-xs text-slate-400 col-span-2 text-center py-4">لا توجد منتجات في المنيو</p>';
+                const filtered = AppState.posProducts.filter(p => AppState.currentCategoryFilter === 'all' || p.category === AppState.currentCategoryFilter);
+                if(filtered.length === 0) {
+                    grid.innerHTML = '<p class="text-xs text-slate-400 col-span-2 text-center py-4">لا توجد منتجات مطابقة</p>';
                     return;
                 }
-                AppState.posProducts.forEach(p => {
+                filtered.forEach(p => {
                     grid.innerHTML += `
                     <div onclick="POSManager.addToCart('${p.id}')" class="p-3 bg-white border rounded-xl shadow-sm cursor-pointer hover:border-blue-500 transition-all flex flex-col justify-between">
                         <div>
@@ -431,12 +508,18 @@
                 const prod = AppState.posProducts.find(p => p.id === prodId);
                 if(!prod) return;
                 const existing = AppState.posCart.find(item => item.id === prodId);
-                if(existing) {
-                    existing.qty += 1;
-                } else {
-                    AppState.posCart.push({ ...prod, qty: 1 });
-                }
+                if(existing) { existing.qty += 1; } else { AppState.posCart.push({ ...prod, qty: 1 }); }
                 POSManager.renderCart();
+            },
+            updateQty(prodId, delta) {
+                const item = AppState.posCart.find(i => i.id === prodId);
+                if(!item) return;
+                item.qty += delta;
+                if(item.qty <= 0) {
+                    POSManager.removeFromCart(prodId);
+                } else {
+                    POSManager.renderCart();
+                }
             },
             removeFromCart(prodId) {
                 AppState.posCart = AppState.posCart.filter(item => item.id !== prodId);
@@ -448,6 +531,7 @@
                 let total = 0;
                 if(AppState.posCart.length === 0) {
                     container.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">السلة فارغة</p>';
+                    document.getElementById('pos-subtotal').innerText = "0";
                     document.getElementById('pos-cart-total').innerText = "0";
                     return;
                 }
@@ -457,24 +541,34 @@
                     <div class="flex justify-between items-center bg-white p-2 rounded-lg border text-xs">
                         <div>
                             <span class="font-bold text-slate-800">${item.name}</span>
-                            <span class="text-[10px] text-slate-400 mr-2">(${item.price} × ${item.qty})</span>
+                            <span class="text-[10px] text-slate-400 mr-2">(${item.price})</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <span class="font-bold text-blue-600">${item.price * item.qty}</span>
+                            <div class="flex items-center border rounded bg-slate-50">
+                                <button onclick="POSManager.updateQty('${item.id}', -1)" class="px-2 text-slate-600 font-bold cursor-pointer bg-transparent border-none">-</button>
+                                <span class="px-2 font-bold">${item.qty}</span>
+                                <button onclick="POSManager.updateQty('${item.id}', 1)" class="px-2 text-slate-600 font-bold cursor-pointer bg-transparent border-none">+</button>
+                            </div>
+                            <span class="font-bold text-blue-600 w-12 text-left">${item.price * item.qty}</span>
                             <button onclick="POSManager.removeFromCart('${item.id}')" class="text-red-500 text-xs bg-transparent border-none cursor-pointer"><i class="fas fa-times"></i></button>
                         </div>
                     </div>`;
                 });
+                document.getElementById('pos-subtotal').innerText = total;
                 document.getElementById('pos-cart-total').innerText = total;
             },
             async checkout() {
                 if(AppState.posCart.length === 0) { alert("السلة فارغة!"); return; }
                 const phone = document.getElementById('pos-customer-phone').value.trim();
+                const orderType = document.getElementById('pos-order-type').value;
+                const paymentMethod = document.getElementById('pos-payment-method').value;
                 
                 try {
                     await db.collection("cafes").doc(AppState.currentCafeID).collection("orders").add({
                         items: AppState.posCart,
                         total: AppState.posCart.reduce((sum, i) => sum + (i.price * i.qty), 0),
+                        orderType,
+                        paymentMethod,
                         customerPhone: phone || "غير محدد",
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
@@ -498,10 +592,23 @@
                     console.error(e);
                     alert("حدث خطأ أثناء إتمام الطلب");
                 }
+            },
+            printInvoice() {
+                if(AppState.posCart.length === 0) { alert("السلة فارغة للطباعة!"); return; }
+                document.getElementById('inv-cafe-name').innerText = document.getElementById('display-cafe-name').innerText;
+                document.getElementById('inv-date').innerText = new Date().toLocaleString('ar-EG');
+                let listHtml = "";
+                let total = 0;
+                AppState.posCart.forEach(i => {
+                    total += i.price * i.qty;
+                    listHtml += `<div class="flex justify-between"><span>${i.name} (x${i.qty})</span><span>${i.price * i.qty}</span></div>`;
+                });
+                document.getElementById('inv-items-list').innerHTML = listHtml;
+                document.getElementById('inv-total').innerText = total;
+                window.print();
             }
         };
 
-        // 4. Branding & Settings Manager
         const BrandingManager = {
             selectSystem(sys) {
                 AppState.selectedSystem = sys;
@@ -548,7 +655,6 @@
             }
         };
 
-        // 5. Products & Catalog Manager
         const ProductsManager = {
             async saveProduct() {
                 const name = document.getElementById('prod-name').value;
@@ -577,6 +683,7 @@
                 if(snap.empty) { 
                     if(list) list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد منتجات مضافة بعد</p>'; 
                     POSManager.renderPOSProducts();
+                    POSManager.renderCategoriesFilter();
                     return; 
                 }
                 snap.forEach(doc => {
@@ -597,6 +704,7 @@
                     }
                 });
                 POSManager.renderPOSProducts();
+                POSManager.renderCategoriesFilter();
             },
             async deleteProduct(id) {
                 if(confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
@@ -606,7 +714,6 @@
             }
         };
 
-        // 6. Waiters & Realtime Calls Manager
         const WaitersManager = {
             async saveWaiter() {
                 const username = document.getElementById('waiter-username').value;
@@ -676,7 +783,6 @@
             }
         };
 
-        // 7. Scanner & Customers Manager
         const ScannerManager = {
             startScanner() {
                 AppState.html5QrCode = new Html5Qrcode("reader");
@@ -769,12 +875,11 @@
             }
         };
 
-        // Main App Initializer
         const AppInitializer = {
             initCafe() {
                 BrandingManager.loadBranding();
                 CustomersManager.loadCustomers();
-                ProductsManager.loadProducts(); // يجلب المنتجات تلقائياً لتظهر فوراً في الكاشير
+                ProductsManager.loadProducts();
                 WaitersManager.loadWaiters();
                 WaitersManager.listenToWaiterCalls();
                 CustomersManager.generateCafeQR();
