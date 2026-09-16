@@ -54,10 +54,13 @@
         </div>
 
         <div class="flex gap-2 mb-6 overflow-x-auto no-scrollbar py-2">
-            <button onclick="showSection('scan')" id="tab-scan" class="tab-btn active-tab bg-white border px-5 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1">المسح / التحكم</button>
-            <button onclick="showSection('branding')" id="tab-branding" class="tab-btn bg-white border px-5 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1">التخصيص</button>
-            <button onclick="showSection('customers')" id="tab-customers" class="tab-btn bg-white border px-5 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1">العملاء</button>
-            <button onclick="showSection('billing')" id="tab-billing" class="tab-btn bg-white border px-5 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 text-emerald-600">الاشتراك</button>
+            <button onclick="showSection('scan')" id="tab-scan" class="tab-btn active-tab bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1">المسح / التحكم</button>
+            <button onclick="showSection('products')" id="tab-products" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1">المنيو</button>
+            <button onclick="showSection('waiters')" id="tab-waiters" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1">النُدل والنداء</button>
+            <button onclick="showSection('pos')" id="tab-pos" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1">المحاسبة</button>
+            <button onclick="showSection('branding')" id="tab-branding" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1">التخصيص</button>
+            <button onclick="showSection('customers')" id="tab-customers" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1">العملاء</button>
+            <button onclick="showSection('billing')" id="tab-billing" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 text-emerald-600">الاشتراك</button>
         </div>
 
         <div id="section-scan" class="section-content">
@@ -91,6 +94,100 @@
                     </div>
                     <button onclick="resetPoints()" class="w-full mt-3 py-3 text-xs font-bold text-orange-600 bg-orange-50 rounded-xl border border-orange-100">تصفير الحساب / تسليم الهدية</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- قسم إدارة المنتجات والمنيو التفاعلي -->
+        <div id="section-products" class="section-content hidden">
+            <div class="admin-card">
+                <h3 class="font-black text-blue-600 mb-4 border-r-4 border-blue-600 pr-3">إضافة منتج جديد للمنيو التفاعلي</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label>اسم المنتج</label>
+                        <input type="text" id="prod-name" placeholder="مثال: قهوة تركية">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label>السعر</label>
+                            <input type="number" id="prod-price" placeholder="السعر">
+                        </div>
+                        <div>
+                            <label>القسم</label>
+                            <input type="text" id="prod-category" placeholder="مشروبات ساخنة">
+                        </div>
+                    </div>
+                    <div>
+                        <label>رابط صورة المنتج</label>
+                        <input type="text" id="prod-image" placeholder="https://...">
+                    </div>
+                    <div>
+                        <label>وصف مختصر</label>
+                        <textarea id="prod-desc" placeholder="مكونات أو وصف المنتج..."></textarea>
+                    </div>
+                    <button onclick="saveProduct()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg">إضافة المنتج للمنيو</button>
+                </div>
+            </div>
+            <div class="admin-card">
+                <h3 class="font-bold text-slate-700 text-xs mb-3">المنتجات الحالية في المنيو</h3>
+                <div id="products-list" class="space-y-2 max-h-96 overflow-y-auto"></div>
+            </div>
+        </div>
+
+        <!-- قسم النُدل ونداء النادل -->
+        <div id="section-waiters" class="section-content hidden">
+            <div class="admin-card border-amber-200 bg-amber-50/30">
+                <h3 class="font-black text-amber-800 mb-3"><i class="fas fa-bell ml-1"></i> تنبيهات نداء النادل من الطاولات</h3>
+                <div id="waiter-calls-list" class="space-y-2 max-h-60 overflow-y-auto">
+                    <p class="text-xs text-slate-400 text-center py-4">لا توجد نداءات جديدة حالياً</p>
+                </div>
+            </div>
+            <div class="admin-card">
+                <h3 class="font-black text-blue-600 mb-4 border-r-4 border-blue-600 pr-3">إضافة حساب نادل جديد</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label>اسم أو رقم المستخدم للنادل</label>
+                        <input type="text" id="waiter-username" placeholder="مثال: waiter1">
+                    </div>
+                    <div>
+                        <label>كلمة المرور</label>
+                        <input type="password" id="waiter-password" placeholder="كلمة المرور الخاصة بالنادل">
+                    </div>
+                    <div>
+                        <label>اسم النادل (للعرض)</label>
+                        <input type="text" id="waiter-fullname" placeholder="مثال: أحمد محمد">
+                    </div>
+                    <button onclick="saveWaiter()" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold shadow-lg">إنشاء حساب النادل</button>
+                </div>
+            </div>
+            <div class="admin-card">
+                <h3 class="font-bold text-slate-700 text-xs mb-3">حسابات النُدل المفعلة</h3>
+                <div id="waiters-list" class="space-y-2 max-h-60 overflow-y-auto"></div>
+            </div>
+        </div>
+
+        <!-- النظام المحاسبي البسيط وإصدار الفواتير -->
+        <div id="section-pos" class="section-content hidden">
+            <div class="admin-card">
+                <h3 class="font-black text-emerald-600 mb-4 border-r-4 border-emerald-600 pr-3">النظام المحاسبي - إصدار فاتورة جديدة</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label>رقم الطاولة / اسم الزبون</label>
+                        <input type="text" id="invoice-target" placeholder="طاولة 4 أو اسم العميل">
+                    </div>
+                    <div>
+                        <label>قائمة الطلبات والمبلغ الإجمالي</label>
+                        <textarea id="invoice-details" placeholder="تفاصيل الطلبات (مثلاً: 2 قهوة، 1 كيكة)"></textarea>
+                    </div>
+                    <div>
+                        <label>المبلغ الإجمالي</label>
+                        <input type="number" id="invoice-amount" placeholder="0.00">
+                    </div>
+                    <button onclick="issueInvoice()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-lg">إصدار وحفظ الفاتورة</button>
+                </div>
+            </div>
+            <div class="admin-card">
+                <h3 class="font-bold text-slate-700 text-xs mb-3">سجل الفواتير والمبيعات</h3>
+                <div id="invoices-list" class="space-y-2 max-h-80 overflow-y-auto"></div>
             </div>
         </div>
 
@@ -270,7 +367,7 @@
                 brandName: document.getElementById('set-brand-name').value,
                 logo: document.getElementById('set-logo-url').value,
                 bgImage: document.getElementById('set-bg-url').value,
-                menuImage: document.getElementById('set-menu-url').value, // إضافة المنيو
+                menuImage: document.getElementById('set-menu-url').value,
                 color: document.getElementById('set-theme-color').value,
                 maxStamps: document.getElementById('set-max-stamps').value,
                 labelStamps: document.getElementById('label-stamps').value,
@@ -290,7 +387,7 @@
                 document.getElementById('set-brand-name').value = b.brandName || "";
                 document.getElementById('set-logo-url').value = b.logo || "";
                 document.getElementById('set-bg-url').value = b.bgImage || "";
-                document.getElementById('set-menu-url').value = b.menuImage || ""; // تحميل المنيو
+                document.getElementById('set-menu-url').value = b.menuImage || "";
                 document.getElementById('set-theme-color').value = b.color || "#2563eb";
                 document.getElementById('set-max-stamps').value = b.maxStamps || 6;
                 document.getElementById('label-stamps').value = b.labelStamps || "أختامك الحالية";
@@ -305,12 +402,170 @@
         function initCafe() {
             loadCafeBranding();
             loadCustomers();
+            loadProducts();
+            loadWaiters();
+            listenToWaiterCalls();
+            loadInvoices();
             generateCafeQR();
             startTimer();
             loadAdminBankInfo();
             db.collection("cafes").doc(currentCafeID).get().then(doc => {
                 document.getElementById('expiry-date-text').innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
                 document.getElementById('display-cafe-name').innerText = doc.data().cafeName;
+            });
+        }
+
+        // دوال إدارة المنتجات للمنيو التفاعلي
+        async function saveProduct() {
+            const name = document.getElementById('prod-name').value;
+            const price = document.getElementById('prod-price').value;
+            const category = document.getElementById('prod-category').value;
+            const image = document.getElementById('prod-image').value;
+            const description = document.getElementById('prod-desc').value;
+            if(!name || !price) { alert("يرجى إدخال اسم المنتج والسعر على الأقل"); return; }
+            
+            await db.collection("cafes").doc(currentCafeID).collection("products").add({
+                name, price: Number(price), category: category || 'عام', image, description, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            alert("تم إضافة المنتج بنجاح!");
+            document.getElementById('prod-name').value = "";
+            document.getElementById('prod-price').value = "";
+            document.getElementById('prod-category').value = "";
+            document.getElementById('prod-image').value = "";
+            document.getElementById('prod-desc').value = "";
+            loadProducts();
+        }
+
+        async function loadProducts() {
+            const list = document.getElementById('products-list');
+            const snap = await db.collection("cafes").doc(currentCafeID).collection("products").orderBy("createdAt", "desc").get();
+            list.innerHTML = "";
+            if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد منتجات مضافة بعد</p>'; return; }
+            snap.forEach(doc => {
+                const p = doc.data();
+                list.innerHTML += `
+                <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <img src="${p.image || 'https://via.placeholder.com/50'}" class="w-10 h-10 object-cover rounded-lg">
+                        <div>
+                            <div class="font-bold text-xs text-slate-800">${p.name}</div>
+                            <div class="text-[10px] text-blue-600 font-bold">${p.price} - ${p.category}</div>
+                        </div>
+                    </div>
+                    <button onclick="deleteProduct('${doc.id}')" class="text-red-500 hover:text-red-700 text-xs px-2 py-1"><i class="fas fa-trash"></i></button>
+                </div>`;
+            });
+        }
+
+        async function deleteProduct(id) {
+            if(confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
+                await db.collection("cafes").doc(currentCafeID).collection("products").doc(id).delete();
+                loadProducts();
+            }
+        }
+
+        // دوال إدارة النُدل وحساباتهم ونداء الطاولات
+        async function saveWaiter() {
+            const username = document.getElementById('waiter-username').value;
+            const password = document.getElementById('waiter-password').value;
+            const fullname = document.getElementById('waiter-fullname').value;
+            if(!username || !password) { alert("يرجى إدخال اسم المستخدم وكلمة المرور للنادل"); return; }
+            
+            await db.collection("cafes").doc(currentCafeID).collection("waiters").doc(username).set({
+                password, fullname: fullname || username, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            alert("تم إنشاء حساب النادل بنجاح!");
+            document.getElementById('waiter-username').value = "";
+            document.getElementById('waiter-password').value = "";
+            document.getElementById('waiter-fullname').value = "";
+            loadWaiters();
+        }
+
+        async function loadWaiters() {
+            const list = document.getElementById('waiters-list');
+            const snap = await db.collection("cafes").doc(currentCafeID).collection("waiters").get();
+            list.innerHTML = "";
+            if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد حسابات نُدل مضافة</p>'; return; }
+            snap.forEach(doc => {
+                const w = doc.data();
+                list.innerHTML += `
+                <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm">
+                    <div class="text-right">
+                        <div class="font-bold text-xs text-slate-800">${w.fullname}</div>
+                        <div class="text-[10px] text-slate-400 font-mono">المستخدم: ${doc.id}</div>
+                    </div>
+                    <button onclick="deleteWaiter('${doc.id}')" class="text-red-500 text-xs px-2 py-1"><i class="fas fa-trash"></i></button>
+                </div>`;
+            });
+        }
+
+        async function deleteWaiter(id) {
+            if(confirm("هل أنت متأكد من حذف حساب النادل؟")) {
+                await db.collection("cafes").doc(currentCafeID).collection("waiters").doc(id).delete();
+                loadWaiters();
+            }
+        }
+
+        function listenToWaiterCalls() {
+            db.collection("cafes").doc(currentCafeID).collection("waiter_calls")
+              .where("status", "==", "pending")
+              .onSnapshot(snap => {
+                const list = document.getElementById('waiter-calls-list');
+                list.innerHTML = "";
+                if(snap.empty) {
+                    list.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">لا توجد نداءات جديدة حالياً</p>';
+                    return;
+                }
+                snap.forEach(doc => {
+                    const call = doc.data();
+                    list.innerHTML += `
+                    <div class="flex justify-between items-center p-3 bg-white rounded-xl border border-amber-200 shadow-sm animate-bounce">
+                        <div>
+                            <div class="font-bold text-xs text-amber-900"><i class="fas fa-bell text-amber-500 ml-1"></i> نداء من: ${call.table || 'طاولة غير محددة'}</div>
+                            <div class="text-[10px] text-slate-400">${call.time ? new Date(call.time.toDate()).toLocaleTimeString('ar-EG') : ''}</div>
+                        </div>
+                        <button onclick="resolveCall('${doc.id}')" class="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold">تمت الاستجابة</button>
+                    </div>`;
+                });
+            });
+        }
+
+        async function resolveCall(callId) {
+            await db.collection("cafes").doc(currentCafeID).collection("waiter_calls").doc(callId).update({ status: 'resolved' });
+        }
+
+        // دوال النظام المحاسبي البسيط والفواتير
+        async function issueInvoice() {
+            const target = document.getElementById('invoice-target').value;
+            const details = document.getElementById('invoice-details').value;
+            const amount = document.getElementById('invoice-amount').value;
+            if(!target || !amount) { alert("يرجى إدخال اسم الطاولة/الزبون والمبلغ الإجمالي"); return; }
+
+            await db.collection("cafes").doc(currentCafeID).collection("invoices").add({
+                target, details, amount: Number(amount), date: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            alert("تم اصدار وحفظ الفاتورة بنجاح!");
+            document.getElementById('invoice-target').value = "";
+            document.getElementById('invoice-details').value = "";
+            document.getElementById('invoice-amount').value = "";
+            loadInvoices();
+        }
+
+        async function loadInvoices() {
+            const list = document.getElementById('invoices-list');
+            const snap = await db.collection("cafes").doc(currentCafeID).collection("invoices").orderBy("date", "desc").get();
+            list.innerHTML = "";
+            if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد فواتير مسجلة</p>'; return; }
+            snap.forEach(doc => {
+                const inv = doc.data();
+                list.innerHTML += `
+                <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm">
+                    <div class="text-right">
+                        <div class="font-bold text-xs text-slate-800">${inv.target} - <span class="text-emerald-600">${inv.amount}</span></div>
+                        <div class="text-[10px] text-slate-400">${inv.details || 'بدون تفاصيل'}</div>
+                    </div>
+                    <span class="text-[10px] text-slate-400">${inv.date ? new Date(inv.date.toDate()).toLocaleTimeString('ar-EG') : ''}</span>
+                </div>`;
             });
         }
 
