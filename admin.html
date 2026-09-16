@@ -930,7 +930,6 @@
             calculateInvoiceTotals();
         }
 
-        // تصميم محسن ومنظم لحقول بنود الفاتورة لضمان عدم التداخل وتحديث المبالغ لحظياً
         function renderInvoiceItemsBuilder() {
             const container = document.getElementById('invoice-items-builder');
             if(!container) return;
@@ -987,7 +986,6 @@
 
             const total = subtotal + totalTaxValue;
 
-            // تحديث العناصر النصية (SPAN بدلاً من input لضمان التوافق المطلق ومنع المشاكل)
             const subtotalEl = document.getElementById('invoice-subtotal');
             const taxValEl = document.getElementById('invoice-total-tax-val');
             const amountEl = document.getElementById('invoice-amount');
@@ -1034,6 +1032,7 @@
             window.activeCartIdToResolve = null;
         }
 
+        // تم إزالة أي شرط للضرائب هنا لتتم الفاتورة طبيعياً حتى لو كانت قيمة الضريبة 0
         async function issueInvoice() {
             const target = document.getElementById('invoice-target').value.trim();
             const subtotal = Number(document.getElementById('invoice-subtotal').innerText) || 0;
@@ -1210,7 +1209,7 @@
                 <body>
                     <div class="header">
                         <h2>${cafeName}</h2>
-                        <p style="font-size: 12px; margin: 0; color: #555;">فاتورة مبيعات وضريبية</p>
+                        <p style="font-size: 12px; margin: 0; color: #555;">فاتورة مبيعات</p>
                     </div>
                     <div class="info">
                         <div>الرقم: <span style="font-family: monospace;">${invoiceData.serial}</span></div>
@@ -1250,6 +1249,7 @@
             printWindow.document.close();
         }
 
+        // تم إزالة أي شرط للضرائب لتتم الطباعة مباشرة بغض النظر عن قيمة الضريبة
         function printCurrentPOSInvoicePrintView() {
             const target = document.getElementById('invoice-target').value;
             const serial = document.getElementById('invoice-serial').innerText;
@@ -1451,7 +1451,7 @@
                 const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                 const secs = Math.floor((diff % (1000 * 60)) / 1000);
-                document.getElementById('countdown-timer').Text = `${days}d ${hours}:${mins}:${secs}`;
+                document.getElementById('countdown-timer').innerText = `${days}d ${hours}:${mins}:${secs}`;
             }, 1000);
         }
 
@@ -1472,3 +1472,4 @@
     </script>
 </body>
 </html>
+ 
