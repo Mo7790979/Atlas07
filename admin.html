@@ -32,7 +32,7 @@
         
         .pos-container { display: grid; grid-template-columns: 1fr; gap: 1rem; }
         @media(min-width: 1024px) {
-            .pos-container { grid-template-columns: 420px 1fr; align-items: start; }
+            .pos-container { grid-template-columns: 440px 1fr; align-items: start; }
             body { max-width: 1400px !important; }
         }
         .pos-menu-card { background: white; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 10px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
@@ -249,10 +249,10 @@
                         <!-- Interactive Invoice Items List -->
                         <div class="mb-3">
                             <div class="flex justify-between items-center mb-1.5">
-                                <label class="text-xs font-bold text-slate-700">بنود الفاتورة (تضاف بالضغط مباشرة من المنيو)</label>
-                                <button onclick="addInvoiceItemRow()" class="bg-emerald-600 text-white px-2 py-1 rounded-md text-[10px] font-bold"><i class="fas fa-plus ml-1"></i> إضافة يدوية</button>
+                                <label class="text-xs font-bold text-slate-700">بنود الفاتورة</label>
+                                <button onclick="addInvoiceItemRow()" class="bg-emerald-600 text-white px-2.5 py-1 rounded-md text-[11px] font-bold shadow-sm flex items-center gap-1 hover:bg-emerald-700"><i class="fas fa-plus"></i> إضافة بند</button>
                             </div>
-                            <div id="invoice-items-builder" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
+                            <div id="invoice-items-builder" class="space-y-2.5 max-h-60 overflow-y-auto pr-1"></div>
                         </div>
                     </div>
 
@@ -930,7 +930,7 @@
             calculateInvoiceTotals();
         }
 
-        // تم تعديل تصميم الدالة لضمان وضوح وترتيب حقول البنود على جميع الشاشات والهواتف
+        // تصميم محسن ومنظم لحقول بنود الفاتورة لضمان عدم التداخل على الهواتف والشاشات الصغيرة
         function renderInvoiceItemsBuilder() {
             const container = document.getElementById('invoice-items-builder');
             if(!container) return;
@@ -942,22 +942,22 @@
 
             invoiceInteractiveItems.forEach((item, index) => {
                 container.innerHTML += `
-                <div class="bg-slate-50 p-2.5 rounded-xl border shadow-sm text-right space-y-2 mb-2">
+                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm text-right space-y-2 mb-2.5">
                     <div class="flex gap-2 items-center">
                         <div class="flex-1">
-                            <label class="text-[9px] text-slate-500">اسم البند</label>
-                            <input type="text" value="${item.name || ''}" oninput="updateItemField(${index}, 'name', this.value)" placeholder="اسم البند أو الوجبة" class="text-xs py-1.5 font-bold text-slate-800 bg-white">
+                            <label class="text-[10px] font-bold text-slate-500 mb-1">اسم البند</label>
+                            <input type="text" value="${item.name || ''}" oninput="updateItemField(${index}, 'name', this.value)" placeholder="اسم الوجبة أو المنتج" class="text-xs py-1.5 font-bold text-slate-800 bg-slate-50">
                         </div>
-                        <button onclick="removeInvoiceItemRow(${index})" class="text-red-500 hover:text-red-700 p-2 mt-4 shrink-0"><i class="fas fa-trash text-xs"></i></button>
+                        <button onclick="removeInvoiceItemRow(${index})" class="text-red-400 hover:text-red-600 p-2 mt-4 shrink-0 transition-colors" title="حذف البند"><i class="fas fa-trash text-xs"></i></button>
                     </div>
-                    <div class="grid grid-cols-2 gap-2">
+                    <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
                         <div>
-                            <label class="text-[9px] text-slate-500">الكمية</label>
-                            <input type="number" value="${item.qty || 1}" min="1" oninput="updateItemField(${index}, 'qty', this.value)" class="text-xs py-1.5 text-center font-bold bg-white">
+                            <label class="text-[9px] font-bold text-slate-500 mb-0.5">الكمية</label>
+                            <input type="number" value="${item.qty || 1}" min="1" oninput="updateItemField(${index}, 'qty', this.value)" class="text-xs py-1.5 text-center font-bold bg-slate-50">
                         </div>
                         <div>
-                            <label class="text-[9px] text-slate-500">السعر</label>
-                            <input type="number" value="${item.price || 0}" oninput="updateItemField(${index}, 'price', this.value)" class="text-xs py-1.5 text-center font-bold bg-white">
+                            <label class="text-[9px] font-bold text-slate-500 mb-0.5">السعر للوحدة</label>
+                            <input type="number" value="${item.price || 0}" oninput="updateItemField(${index}, 'price', this.value)" class="text-xs py-1.5 text-center font-bold bg-slate-50">
                         </div>
                     </div>
                 </div>`;
