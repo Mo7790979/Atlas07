@@ -30,7 +30,6 @@
         .wa-sa { background: #e8f5e9; color: #2e7d32; }
         .wa-sy { background: #f3e5f5; color: #7b1fa2; }
         
-        /* Modern POS Custom Styles matching Customer Interactive Menu */
         .pos-container { display: grid; grid-template-columns: 1fr; gap: 1rem; }
         @media(min-width: 1024px) {
             .pos-container { grid-template-columns: 420px 1fr; align-items: start; }
@@ -1025,7 +1024,7 @@
         }
 
         async function issueInvoice() {
-            const target = document.getElementById('invoice-target').value;
+            const target = document.getElementById('invoice-target').value.trim();
             const subtotal = Number(document.getElementById('invoice-subtotal').value) || 0;
             const tax = Number(document.getElementById('invoice-total-tax-val').innerText) || 0;
             const appliedTaxes = window.activeAppliedTaxes || [];
@@ -1039,26 +1038,31 @@
 
             const detailsSummary = invoiceInteractiveItems.map(i => `${i.qty}x ${i.name} (${i.price})`).join(' - ');
 
-            await db.collection("cafes").doc(currentCafeID).collection("invoices").add({
-                serial,
-                target,
-                items: invoiceInteractiveItems,
-                details: detailsSummary,
-                subtotal,
-                tax,
-                appliedTaxes,
-                amount,
-                date: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            try {
+                await db.collection("cafes").doc(currentCafeID).collection("invoices").add({
+                    serial,
+                    target,
+                    items: invoiceInteractiveItems,
+                    details: detailsSummary,
+                    subtotal,
+                    tax,
+                    appliedTaxes,
+                    amount,
+                    date: firebase.firestore.FieldValue.serverTimestamp()
+                });
 
-            if(window.activeCartIdToResolve) {
-                await db.collection("cafes").doc(currentCafeID).collection("customer_carts").doc(window.activeCartIdToResolve).update({ status: 'billed' });
-                window.activeCartIdToResolve = null;
+                if(window.activeCartIdToResolve) {
+                    await db.collection("cafes").doc(currentCafeID).collection("customer_carts").doc(window.activeCartIdToResolve).update({ status: 'billed' });
+                    window.activeCartIdToResolve = null;
+                }
+
+                alert("تم إصدار وحفظ الفاتورة بنجاح في النظام المحاسبي!");
+                clearInvoiceForm();
+                loadInvoices();
+            } catch(e) {
+                console.error(e);
+                alert("حدث خطأ أثناء حفظ الفاتورة في قاعدة البيانات");
             }
-
-            alert("تم إصدار وحفظ الفاتورة بنجاح في النظام المحاسبي!");
-            clearInvoiceForm();
-            loadInvoices();
         }
 
         async function loadInvoices() {
@@ -1087,11 +1091,16 @@
                     taxDesc = ` | الضريبة: ${inv.tax}`;
                 }
 
+                let timeStr = '';
+                if(inv.date && typeof inv.date.toDate === 'function') {
+                    timeStr = new Date(inv.date.toDate()).toLocaleTimeString('ar-EG');
+                }
+
                 list.innerHTML += `
                 <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm hover:bg-slate-50 text-right">
                     <div class="flex items-center gap-2">
                         <button onclick='printSpecificInvoicePrintView("${inv.id}")' class="bg-blue-600 text-white px-2.5 py-1.5 rounded-lg text-xs shadow"><i class="fas fa-print"></i></button>
-                        <span class="text-[10px] text-slate-400">${inv.date ? new Date(inv.date.toDate()).toLocaleTimeString('ar-EG') : ''}</span>
+                        <span class="text-[10px] text-slate-400">${timeStr}</span>
                     </div>
                     <div onclick='loadInvoiceToPOS("${inv.id}")' class="customer-row text-right flex-1">
                         <div class="font-bold text-xs text-slate-800">
@@ -1159,7 +1168,7 @@
                 invoiceData.appliedTaxes.forEach(t => {
                     taxesRowsHTML += `<div><span>${t.name} (${t.rate}%):</span> <span>${t.value.toFixed(2)}</span></div>`;
                 });
-            } else {
+            } else if(invoiceData.tax > 0) {
                 taxesRowsHTML += `<div><span>الضريبة:</span> <span>${invoiceData.tax.toFixed(2)}</span></div>`;
             }
 
@@ -1259,7 +1268,11 @@
             const inv = window._tempInvoices && window._tempInvoices[invId];
             if(!inv) return;
 
-            const dateStr = inv.date ? new Date(inv.date.toDate()).toLocaleString('ar-EG') : new Date().toLocaleString('ar-EG');
+            let dateStr = new Date().toLocaleString('ar-EG');
+            if(inv.date && typeof inv.date.toDate === 'function') {
+                dateStr = new Date(inv.date.toDate()).toLocaleString('ar-EG');
+            }
+
             const items = inv.items || [{ name: inv.details || 'تفاصيل الفاتورة', qty: 1, price: inv.subtotal || inv.amount || 0 }];
             
             executePrintWindow({
@@ -1277,7 +1290,7 @@
         async function generateDailySalesReport() {
             const todayStr = new Date().toDateString();
             let todayInvoices = allInvoicesCache.filter(inv => {
-                if(!inv.date) return false;
+                if(!inv.date || typeof inv.date.toDate !== 'function') return false;
                 return new Date(inv.date.toDate()).toDateString() === todayStr;
             });
 
@@ -1448,3 +1461,4 @@
     </script>
 </body>
 </html>
+ 
