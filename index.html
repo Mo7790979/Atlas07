@@ -46,7 +46,7 @@
 
     <div id="status-screen" class="w-full max-w-sm card-glass p-6 rounded-[2.5rem] shadow-2xl text-center hidden">
         <header class="flex justify-between items-center mb-6">
-            <button onclick="logout()" class="text-slate-400"><i class="fas fa-sign-out-alt"></i></button>
+            <button onclick="logout()" class="text-slate-400 hover:text-red-500 transition-colors"><i class="fas fa-sign-out-alt"></i></button>
             <h3 id="user-display-name" class="font-bold text-slate-700">--</h3>
         </header>
 
@@ -72,16 +72,16 @@
         </button>
 
         <div class="grid grid-cols-2 gap-2 mb-3">
-            <button onclick="toggleCartModal(true)" class="py-3 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2 text-xs relative">
+            <button onclick="toggleCartModal(true)" class="py-3 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2 text-xs relative active:scale-95 transition-all">
                 <i class="fas fa-shopping-cart"></i> سلة المشتريات
                 <span id="cart-badge" class="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold hidden">0</span>
             </button>
-            <button onclick="callWaiter()" class="py-3 bg-amber-500 text-white rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2 text-xs">
+            <button onclick="callWaiter()" class="py-3 bg-amber-500 text-white rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2 text-xs active:scale-95 transition-all">
                 <i class="fas fa-bell"></i> نداء النادل
             </button>
         </div>
 
-        <button onclick="showInstallGuide()" class="flex items-center justify-center gap-2 w-full py-3 bg-white/40 border border-white/60 rounded-2xl text-xs font-bold text-slate-600 mb-4">
+        <button onclick="showInstallGuide()" class="flex items-center justify-center gap-2 w-full py-3 bg-white/40 border border-white/60 rounded-2xl text-xs font-bold text-slate-600 mb-4 active:scale-95 transition-all">
             <i class="fas fa-download"></i> تثبيت التطبيق على الجوال
         </button>
 
@@ -119,7 +119,7 @@
             </div>
             <div class="mb-4">
                 <label class="text-xs font-bold text-slate-500 mb-1">رقم الطاولة أو المكان</label>
-                <input type="text" id="table-number-input" placeholder="مثال: طاولة رقم 4" class="w-full p-3 border rounded-xl bg-slate-50 text-sm font-bold">
+                <input type="text" id="table-number-input" placeholder="مثال: طاولة رقم 4" class="w-full p-3 border rounded-xl bg-slate-50 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div id="cart-items-list" class="space-y-3 mb-4 max-h-48 overflow-y-auto border-t border-b py-3">
                 <!-- عناصر السلة -->
@@ -128,7 +128,7 @@
                 <span>المبلغ الإجمالي:</span>
                 <span id="cart-total-price" class="text-blue-600">0</span>
             </div>
-            <button onclick="submitOrder()" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-lg">إرسال الطلب للمطعم</button>
+            <button onclick="submitOrder()" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-lg active:scale-95 transition-all">إرسال الطلب للمطعم</button>
         </div>
     </div>
 
@@ -243,13 +243,17 @@
         }
 
         async function loadInteractiveMenu() {
-            const snap = await db.collection("cafes").doc(cafeID).collection("products").get();
-            allProducts = [];
-            snap.forEach(doc => {
-                allProducts.push({ id: doc.id, ...doc.data() });
-            });
-            renderCategories();
-            renderProducts();
+            try {
+                const snap = await db.collection("cafes").doc(cafeID).collection("products").get();
+                allProducts = [];
+                snap.forEach(doc => {
+                    allProducts.push({ id: doc.id, ...doc.data() });
+                });
+                renderCategories();
+                renderProducts();
+            } catch(e) {
+                console.error("Error loading menu:", e);
+            }
         }
 
         function renderCategories() {
@@ -261,7 +265,7 @@
                 const displayName = cat === 'all' ? 'الكل' : cat;
                 const isActive = currentCategory === cat;
                 categoriesBar.innerHTML += `
-                    <button onclick="filterCategory('${cat}')` + `" class="px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${isActive ? 'bg-blue-600 text-white shadow-lg' : 'bg-white/20 text-white hover:bg-white/30'}">
+                    <button onclick="filterCategory('${cat}')" class="px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${isActive ? 'bg-blue-600 text-white shadow-lg' : 'bg-white/20 text-white hover:bg-white/30'}">
                         ${displayName}
                     </button>
                 `;
@@ -288,6 +292,7 @@
             }
 
             filtered.forEach(p => {
+                const currency = cafeSettings.currency || '';
                 menuContainer.innerHTML += `
                 <div class="bg-white/90 p-4 rounded-2xl flex justify-between items-center shadow-md">
                     <div class="flex items-center gap-3">
@@ -295,10 +300,10 @@
                         <div>
                             <h4 class="font-black text-slate-800 text-sm">${p.name}</h4>
                             <p class="text-[10px] text-slate-500">${p.description || ''}</p>
-                            <span class="text-xs font-black text-blue-600">${p.price}</span>
+                            <span class="text-xs font-black text-blue-600">${p.price} ${currency}</span>
                         </div>
                     </div>
-                    <button onclick="addToCart('${p.id}', '${p.name}', ${p.price})" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow"><i class="fas fa-plus"></i> إضافة</button>
+                    <button onclick="addToCart('${p.id}', '${p.name}', ${p.price})" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow active:scale-95 transition-all"><i class="fas fa-plus"></i> إضافة</button>
                 </div>`;
             });
         }
@@ -311,13 +316,13 @@
                 cart.push({ id, name, price, qty: 1 });
             }
             updateCartUI();
-            alert("تمت الإضافة إلى السلة");
         }
 
         function updateCartUI() {
             const badge = document.getElementById('cart-badge');
             const list = document.getElementById('cart-items-list');
             const totalPriceEl = document.getElementById('cart-total-price');
+            const currency = cafeSettings.currency || '';
             
             const totalCount = cart.reduce((sum, item) => sum + item.qty, 0);
             if(totalCount > 0) {
@@ -338,17 +343,17 @@
                     <div class="flex justify-between items-center py-2">
                         <div>
                             <div class="font-bold text-xs text-slate-800">${item.name}</div>
-                            <div class="text-[10px] text-slate-500">${item.price} × ${item.qty}</div>
+                            <div class="text-[10px] text-slate-500">${item.price} ${currency} × ${item.qty}</div>
                         </div>
                         <div class="flex items-center gap-2">
-                            <button onclick="changeQty(${index}, 1)" class="w-6 h-6 bg-slate-100 rounded-full font-bold text-xs">+</button>
+                            <button onclick="changeQty(${index}, 1)" class="w-6 h-6 bg-slate-100 rounded-full font-bold text-xs hover:bg-slate-200 transition-colors">+</button>
                             <span class="text-xs font-bold">${item.qty}</span>
-                            <button onclick="changeQty(${index}, -1)" class="w-6 h-6 bg-slate-100 rounded-full font-bold text-xs">-</button>
+                            <button onclick="changeQty(${index}, -1)" class="w-6 h-6 bg-slate-100 rounded-full font-bold text-xs hover:bg-slate-200 transition-colors">-</button>
                         </div>
                     </div>`;
                 });
             }
-            totalPriceEl.innerText = total;
+            totalPriceEl.innerText = `${total} ${currency}`;
         }
 
         function changeQty(index, delta) {
@@ -378,6 +383,8 @@
                     target: table,
                     details: detailsText,
                     amount: total,
+                    customerName: userData ? userData.name : "زائر",
+                    status: "pending",
                     date: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 alert("تم إرسال الطلب بنجاح إلى المطعم!");
@@ -395,6 +402,7 @@
             try {
                 await db.collection("cafes").doc(cafeID).collection("waiter_calls").add({
                     table: `طاولة ${table}`,
+                    customerName: userData ? userData.name : "زائر",
                     status: 'pending',
                     time: firebase.firestore.FieldValue.serverTimestamp()
                 });
