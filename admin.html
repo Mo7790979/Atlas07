@@ -567,7 +567,7 @@
             startTimer();
             loadAdminBankInfo();
             generateNewSerial();
-            addInvoiceItemRow(); // بدء بند افتراضي فارغ بالفاتورة التفاعلية
+            if(invoiceInteractiveItems.length === 0) addInvoiceItemRow(); // بند افتراضي فارغ بالفاتورة التفاعلية
             db.collection("cafes").doc(currentCafeID).get().then(doc => {
                 document.getElementById('expiry-date-text').innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
                 document.getElementById('display-cafe-name').innerText = doc.data().cafeName;
@@ -620,7 +620,7 @@
                     <button onclick="deleteProduct('${doc.id}')" class="text-red-500 hover:text-red-700 text-xs px-2 py-1"><i class="fas fa-trash"></i></button>
                 </div>`;
             });
-            updateInteractiveItemProductOptions();
+            renderInvoiceItemsBuilder();
         }
 
         async function deleteProduct(id) {
@@ -725,9 +725,8 @@
 
         function loadCartToInvoice(cart, cartId) {
             document.getElementById('invoice-target').value = cart.table || 'طاولة الزبون';
-            // تفكيك أو تحميل بنود السلة التفاعلية إذا وجدت
-            if(cart.items && Array.isArray(cart.items)) {
-                invoiceInteractiveItems = cart.items.map(i => ({ name: i.name, qty: i.qty || 1, price: i.price || 0 }));
+            if(cart.items && Array.isArray(cart.items) && cart.items.length > 0) {
+                invoiceInteractiveItems = cart.items.map(i => ({ name: i.name, qty: Number(i.qty) || 1, price: Number(i.price) || 0 }));
             } else {
                 invoiceInteractiveItems = [{ name: cart.itemsSummary || 'طلب طاولة', qty: 1, price: Number(cart.total) || 0 }];
             }
@@ -812,16 +811,16 @@
 
         function removeInvoiceItemRow(index) {
             invoiceInteractiveItems.splice(index, 1);
-            renderInvoiceItemsBuilder();
+            if(invoiceInteractiveItems.length === 0) addInvoiceItemRow();
+            else renderInvoiceItemsBuilder();
         }
 
         function updateItemFromMenuSelect(index, productName) {
+            if(!productName) return;
             const prod = globalProductsCache.find(p => p.name === productName);
             if(prod) {
                 invoiceInteractiveItems[index].name = prod.name;
-                invoiceInteractiveItems[index].price = prod.price;
-            } else {
-                invoiceInteractiveItems[index].name = productName;
+                invoiceInteractiveItems[index].price = Number(prod.price) || 0;
             }
             renderInvoiceItemsBuilder();
         }
@@ -833,15 +832,15 @@
 
         function renderInvoiceItemsBuilder() {
             const container = document.getElementById('invoice-items-builder');
+            if(!container) return;
             container.innerHTML = "";
             if(invoiceInteractiveItems.length === 0) {
-                container.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد بنود مضافة، اضغط إضافة بند</p>';
-                calculateInvoiceTotals();
+                addInvoiceItemRow();
                 return;
             }
 
             invoiceInteractiveItems.forEach((item, index) => {
-                let optionsHtml = '<option value="">اختر من المنيو أو اكتب يدوياً</option>';
+                let optionsHtml = '<option value="">اختر من المنيو...</option>';
                 globalProductsCache.forEach(p => {
                     optionsHtml += `<option value="${p.name}" ${p.name === item.name ? 'selected' : ''}>${p.name} (${p.price})</option>`;
                 });
@@ -849,18 +848,18 @@
                 container.innerHTML += `
                 <div class="flex gap-2 items-center bg-white p-2 rounded-xl border shadow-sm">
                     <div class="flex-1">
-                        <select onchange="updateItemFromMenuSelect(${index}, this.value)" class="text-xs py-1">
+                        <select onchange="updateItemFromMenuSelect(${index}, this.value)" class="text-xs py-1 mb-1">
                             ${optionsHtml}
                         </select>
-                        <input type="text" value="${item.name}" oninput="updateItemField(${index}, 'name', this.value)" placeholder="اسم البند" class="text-xs mt-1 py-1">
+                        <input type="text" value="${item.name || ''}" oninput="updateItemField(${index}, 'name', this.value)" placeholder="اسم البند يدوياً" class="text-xs py-1">
                     </div>
                     <div class="w-16">
                         <label class="text-[9px]">الكمية</label>
-                        <input type="number" value="${item.qty}" min="1" oninput="updateItemField(${index}, 'qty', this.value); calculateInvoiceTotals();" class="text-xs py-1 text-center font-bold">
+                        <input type="number" value="${item.qty || 1}" min="1" oninput="updateItemField(${index}, 'qty', this.value)" class="text-xs py-1 text-center font-bold">
                     </div>
                     <div class="w-20">
                         <label class="text-[9px]">السعر</label>
-                        <input type="number" value="${item.price}" oninput="updateItemField(${index}, 'price', this.value); calculateInvoiceTotals();" class="text-xs py-1 text-center font-bold">
+                        <input type="number" value="${item.price || 0}" oninput="updateItemField(${index}, 'price', this.value)" class="text-xs py-1 text-center font-bold">
                     </div>
                     <button onclick="removeInvoiceItemRow(${index})" class="text-red-500 hover:text-red-700 px-2 mt-4"><i class="fas fa-trash text-xs"></i></button>
                 </div>`;
@@ -961,7 +960,7 @@
         function loadInvoiceToPOS(inv) {
             document.getElementById('invoice-serial').value = inv.serial || 'INV-' + Math.floor(100000 + Math.random() * 900000);
             document.getElementById('invoice-target').value = inv.target || '';
-            if(inv.items && Array.isArray(inv.items)) {
+            if(inv.items && Array.isArray(inv.items) && inv.items.length > 0) {
                 invoiceInteractiveItems = inv.items;
             } else {
                 invoiceInteractiveItems = [{ name: inv.details || 'بند الفاتورة', qty: 1, price: inv.subtotal || inv.amount || 0 }];
