@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم الاحترافية - الدعم الفني</title>
+    <title>لوحة التحكم الاحترافية - الدعم الفني ونقاط البيع</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -37,7 +37,7 @@
         <div class="w-20 h-20 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-200">
             <i class="fas fa-shield-alt text-3xl"></i>
         </div>
-        <h2 class="text-2xl font-black mb-6 text-slate-800">دخول الإدارة</h2>
+        <h2 class="text-2xl font-black mb-6 text-slate-800">دخول الإدارة ونقاط البيع</h2>
         <div class="space-y-4 text-right">
             <div>
                 <label>اسم المستخدم</label>
@@ -66,7 +66,8 @@
 
         <!-- Main Navigation Tabs -->
         <div class="flex gap-2 mb-6 overflow-x-auto no-scrollbar py-1">
-            <button onclick="NavigationManager.showSection('scan')" id="tab-scan" class="tab-btn active-tab bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">المسح / التحكم</button>
+            <button onclick="NavigationManager.showSection('pos')" id="tab-pos" class="tab-btn active-tab bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">الكاشير (POS)</button>
+            <button onclick="NavigationManager.showSection('scan')" id="tab-scan" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">المسح / التحكم</button>
             <button onclick="NavigationManager.showSection('products')" id="tab-products" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">المنيو</button>
             <button onclick="NavigationManager.showSection('waiters')" id="tab-waiters" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">النُدل والنداء</button>
             <button onclick="NavigationManager.showSection('branding')" id="tab-branding" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">التخصيص</button>
@@ -74,7 +75,42 @@
             <button onclick="NavigationManager.showSection('billing')" id="tab-billing" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 text-emerald-600 cursor-pointer">الاشتراك</button>
         </div>
 
-        <div id="section-scan" class="section-content">
+        <!-- قسم الكاشير ونقاط البيع الجديد (POS) -->
+        <div id="section-pos" class="section-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- قائمة المنتجات السريعة -->
+                <div class="admin-card">
+                    <h3 class="font-black text-blue-600 mb-3 border-r-4 border-blue-600 pr-3">قائمة المنتجات (اختر للطلب)</h3>
+                    <div id="pos-products-grid" class="grid grid-cols-2 gap-2 max-h-[450px] overflow-y-auto p-1">
+                        <!-- يتم تعبئتها برمجياً -->
+                    </div>
+                </div>
+                <!-- سلة المشتريات والفاتورة -->
+                <div class="admin-card flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-black text-slate-800 mb-3"><i class="fas fa-shopping-cart ml-1"></i> فاتورة الطلب الحالي</h3>
+                        <div id="pos-cart-items" class="space-y-2 max-h-56 overflow-y-auto mb-4 border-b pb-2">
+                            <p class="text-xs text-slate-400 text-center py-4">السلة فارغة</p>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="bg-slate-50 p-3 rounded-xl mb-3 space-y-2">
+                            <div>
+                                <label>رقم هاتف الزبون (اختياري لربط النقاط)</label>
+                                <input type="text" id="pos-customer-phone" placeholder="أدخل رقم الهاتف لتسجيل النقاط">
+                            </div>
+                            <div class="flex justify-between items-center text-sm font-bold">
+                                <span>الإجمالي:</span>
+                                <span id="pos-cart-total" class="text-blue-600 text-lg">0</span>
+                            </div>
+                        </div>
+                        <button onclick="POSManager.checkout()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-emerald-100 cursor-pointer border-none">إتمام الطلب وتدوين الأختام/النقاط</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-scan" class="section-content hidden">
             <div class="admin-card text-center">
                 <div id="reader" class="mb-4 overflow-hidden rounded-xl"></div>
                 <button id="start-scan-btn" onclick="ScannerManager.startScanner()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-200 cursor-pointer"><i class="fas fa-qrcode ml-2"></i> مسح كود الزبون</button>
@@ -111,7 +147,7 @@
         <!-- قسم إدارة المنتجات والمنيو -->
         <div id="section-products" class="section-content hidden">
             <div class="admin-card">
-                <h3 class="font-black text-blue-600 mb-4 border-r-4 border-blue-600 pr-3">إضافة منتج جديد للمنيو التفاعلي</h3>
+                <h3 class="font-black text-blue-600 mb-4 border-r-4 border-blue-600 pr-3">إضافة منتج جديد للمنيو التفاعلي ونقاط البيع</h3>
                 <div class="space-y-4">
                     <div>
                         <label>اسم المنتج</label>
@@ -313,7 +349,9 @@
             selectedSystem: "stamps",
             html5QrCode: null,
             expiryDateGlobal: null,
-            activeUserPhone: ""
+            activeUserPhone: "",
+            posCart: [],
+            posProducts: []
         };
 
         // 1. Authentication Manager
@@ -369,7 +407,104 @@
             }
         };
 
-        // 3. Branding & Settings Manager
+        // 3. POS (نظام نقاط البيع والكاشير) Manager
+        const POSManager = {
+            renderPOSProducts() {
+                const grid = document.getElementById('pos-products-grid');
+                grid.innerHTML = "";
+                if(AppState.posProducts.length === 0) {
+                    grid.innerHTML = '<p class="text-xs text-slate-400 col-span-2 text-center py-4">لا توجد منتجات في المنيو</p>';
+                    return;
+                }
+                AppState.posProducts.forEach(p => {
+                    grid.innerHTML += `
+                    <div onclick="POSManager.addToCart('${p.id}')" class="p-3 bg-white border rounded-xl shadow-sm cursor-pointer hover:border-blue-500 transition-all flex flex-col justify-between">
+                        <div>
+                            <div class="font-bold text-xs text-slate-800 truncate">${p.name}</div>
+                            <div class="text-[10px] text-blue-600 font-bold mt-1">${p.price}</div>
+                        </div>
+                        <div class="text-[9px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded mt-2 w-fit">${p.category}</div>
+                    </div>`;
+                });
+            },
+            addToCart(prodId) {
+                const prod = AppState.posProducts.find(p => p.id === prodId);
+                if(!prod) return;
+                const existing = AppState.posCart.find(item => item.id === prodId);
+                if(existing) {
+                    existing.qty += 1;
+                } else {
+                    AppState.posCart.push({ ...prod, qty: 1 });
+                }
+                POSManager.renderCart();
+            },
+            removeFromCart(prodId) {
+                AppState.posCart = AppState.posCart.filter(item => item.id !== prodId);
+                POSManager.renderCart();
+            },
+            renderCart() {
+                const container = document.getElementById('pos-cart-items');
+                container.innerHTML = "";
+                let total = 0;
+                if(AppState.posCart.length === 0) {
+                    container.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">السلة فارغة</p>';
+                    document.getElementById('pos-cart-total').innerText = "0";
+                    return;
+                }
+                AppState.posCart.forEach(item => {
+                    total += item.price * item.qty;
+                    container.innerHTML += `
+                    <div class="flex justify-between items-center bg-white p-2 rounded-lg border text-xs">
+                        <div>
+                            <span class="font-bold text-slate-800">${item.name}</span>
+                            <span class="text-[10px] text-slate-400 mr-2">(${item.price} × ${item.qty})</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-blue-600">${item.price * item.qty}</span>
+                            <button onclick="POSManager.removeFromCart('${item.id}')" class="text-red-500 text-xs bg-transparent border-none cursor-pointer"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>`;
+                });
+                document.getElementById('pos-cart-total').innerText = total;
+            },
+            async checkout() {
+                if(AppState.posCart.length === 0) { alert("السلة فارغة!"); return; }
+                const phone = document.getElementById('pos-customer-phone').value.trim();
+                
+                try {
+                    // تسجيل الطلب في قاعدة البيانات
+                    await db.collection("cafes").doc(AppState.currentCafeID).collection("orders").add({
+                        items: AppState.posCart,
+                        total: AppState.posCart.reduce((sum, i) => sum + (i.price * i.qty), 0),
+                        customerPhone: phone || "غير محدد",
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    // إذا وُجد رقم هاتف، قم بزيادة رصيد الزبون (ختم واحد أو نقاط حسب النظام)
+                    if(phone) {
+                        const custRef = db.collection("cafes").doc(AppState.currentCafeID).collection("customers").doc(phone);
+                        const custDoc = await custRef.get();
+                        if(custDoc.exists) {
+                            await custRef.update({ points: firebase.firestore.FieldValue.increment(1) });
+                        } else {
+                            // إذا لم يكن مسجلاً، نسجل له حساباً افتراضياً بالرقم
+                            await custRef.set({ name: "زبون كاشير", points: 1 });
+                        }
+                    }
+
+                    alert("تم إتمام الطلب بنجاح وتحديث النظام!");
+                    AppState.posCart = [];
+                    document.getElementById('pos-customer-phone').value = "";
+                    POSManager.renderCart();
+                    CustomersManager.loadCustomers();
+                } catch(e) {
+                    console.error(e);
+                    alert("حدث خطأ أثناء إتمام الطلب");
+                }
+            }
+        };
+
+        // 4. Branding & Settings Manager
         const BrandingManager = {
             selectSystem(sys) {
                 AppState.selectedSystem = sys;
@@ -416,7 +551,7 @@
             }
         };
 
-        // 4. Products & Catalog Manager
+        // 5. Products & Catalog Manager
         const ProductsManager = {
             async saveProduct() {
                 const name = document.getElementById('prod-name').value;
@@ -441,12 +576,15 @@
                 const list = document.getElementById('products-list');
                 const snap = await db.collection("cafes").doc(AppState.currentCafeID).collection("products").orderBy("createdAt", "desc").get();
                 list.innerHTML = "";
+                AppState.posProducts = [];
                 if(snap.empty) { 
                     list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد منتجات مضافة بعد</p>'; 
+                    POSManager.renderPOSProducts();
                     return; 
                 }
                 snap.forEach(doc => {
                     const p = { id: doc.id, ...doc.data() };
+                    AppState.posProducts.push(p);
                     list.innerHTML += `
                     <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm">
                         <div class="flex items-center gap-3">
@@ -459,6 +597,7 @@
                         <button onclick="ProductsManager.deleteProduct('${doc.id}')" class="text-red-500 hover:text-red-700 text-xs px-2 py-1 cursor-pointer bg-transparent border-none"><i class="fas fa-trash"></i></button>
                     </div>`;
                 });
+                POSManager.renderPOSProducts();
             },
             async deleteProduct(id) {
                 if(confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
@@ -468,7 +607,7 @@
             }
         };
 
-        // 5. Waiters & Realtime Calls Manager
+        // 6. Waiters & Realtime Calls Manager
         const WaitersManager = {
             async saveWaiter() {
                 const username = document.getElementById('waiter-username').value;
@@ -536,7 +675,7 @@
             }
         };
 
-        // 6. Scanner & Customers Manager
+        // 7. Scanner & Customers Manager
         const ScannerManager = {
             startScanner() {
                 AppState.html5QrCode = new Html5Qrcode("reader");
@@ -648,3 +787,4 @@
     </script>
 </body>
 </html>
+ 
