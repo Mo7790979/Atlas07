@@ -261,7 +261,7 @@
                         <div class="space-y-1.5 text-xs mb-3">
                             <div class="flex justify-between text-slate-600">
                                 <span>المبلغ الفرعي:</span>
-                                <input type="text" id="invoice-subtotal" value="0.00" readonly class="w-24 text-left bg-transparent border-none font-bold p-0 text-slate-800">
+                                <span id="invoice-subtotal" class="font-bold text-slate-800">0.00</span>
                             </div>
                             <!-- منطقة عرض الضرائب المطبقة ديناميكياً مع الاسم والنسبة -->
                             <div id="applied-taxes-breakdown" class="space-y-1 text-purple-700 border-y py-1.5 my-1">
@@ -272,7 +272,7 @@
                             </div>
                             <div class="flex justify-between font-black text-base text-emerald-700 pt-1">
                                 <span>الإجمالي النهائي:</span>
-                                <input type="text" id="invoice-amount" value="0.00" readonly class="w-32 text-left bg-transparent border-none font-black text-base p-0 text-emerald-700">
+                                <span id="invoice-amount" class="font-black text-base text-emerald-700">0.00</span>
                             </div>
                         </div>
 
@@ -930,7 +930,7 @@
             calculateInvoiceTotals();
         }
 
-        // تصميم محسن ومنظم لحقول بنود الفاتورة لضمان عدم التداخل على الهواتف والشاشات الصغيرة
+        // تصميم محسن ومنظم لحقول بنود الفاتورة لضمان عدم التداخل وتحديث المبالغ لحظياً
         function renderInvoiceItemsBuilder() {
             const container = document.getElementById('invoice-items-builder');
             if(!container) return;
@@ -987,9 +987,14 @@
 
             const total = subtotal + totalTaxValue;
 
-            document.getElementById('invoice-subtotal').value = subtotal.toFixed(2);
-            document.getElementById('invoice-total-tax-val').innerText = totalTaxValue.toFixed(2);
-            document.getElementById('invoice-amount').value = total.toFixed(2);
+            // تحديث العناصر النصية (SPAN بدلاً من input لضمان التوافق المطلق ومنع المشاكل)
+            const subtotalEl = document.getElementById('invoice-subtotal');
+            const taxValEl = document.getElementById('invoice-total-tax-val');
+            const amountEl = document.getElementById('invoice-amount');
+
+            if(subtotalEl) subtotalEl.innerText = subtotal.toFixed(2);
+            if(taxValEl) taxValEl.innerText = totalTaxValue.toFixed(2);
+            if(amountEl) amountEl.innerText = total.toFixed(2);
 
             const badgeLabel = document.getElementById('active-tax-badge-label');
             if(badgeLabel) {
@@ -1031,10 +1036,10 @@
 
         async function issueInvoice() {
             const target = document.getElementById('invoice-target').value.trim();
-            const subtotal = Number(document.getElementById('invoice-subtotal').value) || 0;
+            const subtotal = Number(document.getElementById('invoice-subtotal').innerText) || 0;
             const tax = Number(document.getElementById('invoice-total-tax-val').innerText) || 0;
             const appliedTaxes = window.activeAppliedTaxes || [];
-            const amount = Number(document.getElementById('invoice-amount').value) || 0;
+            const amount = Number(document.getElementById('invoice-amount').innerText) || 0;
             const serial = document.getElementById('invoice-serial').innerText;
 
             if(!target || amount <= 0 || invoiceInteractiveItems.length === 0) { 
@@ -1248,10 +1253,10 @@
         function printCurrentPOSInvoicePrintView() {
             const target = document.getElementById('invoice-target').value;
             const serial = document.getElementById('invoice-serial').innerText;
-            const subtotal = Number(document.getElementById('invoice-subtotal').value) || 0;
+            const subtotal = Number(document.getElementById('invoice-subtotal').innerText) || 0;
             const tax = Number(document.getElementById('invoice-total-tax-val').innerText) || 0;
             const appliedTaxes = window.activeAppliedTaxes || [];
-            const amount = Number(document.getElementById('invoice-amount').value) || 0;
+            const amount = Number(document.getElementById('invoice-amount').innerText) || 0;
 
             if(!target || invoiceInteractiveItems.length === 0) {
                 alert("يرجى إدخال اسم الطاولة وبنود الفاتورة أولاً");
@@ -1446,7 +1451,7 @@
                 const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                 const secs = Math.floor((diff % (1000 * 60)) / 1000);
-                document.getElementById('countdown-timer').innerText = `${days}d ${hours}:${mins}:${secs}`;
+                document.getElementById('countdown-timer').Text = `${days}d ${hours}:${mins}:${secs}`;
             }, 1000);
         }
 
