@@ -58,7 +58,7 @@
                 <label>كلمة المرور</label>
                 <input type="password" id="admin-pass-input" placeholder="كلمة المرور">
             </div>
-            <button onclick="login()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-bold transition-all shadow-lg mt-2 cursor-pointer">تسجيل الدخول</button>
+            <button onclick="AuthManager.login()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-bold transition-all shadow-lg mt-2 cursor-pointer">تسجيل الدخول</button>
         </div>
     </div>
 
@@ -77,23 +77,23 @@
 
         <!-- Main Navigation Tabs -->
         <div class="flex gap-2 mb-6 overflow-x-auto no-scrollbar py-1">
-            <button onclick="showSection('scan')" id="tab-scan" class="tab-btn active-tab bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">المسح / التحكم</button>
-            <button onclick="showSection('products')" id="tab-products" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">المنيو</button>
-            <button onclick="showSection('waiters')" id="tab-waiters" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">النُدل والنداء</button>
-            <button onclick="showSection('pos')" id="tab-pos" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">المحاسبة</button>
-            <button onclick="showSection('branding')" id="tab-branding" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">التخصيص</button>
-            <button onclick="showSection('customers')" id="tab-customers" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">العملاء</button>
-            <button onclick="showSection('billing')" id="tab-billing" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 text-emerald-600 cursor-pointer">الاشتراك</button>
+            <button onclick="NavigationManager.showSection('scan')" id="tab-scan" class="tab-btn active-tab bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">المسح / التحكم</button>
+            <button onclick="NavigationManager.showSection('products')" id="tab-products" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">المنيو</button>
+            <button onclick="NavigationManager.showSection('waiters')" id="tab-waiters" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">النُدل والنداء</button>
+            <button onclick="NavigationManager.showSection('pos')" id="tab-pos" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">المحاسبة</button>
+            <button onclick="NavigationManager.showSection('branding')" id="tab-branding" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">التخصيص</button>
+            <button onclick="NavigationManager.showSection('customers')" id="tab-customers" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">العملاء</button>
+            <button onclick="NavigationManager.showSection('billing')" id="tab-billing" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 text-emerald-600 cursor-pointer">الاشتراك</button>
         </div>
 
         <div id="section-scan" class="section-content">
             <div class="admin-card text-center">
                 <div id="reader" class="mb-4 overflow-hidden rounded-xl"></div>
-                <button id="start-scan-btn" onclick="startScanner()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-200 cursor-pointer"><i class="fas fa-qrcode ml-2"></i> مسح كود الزبون</button>
+                <button id="start-scan-btn" onclick="ScannerManager.startScanner()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-200 cursor-pointer"><i class="fas fa-qrcode ml-2"></i> مسح كود الزبون</button>
                 
                 <div id="user-actions" class="p-6 bg-slate-50 rounded-2xl hidden border-2 border-dashed border-blue-200 mt-4 animate-in slide-in-from-top duration-300 text-right">
                     <div class="flex justify-between items-start mb-4">
-                        <button onclick="closeUserActions()" class="text-slate-400 hover:text-red-500 cursor-pointer bg-transparent border-none"><i class="fas fa-times-circle text-xl"></i></button>
+                        <button onclick="ScannerManager.closeUserActions()" class="text-slate-400 hover:text-red-500 cursor-pointer bg-transparent border-none"><i class="fas fa-times-circle text-xl"></i></button>
                         <div>
                             <h2 id="cur-name" class="font-black text-xl text-blue-900 leading-tight"></h2>
                             <p id="cur-phone-display" class="text-[10px] font-mono text-slate-400"></p>
@@ -106,16 +106,16 @@
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
-                        <button onclick="updatePoints(1)" class="bg-emerald-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-emerald-100 flex flex-col items-center cursor-pointer border-none">
+                        <button onclick="ScannerManager.updatePoints(1)" class="bg-emerald-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-emerald-100 flex flex-col items-center cursor-pointer border-none">
                             <i class="fas fa-plus mb-1"></i>
                             <span>إضافة</span>
                         </button>
-                        <button onclick="updatePoints(-1)" class="bg-red-500 text-white py-4 rounded-xl font-bold shadow-lg shadow-red-100 flex flex-col items-center cursor-pointer border-none">
+                        <button onclick="ScannerManager.updatePoints(-1)" class="bg-red-500 text-white py-4 rounded-xl font-bold shadow-lg shadow-red-100 flex flex-col items-center cursor-pointer border-none">
                             <i class="fas fa-minus mb-1"></i>
                             <span>خصم</span>
                         </button>
                     </div>
-                    <button onclick="resetPoints()" class="w-full mt-3 py-3 text-xs font-bold text-orange-600 bg-orange-50 rounded-xl border border-orange-100 cursor-pointer">تصفير الحساب / تسليم الهدية</button>
+                    <button onclick="ScannerManager.resetPoints()" class="w-full mt-3 py-3 text-xs font-bold text-orange-600 bg-orange-50 rounded-xl border border-orange-100 cursor-pointer">تصفير الحساب / تسليم الهدية</button>
                 </div>
             </div>
         </div>
@@ -147,7 +147,7 @@
                         <label>وصف مختصر</label>
                         <textarea id="prod-desc" placeholder="مكونات أو وصف المنتج..."></textarea>
                     </div>
-                    <button onclick="saveProduct()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg cursor-pointer border-none">إضافة المنتج للمنيو</button>
+                    <button onclick="ProductsManager.saveProduct()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg cursor-pointer border-none">إضافة المنتج للمنيو</button>
                 </div>
             </div>
             <div class="admin-card">
@@ -179,7 +179,7 @@
                         <label>اسم النادل (للعرض)</label>
                         <input type="text" id="waiter-fullname" placeholder="مثال: أحمد محمد">
                     </div>
-                    <button onclick="saveWaiter()" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold shadow-lg cursor-pointer border-none">إنشاء حساب النادل</button>
+                    <button onclick="WaitersManager.saveWaiter()" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold shadow-lg cursor-pointer border-none">إنشاء حساب النادل</button>
                 </div>
             </div>
             <div class="admin-card">
@@ -194,10 +194,10 @@
             <!-- Top Interactive Action Bar -->
             <div class="bg-slate-900 text-white p-3 rounded-2xl mb-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
                 <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                    <button onclick="printCurrentPOSInvoicePrintView()" class="top-action-bar-btn"><i class="fas fa-print"></i> <span>طباعة / حفظ كـ PDF</span></button>
-                    <button onclick="openTaxManager()" class="top-action-bar-btn" style="background:#8b5cf6;"><i class="fas fa-percent"></i> <span>إدارة الضرائب</span></button>
-                    <button onclick="generateDailySalesReport()" class="top-action-bar-btn" style="background:#d97706;"><i class="fas fa-chart-line"></i> <span>التقرير اليومي</span></button>
-                    <button onclick="clearInvoiceForm()" class="top-action-bar-btn" style="background:#ef4444;"><i class="fas fa-redo"></i> <span>جديد</span></button>
+                    <button onclick="POSManager.printCurrentInvoice()" class="top-action-bar-btn"><i class="fas fa-print"></i> <span>طباعة / حفظ كـ PDF</span></button>
+                    <button onclick="TaxManager.openTaxManager()" class="top-action-bar-btn" style="background:#8b5cf6;"><i class="fas fa-percent"></i> <span>إدارة الضرائب</span></button>
+                    <button onclick="ReportManager.generateDailySalesReport()" class="top-action-bar-btn" style="background:#d97706;"><i class="fas fa-chart-line"></i> <span>التقرير اليومي</span></button>
+                    <button onclick="POSManager.clearInvoiceForm()" class="top-action-bar-btn" style="background:#ef4444;"><i class="fas fa-redo"></i> <span>جديد</span></button>
                 </div>
                 <div class="text-xs font-bold text-emerald-400 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700">
                     <i class="fas fa-cash-register ml-1 text-blue-400"></i> نظام نقاط البيع (المنيو التفاعلي السريع)
@@ -250,7 +250,7 @@
                         <div class="mb-3">
                             <div class="flex justify-between items-center mb-1.5">
                                 <label class="text-xs font-bold text-slate-700">بنود الفاتورة</label>
-                                <button onclick="addInvoiceItemRow()" class="bg-emerald-600 text-white px-2.5 py-1 rounded-md text-[11px] font-bold shadow-sm flex items-center gap-1 hover:bg-emerald-700 cursor-pointer border-none"><i class="fas fa-plus"></i> إضافة بند</button>
+                                <button onclick="POSManager.addInvoiceItemRow()" class="bg-emerald-600 text-white px-2.5 py-1 rounded-md text-[11px] font-bold shadow-sm flex items-center gap-1 hover:bg-emerald-700 cursor-pointer border-none"><i class="fas fa-plus"></i> إضافة بند</button>
                             </div>
                             <div id="invoice-items-builder" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
                         </div>
@@ -277,10 +277,10 @@
                         </div>
 
                         <div class="grid grid-cols-2 gap-2">
-                            <button onclick="issueInvoice()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-emerald-200 text-xs flex items-center justify-center gap-1 cursor-pointer border-none">
+                            <button onclick="POSManager.issueInvoice()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-emerald-200 text-xs flex items-center justify-center gap-1 cursor-pointer border-none">
                                 <i class="fas fa-check-circle"></i> حفظ وإصدار الفاتورة
                             </button>
-                            <button onclick="clearInvoiceForm()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1 cursor-pointer border-none">
+                            <button onclick="POSManager.clearInvoiceForm()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1 cursor-pointer border-none">
                                 <i class="fas fa-trash-alt"></i> مسح النموذج
                             </button>
                         </div>
@@ -292,10 +292,10 @@
                     <div class="admin-card bg-white">
                         <div class="flex flex-col sm:flex-row justify-between items-center gap-3 mb-4">
                             <div class="w-full sm:w-2/3">
-                                <input type="text" id="pos-product-search" placeholder="بحث سريع في المنيو التفاعلي..." oninput="filterPOSProducts()" class="text-xs">
+                                <input type="text" id="pos-product-search" placeholder="بحث سريع في المنيو التفاعلي..." oninput="POSManager.filterProducts()" class="text-xs">
                             </div>
                             <div class="flex gap-1.5 overflow-x-auto no-scrollbar w-full sm:w-auto" id="pos-categories-filter">
-                                <button onclick="filterPOSByCategory('all')" class="category-filter-btn px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold whitespace-nowrap cursor-pointer border-none">الكل</button>
+                                <button onclick="POSManager.filterByCategory('all')" class="category-filter-btn px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold whitespace-nowrap cursor-pointer border-none">الكل</button>
                             </div>
                         </div>
 
@@ -312,7 +312,7 @@
                 <div class="flex flex-col md:flex-row justify-between items-center gap-3 mb-4">
                     <h3 class="font-bold text-slate-700 text-xs">سجل الفواتير الصادرة (اضغط لطباعتها أو مراجعتها)</h3>
                     <div class="w-full md:w-1/2">
-                        <input type="text" id="invoice-search-input" placeholder="بحث برقم الفاتورة التسلسلي أو رقم الطاولة..." oninput="filterInvoices()" class="text-xs py-2">
+                        <input type="text" id="invoice-search-input" placeholder="بحث برقم الفاتورة التسلسلي أو رقم الطاولة..." oninput="POSManager.filterInvoices()" class="text-xs py-2">
                     </div>
                 </div>
                 <div id="invoices-list" class="space-y-2 max-h-80 overflow-y-auto"></div>
@@ -327,11 +327,11 @@
                     <div>
                         <label>اختر نوع البرنامج</label>
                         <div class="grid grid-cols-2 gap-4">
-                            <div id="btn-sys-stamps" onclick="selectSystem('stamps')" class="system-select-btn active">
+                            <div id="btn-sys-stamps" onclick="BrandingManager.selectSystem('stamps')" class="system-select-btn active">
                                 <i class="fas fa-stamp text-2xl mb-2"></i>
                                 <p class="font-bold text-xs">نظام الأختام</p>
                             </div>
-                            <div id="btn-sys-points" onclick="selectSystem('points')" class="system-select-btn">
+                            <div id="btn-sys-points" onclick="BrandingManager.selectSystem('points')" class="system-select-btn">
                                 <i class="fas fa-coins text-2xl mb-2"></i>
                                 <p class="font-bold text-xs">نظام النقاط</p>
                             </div>
@@ -384,7 +384,7 @@
                         <input type="text" id="set-msg-bye" placeholder="كلمة الوداع">
                     </div>
 
-                    <button onclick="saveBranding()" class="w-full bg-slate-800 text-white py-4 rounded-xl font-bold shadow-xl cursor-pointer border-none">حفظ جميع الإعدادات</button>
+                    <button onclick="BrandingManager.saveBranding()" class="w-full bg-slate-800 text-white py-4 rounded-xl font-bold shadow-xl cursor-pointer border-none">حفظ جميع الإعدادات</button>
                 </div>
             </div>
         </div>
@@ -400,7 +400,7 @@
             <div class="admin-card text-center">
                 <div id="qrcode-container" class="flex justify-center p-4 bg-white border rounded-2xl mx-auto w-fit mb-3"></div>
                 <p class="text-[10px] text-slate-400 mb-2">كود QR الخاص بمحلك لدخول الزبائن</p>
-                <button onclick="downloadQR()" class="text-[10px] text-blue-600 font-bold underline bg-transparent border-none cursor-pointer">تحميل الصورة للطباعة</button>
+                <button onclick="CustomersManager.downloadQR()" class="text-[10px] text-blue-600 font-bold underline bg-transparent border-none cursor-pointer">تحميل الصورة للطباعة</button>
             </div>
         </div>
 
@@ -451,13 +451,13 @@
                     <label>النسبة المئوية (%)</label>
                     <input type="number" id="new-tax-rate" placeholder="مثال: 15 أو 5">
                 </div>
-                <button onclick="saveNewTaxConfig()" class="w-full bg-purple-600 text-white py-3 rounded-xl font-bold shadow hover:bg-purple-700 transition-all cursor-pointer border-none">إضافة وحفظ الضريبة</button>
+                <button onclick="TaxManager.saveNewTaxConfig()" class="w-full bg-purple-600 text-white py-3 rounded-xl font-bold shadow hover:bg-purple-700 transition-all cursor-pointer border-none">إضافة وحفظ الضريبة</button>
             </div>
             <div class="border-t pt-3">
                 <label class="text-xs font-bold text-slate-600 mb-2">الضرائب المضافة مسبقاً:</label>
                 <div id="taxes-list-modal" class="space-y-2 max-h-36 overflow-y-auto"></div>
             </div>
-            <button onclick="closeTaxManager()" class="w-full bg-slate-200 text-slate-700 py-2.5 rounded-xl font-bold hover:bg-slate-300 transition-all cursor-pointer border-none">إغلاق</button>
+            <button onclick="TaxManager.closeTaxManager()" class="w-full bg-slate-200 text-slate-700 py-2.5 rounded-xl font-bold hover:bg-slate-300 transition-all cursor-pointer border-none">إغلاق</button>
         </div>
     </div>
 
@@ -465,11 +465,11 @@
     <div id="sales-report-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto text-right">
             <div class="flex justify-between items-center border-b pb-3">
-                <button onclick="closeSalesReportModal()" class="text-slate-400 hover:text-red-500 font-bold text-xl cursor-pointer bg-transparent border-none">&times;</button>
+                <button onclick="ReportManager.closeSalesReportModal()" class="text-slate-400 hover:text-red-500 font-bold text-xl cursor-pointer bg-transparent border-none">&times;</button>
                 <h3 class="font-black text-lg text-slate-800"><i class="fas fa-file-invoice-dollar text-amber-600 ml-1"></i> تقرير مبيعات اليوم المفصل</h3>
             </div>
             <div id="sales-report-content" class="space-y-4 text-xs"></div>
-            <button onclick="closeSalesReportModal()" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold cursor-pointer border-none">إغلاق التقرير</button>
+            <button onclick="ReportManager.closeSalesReportModal()" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold cursor-pointer border-none">إغلاق التقرير</button>
         </div>
     </div>
 
@@ -485,999 +485,989 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        let currentCafeID = "";
-        let selectedSystem = "stamps";
-        let html5QrCode = null;
-        let expiryDateGlobal = null;
-        let activeUserPhone = "";
-        let allInvoicesCache = [];
-        let globalProductsCache = [];
-        let invoiceInteractiveItems = [];
-        let currentPOSCategory = "all";
-        let cachedTaxesList = []; 
+        // Global App State
+        window.AppState = {
+            currentCafeID: "",
+            selectedSystem: "stamps",
+            html5QrCode: null,
+            expiryDateGlobal: null,
+            activeUserPhone: "",
+            allInvoicesCache: [],
+            globalProductsCache: [],
+            invoiceInteractiveItems: [],
+            currentPOSCategory: "all",
+            cachedTaxesList: [],
+            activeCartIdToResolve: null,
+            activeAppliedTaxes: [],
+            tempInvoices: {},
+            tempCarts: {}
+        };
 
-        async function login() {
-            const user = document.getElementById('admin-user-input').value.trim();
-            const pass = document.getElementById('admin-pass-input').value;
-            if(!user || !pass) { alert("يرجى إدخال اسم المستخدم وكلمة المرور"); return; }
-            try {
-                const doc = await db.collection("cafes").doc(user).get();
-                if(doc.exists && doc.data().password === pass) {
-                    currentCafeID = user;
-                    expiryDateGlobal = doc.data().expiryDate.toDate();
-                    document.getElementById('login-screen').classList.add('hidden');
-                    document.getElementById('main-admin').classList.remove('hidden');
-                    initCafe();
-                } else { alert("بيانات الدخول غير صحيحة"); }
-            } catch(e) {
-                console.error(e);
-                alert("حدث خطأ أثناء الاتصال بقاعدة البيانات");
+        // 1. Authentication Manager
+        const AuthManager = {
+            async login() {
+                const user = document.getElementById('admin-user-input').value.trim();
+                const pass = document.getElementById('admin-pass-input').value;
+                if(!user || !pass) { alert("يرجى إدخال اسم المستخدم وكلمة المرور"); return; }
+                try {
+                    const doc = await db.collection("cafes").doc(user).get();
+                    if(doc.exists && doc.data().password === pass) {
+                        AppState.currentCafeID = user;
+                        AppState.expiryDateGlobal = doc.data().expiryDate.toDate();
+                        document.getElementById('login-screen').classList.add('hidden');
+                        document.getElementById('main-admin').classList.remove('hidden');
+                        AppInitializer.initCafe();
+                    } else { alert("بيانات الدخول غير صحيحة"); }
+                } catch(e) {
+                    console.error(e);
+                    alert("حدث خطأ أثناء الاتصال بقاعدة البيانات");
+                }
+            },
+            async loadBankInfo() {
+                try {
+                    const doc = await db.collection("admin_settings").doc("global_config").get();
+                    if(doc.exists) {
+                        document.getElementById('admin-bank-img').src = doc.data().bankImageUrl || "";
+                    }
+                } catch(e) { console.log("خطأ في جلب بيانات الإدارة"); }
             }
-        }
+        };
 
-        async function loadAdminBankInfo() {
-            try {
-                const doc = await db.collection("admin_settings").doc("global_config").get();
+        // 2. Navigation Manager
+        const NavigationManager = {
+            showSection(id) {
+                document.querySelectorAll('.section-content').forEach(s => s.classList.add('hidden'));
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-tab'));
+                document.getElementById('section-'+id).classList.remove('hidden');
+                document.getElementById('tab-'+id).classList.add('active-tab');
+                if(AppState.html5QrCode && id !== 'scan') AppState.html5QrCode.stop().catch(()=>{});
+            },
+            startTimer() {
+                setInterval(() => {
+                    const now = new Date().getTime();
+                    const diff = AppState.expiryDateGlobal - now;
+                    if (diff < 0) { document.getElementById('countdown-timer').innerText = "منتهي"; return; }
+                    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const secs = Math.floor((diff % (1000 * 60)) / 1000);
+                    document.getElementById('countdown-timer').innerText = `${days}d ${hours}:${mins}:${secs}`;
+                }, 1000);
+            }
+        };
+
+        // 3. Branding & Settings Manager
+        const BrandingManager = {
+            selectSystem(sys) {
+                AppState.selectedSystem = sys;
+                document.getElementById('btn-sys-stamps').classList.toggle('active', sys === 'stamps');
+                document.getElementById('btn-sys-points').classList.toggle('active', sys === 'points');
+                document.getElementById('area-stamps').classList.toggle('hidden', sys !== 'stamps');
+                document.getElementById('area-points').classList.toggle('hidden', sys !== 'points');
+            },
+            async saveBranding() {
+                const data = {
+                    systemType: AppState.selectedSystem,
+                    brandName: document.getElementById('set-brand-name').value,
+                    logo: document.getElementById('set-logo-url').value,
+                    bgImage: document.getElementById('set-bg-url').value,
+                    menuImage: document.getElementById('set-menu-url').value,
+                    color: document.getElementById('set-theme-color').value,
+                    maxStamps: document.getElementById('set-max-stamps').value,
+                    labelStamps: document.getElementById('label-stamps').value,
+                    labelPointsUnit: document.getElementById('label-points-unit').value,
+                    labelPointsTitle: document.getElementById('label-points-title').value,
+                    msgWelcome: document.getElementById('set-msg-welcome').value,
+                    msgBye: document.getElementById('set-msg-bye').value
+                };
+                await db.collection("cafes").doc(AppState.currentCafeID).collection("settings").doc("branding").set(data, {merge: true});
+                alert("تم حفظ التعديلات بنجاح!");
+            },
+            async loadBranding() {
+                const doc = await db.collection("cafes").doc(AppState.currentCafeID).collection("settings").doc("branding").get();
                 if(doc.exists) {
-                    document.getElementById('admin-bank-img').src = doc.data().bankImageUrl || "";
+                    const b = doc.data();
+                    document.getElementById('set-brand-name').value = b.brandName || "";
+                    document.getElementById('set-logo-url').value = b.logo || "";
+                    document.getElementById('set-bg-url').value = b.bgImage || "";
+                    document.getElementById('set-menu-url').value = b.menuImage || "";
+                    document.getElementById('set-theme-color').value = b.color || "#2563eb";
+                    document.getElementById('set-max-stamps').value = b.maxStamps || 6;
+                    document.getElementById('label-stamps').value = b.labelStamps || "أختامك الحالية";
+                    document.getElementById('label-points-unit').value = b.labelPointsUnit || "نقطة";
+                    document.getElementById('label-points-title').value = b.labelPointsTitle || "إجمالي النقاط";
+                    document.getElementById('set-msg-welcome').value = b.msgWelcome || "";
+                    document.getElementById('set-msg-bye').value = b.msgBye || "";
+                    BrandingManager.selectSystem(b.systemType || "stamps");
                 }
-            } catch(e) { console.log("خطأ في جلب بيانات الإدارة"); }
-        }
-
-        function selectSystem(sys) {
-            selectedSystem = sys;
-            document.getElementById('btn-sys-stamps').classList.toggle('active', sys === 'stamps');
-            document.getElementById('btn-sys-points').classList.toggle('active', sys === 'points');
-            document.getElementById('area-stamps').classList.toggle('hidden', sys !== 'stamps');
-            document.getElementById('area-points').classList.toggle('hidden', sys !== 'points');
-        }
-
-        async function saveBranding() {
-            const data = {
-                systemType: selectedSystem,
-                brandName: document.getElementById('set-brand-name').value,
-                logo: document.getElementById('set-logo-url').value,
-                bgImage: document.getElementById('set-bg-url').value,
-                menuImage: document.getElementById('set-menu-url').value,
-                color: document.getElementById('set-theme-color').value,
-                maxStamps: document.getElementById('set-max-stamps').value,
-                labelStamps: document.getElementById('label-stamps').value,
-                labelPointsUnit: document.getElementById('label-points-unit').value,
-                labelPointsTitle: document.getElementById('label-points-title').value,
-                msgWelcome: document.getElementById('set-msg-welcome').value,
-                msgBye: document.getElementById('set-msg-bye').value
-            };
-            await db.collection("cafes").doc(currentCafeID).collection("settings").doc("branding").set(data, {merge: true});
-            alert("تم حفظ التعديلات بنجاح!");
-        }
-
-        async function loadCafeBranding() {
-            const doc = await db.collection("cafes").doc(currentCafeID).collection("settings").doc("branding").get();
-            if(doc.exists) {
-                const b = doc.data();
-                document.getElementById('set-brand-name').value = b.brandName || "";
-                document.getElementById('set-logo-url').value = b.logo || "";
-                document.getElementById('set-bg-url').value = b.bgImage || "";
-                document.getElementById('set-menu-url').value = b.menuImage || "";
-                document.getElementById('set-theme-color').value = b.color || "#2563eb";
-                document.getElementById('set-max-stamps').value = b.maxStamps || 6;
-                document.getElementById('label-stamps').value = b.labelStamps || "أختامك الحالية";
-                document.getElementById('label-points-unit').value = b.labelPointsUnit || "نقطة";
-                document.getElementById('label-points-title').value = b.labelPointsTitle || "إجمالي النقاط";
-                document.getElementById('set-msg-welcome').value = b.msgWelcome || "";
-                document.getElementById('set-msg-bye').value = b.msgBye || "";
-                selectSystem(b.systemType || "stamps");
             }
-        }
+        };
 
-        function initCafe() {
-            loadCafeBranding();
-            loadCustomers();
-            loadProducts();
-            loadWaiters();
-            listenToWaiterCalls();
-            listenToCustomerCarts();
-            loadTaxesCheckboxes();
-            loadInvoices();
-            generateCafeQR();
-            startTimer();
-            loadAdminBankInfo();
-            generateNewSerial();
-            
-            invoiceInteractiveItems = [];
-            renderInvoiceItemsBuilder();
-
-            db.collection("cafes").doc(currentCafeID).get().then(doc => {
-                document.getElementById('expiry-date-text').innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
-                document.getElementById('display-cafe-name').innerText = doc.data().cafeName;
-            });
-        }
-
-        function generateNewSerial() {
-            const serial = 'INV-' + Math.floor(100000 + Math.random() * 900000);
-            document.getElementById('invoice-serial').innerText = serial;
-        }
-
-        async function saveProduct() {
-            const name = document.getElementById('prod-name').value;
-            const price = document.getElementById('prod-price').value;
-            const category = document.getElementById('prod-category').value;
-            const image = document.getElementById('prod-image').value;
-            const description = document.getElementById('prod-desc').value;
-            if(!name || !price) { alert("يرجى إدخال اسم المنتج والسعر على الأقل"); return; }
-            
-            await db.collection("cafes").doc(currentCafeID).collection("products").add({
-                name, price: Number(price), category: category || 'عام', image, description, createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            alert("تم إضافة المنتج بنجاح!");
-            document.getElementById('prod-name').value = "";
-            document.getElementById('prod-price').value = "";
-            document.getElementById('prod-category').value = "";
-            document.getElementById('prod-image').value = "";
-            document.getElementById('prod-desc').value = "";
-            loadProducts();
-        }
-
-        async function loadProducts() {
-            const list = document.getElementById('products-list');
-            const snap = await db.collection("cafes").doc(currentCafeID).collection("products").orderBy("createdAt", "desc").get();
-            list.innerHTML = "";
-            globalProductsCache = [];
-            if(snap.empty) { 
-                list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد منتجات مضافة بعد</p>'; 
-                renderPOSProductsGrid();
-                return; 
-            }
-            snap.forEach(doc => {
-                const p = { id: doc.id, ...doc.data() };
-                globalProductsCache.push(p);
-                list.innerHTML += `
-                <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm">
-                    <div class="flex items-center gap-3">
-                        <img src="${p.image || 'https://via.placeholder.com/50'}" class="w-10 h-10 object-cover rounded-lg">
-                        <div>
-                            <div class="font-bold text-xs text-slate-800">${p.name}</div>
-                            <div class="text-[10px] text-blue-600 font-bold">${p.price} - ${p.category}</div>
-                        </div>
-                    </div>
-                    <button onclick="deleteProduct('${doc.id}')" class="text-red-500 hover:text-red-700 text-xs px-2 py-1 cursor-pointer bg-transparent border-none"><i class="fas fa-trash"></i></button>
-                </div>`;
-            });
-            renderInvoiceItemsBuilder();
-            renderPOSProductsGrid();
-            buildPOSCategoriesFilter();
-        }
-
-        function buildPOSCategoriesFilter() {
-            const container = document.getElementById('pos-categories-filter');
-            if(!container) return;
-            const categories = ['all'];
-            globalProductsCache.forEach(p => {
-                const cat = p.category || 'عام';
-                if(!categories.includes(cat)) categories.push(cat);
-            });
-            
-            container.innerHTML = '';
-            categories.forEach(cat => {
-                const active = currentPOSCategory === cat;
-                const label = cat === 'all' ? 'الكل' : cat;
-                container.innerHTML += `
-                <button onclick="filterPOSByCategory('${cat}')" class="category-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer border-none ${active ? 'bg-blue-600 text-white shadow' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">${label}</button>`;
-            });
-        }
-
-        function filterPOSByCategory(cat) {
-            currentPOSCategory = cat;
-            buildPOSCategoriesFilter();
-            renderPOSProductsGrid();
-        }
-
-        function filterPOSProducts() {
-            renderPOSProductsGrid();
-        }
-
-        function renderPOSProductsGrid() {
-            const grid = document.getElementById('pos-products-grid');
-            if(!grid) return;
-            const searchInput = document.getElementById('pos-product-search');
-            const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-
-            let filtered = globalProductsCache.filter(p => {
-                const matchCat = currentPOSCategory === 'all' || (p.category || 'عام') === currentPOSCategory;
-                const matchSearch = !query || p.name.toLowerCase().includes(query) || (p.category && p.category.toLowerCase().includes(query));
-                return matchCat && matchSearch;
-            });
-
-            grid.innerHTML = '';
-            if(filtered.length === 0) {
-                grid.innerHTML = '<p class="text-xs text-slate-400 text-center col-span-full py-8">لا توجد منتجات مطابقة في المنيو</p>';
-                return;
-            }
-
-            filtered.forEach(p => {
-                grid.innerHTML += `
-                <div onclick='addPOSProductToInvoice("${p.name.replace(/"/g, '&quot;')}", ${p.price})' class="pos-menu-card">
-                    <img src="${p.image || 'https://via.placeholder.com/150'}" class="w-16 h-16 object-cover rounded-xl bg-slate-100 shrink-0">
-                    <div class="flex-1 text-right">
-                        <div class="flex justify-between items-start">
-                            <h4 class="font-bold text-xs text-slate-800 line-clamp-1 mb-0.5">${p.name}</h4>
-                            <span class="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow">${p.price}</span>
-                        </div>
-                        <p class="text-[10px] text-slate-500 line-clamp-1 mb-1.5">${p.description || p.category || 'مشروبات ومأكولات'}</p>
-                        <span class="bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white px-2.5 py-1 rounded-lg text-[10px] font-bold inline-flex items-center gap-1 transition-all">
-                            <i class="fas fa-plus"></i> إضافة للفاتورة
-                        </span>
-                    </div>
-                </div>`;
-            });
-        }
-
-        function addPOSProductToInvoice(name, price) {
-            const existing = invoiceInteractiveItems.find(i => i.name === name);
-            if(existing) {
-                existing.qty = (Number(existing.qty) || 1) + 1;
-            } else {
-                invoiceInteractiveItems.push({ name, qty: 1, price: Number(price) || 0 });
-            }
-            renderInvoiceItemsBuilder();
-        }
-
-        async function deleteProduct(id) {
-            if(confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
-                await db.collection("cafes").doc(currentCafeID).collection("products").doc(id).delete();
-                loadProducts();
-            }
-        }
-
-        async function saveWaiter() {
-            const username = document.getElementById('waiter-username').value;
-            const password = document.getElementById('waiter-password').value;
-            const fullname = document.getElementById('waiter-fullname').value;
-            if(!username || !password) { alert("يرجى إدخال اسم المستخدم وكلمة المرور للنادل"); return; }
-            
-            await db.collection("cafes").doc(currentCafeID).collection("waiters").doc(username).set({
-                password, fullname: fullname || username, createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            alert("تم إنشاء حساب النادل بنجاح!");
-            document.getElementById('waiter-username').value = "";
-            document.getElementById('waiter-password').value = "";
-            document.getElementById('waiter-fullname').value = "";
-            loadWaiters();
-        }
-
-        async function loadWaiters() {
-            const list = document.getElementById('waiters-list');
-            const snap = await db.collection("cafes").doc(currentCafeID).collection("waiters").get();
-            list.innerHTML = "";
-            if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد حسابات نُدل مضافة</p>'; return; }
-            snap.forEach(doc => {
-                const w = doc.data();
-                list.innerHTML += `
-                <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm">
-                    <div class="text-right">
-                        <div class="font-bold text-xs text-slate-800">${w.fullname}</div>
-                        <div class="text-[10px] text-slate-400 font-mono">المستخدم: ${doc.id}</div>
-                    </div>
-                    <button onclick="deleteWaiter('${doc.id}')" class="text-red-500 text-xs px-2 py-1 cursor-pointer bg-transparent border-none"><i class="fas fa-trash"></i></button>
-                </div>`;
-            });
-        }
-
-        async function deleteWaiter(id) {
-            if(confirm("هل أنت متأكد من حذف حساب النادل؟")) {
-                await db.collection("cafes").doc(currentCafeID).collection("waiters").doc(id).delete();
-                loadWaiters();
-            }
-        }
-
-        function listenToWaiterCalls() {
-            db.collection("cafes").doc(currentCafeID).collection("waiter_calls")
-              .where("status", "==", "pending")
-              .onSnapshot(snap => {
-                const list = document.getElementById('waiter-calls-list');
+        // 4. Products & Catalog Manager
+        const ProductsManager = {
+            async saveProduct() {
+                const name = document.getElementById('prod-name').value;
+                const price = document.getElementById('prod-price').value;
+                const category = document.getElementById('prod-category').value;
+                const image = document.getElementById('prod-image').value;
+                const description = document.getElementById('prod-desc').value;
+                if(!name || !price) { alert("يرجى إدخال اسم المنتج والسعر على الأقل"); return; }
+                
+                await db.collection("cafes").doc(AppState.currentCafeID).collection("products").add({
+                    name, price: Number(price), category: category || 'عام', image, description, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert("تم إضافة المنتج بنجاح!");
+                document.getElementById('prod-name').value = "";
+                document.getElementById('prod-price').value = "";
+                document.getElementById('prod-category').value = "";
+                document.getElementById('prod-image').value = "";
+                document.getElementById('prod-desc').value = "";
+                ProductsManager.loadProducts();
+            },
+            async loadProducts() {
+                const list = document.getElementById('products-list');
+                const snap = await db.collection("cafes").doc(AppState.currentCafeID).collection("products").orderBy("createdAt", "desc").get();
                 list.innerHTML = "";
-                if(snap.empty) {
-                    list.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">لا توجد نداءات جديدة حالياً</p>';
-                    return;
+                AppState.globalProductsCache = [];
+                if(snap.empty) { 
+                    list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد منتجات مضافة بعد</p>'; 
+                    POSManager.renderPOSProductsGrid();
+                    return; 
                 }
                 snap.forEach(doc => {
-                    const call = doc.data();
+                    const p = { id: doc.id, ...doc.data() };
+                    AppState.globalProductsCache.push(p);
                     list.innerHTML += `
-                    <div class="flex justify-between items-center p-3 bg-white rounded-xl border border-amber-200 shadow-sm animate-bounce">
-                        <div>
-                            <div class="font-bold text-xs text-amber-900"><i class="fas fa-bell text-amber-500 ml-1"></i> نداء من: ${call.table || 'طاولة غير محددة'}</div>
-                            <div class="text-[10px] text-slate-400">${call.time ? new Date(call.time.toDate()).toLocaleTimeString('ar-EG') : ''}</div>
+                    <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <img src="${p.image || 'https://via.placeholder.com/50'}" class="w-10 h-10 object-cover rounded-lg">
+                            <div>
+                                <div class="font-bold text-xs text-slate-800">${p.name}</div>
+                                <div class="text-[10px] text-blue-600 font-bold">${p.price} - ${p.category}</div>
+                            </div>
                         </div>
-                        <button onclick="resolveCall('${doc.id}')" class="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer border-none">تمت الاستجابة</button>
+                        <button onclick="ProductsManager.deleteProduct('${doc.id}')" class="text-red-500 hover:text-red-700 text-xs px-2 py-1 cursor-pointer bg-transparent border-none"><i class="fas fa-trash"></i></button>
                     </div>`;
                 });
-            });
-        }
-
-        async function resolveCall(callId) {
-            await db.collection("cafes").doc(currentCafeID).collection("waiter_calls").doc(callId).update({ status: 'resolved' });
-        }
-
-        function listenToCustomerCarts() {
-            db.collection("cafes").doc(currentCafeID).collection("customer_carts")
-              .where("status", "==", "pending")
-              .onSnapshot(snap => {
-                const list = document.getElementById('customer-carts-list');
-                const badge = document.getElementById('cart-count-badge');
-                if(badge) badge.innerText = snap.size;
-                list.innerHTML = "";
-                if(snap.empty) {
-                    list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد طلبات جديدة من الطاولات حالياً</p>';
-                    return;
+                POSManager.renderInvoiceItemsBuilder();
+                POSManager.renderPOSProductsGrid();
+                POSManager.buildPOSCategoriesFilter();
+            },
+            async deleteProduct(id) {
+                if(confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
+                    await db.collection("cafes").doc(AppState.currentCafeID).collection("products").doc(id).delete();
+                    ProductsManager.loadProducts();
                 }
-                snap.forEach(doc => {
-                    const cart = doc.data();
-                    window._tempCarts = window._tempCarts || {};
-                    window._tempCarts[doc.id] = cart;
+            }
+        };
 
+        // 5. Waiters & Realtime Calls Manager
+        const WaitersManager = {
+            async saveWaiter() {
+                const username = document.getElementById('waiter-username').value;
+                const password = document.getElementById('waiter-password').value;
+                const fullname = document.getElementById('waiter-fullname').value;
+                if(!username || !password) { alert("يرجى إدخال اسم المستخدم وكلمة المرور للنادل"); return; }
+                
+                await db.collection("cafes").doc(AppState.currentCafeID).collection("waiters").doc(username).set({
+                    password, fullname: fullname || username, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert("تم إنشاء حساب النادل بنجاح!");
+                document.getElementById('waiter-username').value = "";
+                document.getElementById('waiter-password').value = "";
+                document.getElementById('waiter-fullname').value = "";
+                WaitersManager.loadWaiters();
+            },
+            async loadWaiters() {
+                const list = document.getElementById('waiters-list');
+                const snap = await db.collection("cafes").doc(AppState.currentCafeID).collection("waiters").get();
+                list.innerHTML = "";
+                if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد حسابات نُدل مضافة</p>'; return; }
+                snap.forEach(doc => {
+                    const w = doc.data();
                     list.innerHTML += `
-                    <div onclick='loadCartToInvoiceById("${doc.id}")' class="interactive-item flex justify-between items-center p-2.5 bg-white rounded-xl border border-blue-200 shadow-sm hover:bg-blue-50 text-right">
-                        <div>
-                            <div class="font-bold text-xs text-blue-900"><i class="fas fa-utensils text-blue-500 ml-1"></i> ${cart.table || 'طاولة عامة'} - <span class="text-emerald-600">${cart.total}</span></div>
-                            <div class="text-[10px] text-slate-500 mt-0.5 line-clamp-1">${cart.itemsSummary || 'تفاصيل الطلبات'}</div>
+                    <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm">
+                        <div class="text-right">
+                            <div class="font-bold text-xs text-slate-800">${w.fullname}</div>
+                            <div class="text-[10px] text-slate-400 font-mono">المستخدم: ${doc.id}</div>
                         </div>
-                        <span class="bg-blue-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap">تحميل</span>
+                        <button onclick="WaitersManager.deleteWaiter('${doc.id}')" class="text-red-500 text-xs px-2 py-1 cursor-pointer bg-transparent border-none"><i class="fas fa-trash"></i></button>
                     </div>`;
                 });
-            });
-        }
-
-        function loadCartToInvoiceById(cartId) {
-            const cart = window._tempCarts && window._tempCarts[cartId];
-            if(!cart) return;
-            
-            document.getElementById('invoice-target').value = cart.table || 'طاولة الزبون';
-            if(cart.items && Array.isArray(cart.items) && cart.items.length > 0) {
-                invoiceInteractiveItems = cart.items.map(i => ({ name: i.name, qty: Number(i.qty) || 1, price: Number(i.price) || 0 }));
-            } else {
-                invoiceInteractiveItems = [{ name: cart.itemsSummary || 'طلب طاولة', qty: 1, price: Number(cart.total) || 0 }];
-            }
-            renderInvoiceItemsBuilder();
-            showSection('pos');
-            window.activeCartIdToResolve = cartId;
-        }
-
-        async function openTaxManager() {
-            document.getElementById('tax-manager-modal').classList.remove('hidden');
-            loadTaxesModalList();
-        }
-        function closeTaxManager() {
-            document.getElementById('tax-manager-modal').classList.add('hidden');
-        }
-
-        async function saveNewTaxConfig() {
-            const name = document.getElementById('new-tax-name').value.trim();
-            const rate = Number(document.getElementById('new-tax-rate').value);
-            if(!name || isNaN(rate)) { alert("يرجى إدخال اسم الضريبة والنسبة المئوية بشكل صحيح"); return; }
-            
-            await db.collection("cafes").doc(currentCafeID).collection("taxes").add({
-                name, rate, createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            document.getElementById('new-tax-name').value = "";
-            document.getElementById('new-tax-rate').value = "";
-            loadTaxesCheckboxes();
-            loadTaxesModalList();
-            alert("تم إضافة الضريبة بنجاح!");
-        }
-
-        async function loadTaxesCheckboxes() {
-            const container = document.getElementById('taxes-checkboxes-container');
-            if(!container) return;
-            const snap = await db.collection("cafes").doc(currentCafeID).collection("taxes").get();
-            cachedTaxesList = [];
-            container.innerHTML = "";
-            
-            if(snap.empty) {
-                container.innerHTML = '<p class="text-[11px] text-slate-400 text-center py-1">لا توجد ضرائب معرفة، أضفها من إدارة الضرائب</p>';
-                calculateInvoiceTotals();
-                return;
-            }
-
-            snap.forEach(doc => {
-                const t = { id: doc.id, ...doc.data() };
-                cachedTaxesList.push(t);
-                container.innerHTML += `
-                <label class="flex items-center justify-between text-xs font-bold text-slate-700 p-1 hover:bg-slate-50 rounded cursor-pointer">
-                    <span class="flex items-center gap-1.5">
-                        <input type="checkbox" value="${t.id}" data-rate="${t.rate}" data-name="${t.name}" onchange="calculateInvoiceTotals()" class="pos-tax-checkbox w-3.5 h-3.5 text-blue-600 rounded">
-                        ${t.name}
-                    </span>
-                    <span class="text-purple-600 font-mono">${t.rate}%</span>
-                </label>`;
-            });
-            calculateInvoiceTotals();
-        }
-
-        async function loadTaxesModalList() {
-            const list = document.getElementById('taxes-list-modal');
-            if(!list) return;
-            const snap = await db.collection("cafes").doc(currentCafeID).collection("taxes").get();
-            list.innerHTML = "";
-            if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400">لا توجد ضرائب مضافة بعد</p>'; return; }
-            snap.forEach(doc => {
-                const t = doc.data();
-                list.innerHTML += `
-                <div class="flex justify-between items-center p-2 bg-slate-50 rounded-lg border text-xs">
-                    <span>${t.name} (${t.rate}%)</span>
-                    <button onclick="deleteTax('${doc.id}')" class="text-red-500 font-bold px-2 py-1 bg-red-50 hover:bg-red-100 rounded transition-all cursor-pointer border-none">حذف</button>
-                </div>`;
-            });
-        }
-
-        async function deleteTax(id) {
-            if(confirm("هل أنت متأكد من حذف هذه الضريبة؟")) {
-                await db.collection("cafes").doc(currentCafeID).collection("taxes").doc(id).delete();
-                loadTaxesCheckboxes();
-                loadTaxesModalList();
-            }
-        }
-
-        function addInvoiceItemRow() {
-            invoiceInteractiveItems.push({ name: '', qty: 1, price: 0 });
-            renderInvoiceItemsBuilder();
-        }
-
-        function removeInvoiceItemRow(index) {
-            invoiceInteractiveItems.splice(index, 1);
-            renderInvoiceItemsBuilder();
-        }
-
-        function updateItemField(index, field, val) {
-            if(invoiceInteractiveItems[index]) {
-                invoiceInteractiveItems[index][field] = field === 'qty' || field === 'price' ? parseFloat(val) || 0 : val;
-                calculateInvoiceTotals();
-            }
-        }
-
-        // دالة بناء بنود الفاتورة المُحسّنة (تصميم صف مدمج مانع للتداخل)
-        function renderInvoiceItemsBuilder() {
-            const container = document.getElementById('invoice-items-builder');
-            if(!container) return;
-            container.innerHTML = "";
-            
-            if(invoiceInteractiveItems.length === 0) {
-                container.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">لا توجد بنود مضافة للفاتورة. اضغط على (إضافة بند) أو اختر من المنيو.</p>';
-                calculateInvoiceTotals();
-                return;
-            }
-
-            invoiceInteractiveItems.forEach((item, index) => {
-                container.innerHTML += `
-                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 shadow-sm text-right space-y-2 mb-2 relative group transition-all hover:border-blue-300">
-                    <!-- الصف الأول: اسم البند وزر الحذف -->
-                    <div class="flex items-center gap-2">
-                        <div class="flex-1">
-                            <input type="text" value="${item.name || ''}" oninput="updateItemField(${index}, 'name', this.value)" placeholder="اسم البند أو الوجبة" class="text-xs py-1.5 px-2 font-bold text-slate-800 bg-white border border-slate-300 rounded-lg w-full">
-                        </div>
-                        <button onclick="removeInvoiceItemRow(${index})" class="text-red-500 hover:text-white hover:bg-red-500 w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all cursor-pointer border border-red-200 bg-white" title="حذف البند">
-                            <i class="fas fa-trash-alt text-xs"></i>
-                        </button>
-                    </div>
-                    
-                    <!-- الصف الثاني: الكمية والسعر الإجمالي الفرعي للبند -->
-                    <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200/60">
-                        <div class="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-slate-200">
-                            <span class="text-[10px] font-bold text-slate-400 shrink-0">الكمية:</span>
-                            <input type="number" value="${item.qty || 1}" min="1" oninput="updateItemField(${index}, 'qty', this.value)" class="text-xs py-0.5 text-center font-black text-blue-600 bg-transparent border-none outline-none w-full">
-                        </div>
-                        <div class="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-slate-200">
-                            <span class="text-[10px] font-bold text-slate-400 shrink-0">السعر:</span>
-                            <input type="number" value="${item.price || 0}" oninput="updateItemField(${index}, 'price', this.value)" class="text-xs py-0.5 text-center font-black text-emerald-600 bg-transparent border-none outline-none w-full">
-                        </div>
-                    </div>
-                </div>`;
-            });
-            calculateInvoiceTotals();
-        }
-
-        function calculateInvoiceTotals() {
-            let subtotal = 0;
-            invoiceInteractiveItems.forEach(item => {
-                subtotal += (Number(item.qty) || 0) * (Number(item.price) || 0);
-            });
-
-            const checkboxes = document.querySelectorAll('.pos-tax-checkbox:checked');
-            let totalTaxValue = 0;
-            let appliedTaxesArray = [];
-            let badgeNames = [];
-
-            checkboxes.forEach(cb => {
-                const rate = Number(cb.getAttribute('data-rate')) || 0;
-                const name = cb.getAttribute('data-name') || 'ضريبة';
-                const taxVal = (subtotal * rate) / 100;
-                totalTaxValue += taxVal;
-                appliedTaxesArray.push({ name, rate, value: taxVal });
-                badgeNames.push(`${name} (${rate}%)`);
-            });
-
-            const total = subtotal + totalTaxValue;
-
-            const subtotalEl = document.getElementById('invoice-subtotal');
-            const taxValEl = document.getElementById('invoice-total-tax-val');
-            const amountEl = document.getElementById('invoice-amount');
-
-            if(subtotalEl) subtotalEl.innerText = subtotal.toFixed(2);
-            if(taxValEl) taxValEl.innerText = totalTaxValue.toFixed(2);
-            if(amountEl) amountEl.innerText = total.toFixed(2);
-
-            const badgeLabel = document.getElementById('active-tax-badge-label');
-            if(badgeLabel) {
-                badgeLabel.innerText = badgeNames.length > 0 ? badgeNames.join(' + ') : 'بدون ضريبة';
-            }
-
-            const breakdownContainer = document.getElementById('applied-taxes-breakdown');
-            if(breakdownContainer) {
-                if(appliedTaxesArray.length === 0) {
-                    breakdownContainer.innerHTML = `
-                    <div class="flex justify-between text-slate-400">
-                        <span>الضرائب والخدمات:</span>
-                        <span>0.00</span>
-                    </div>`;
-                } else {
-                    let html = '';
-                    appliedTaxesArray.forEach(t => {
-                        html += `
-                        <div class="flex justify-between text-purple-700 text-[11px] font-bold my-0.5">
-                            <span>${t.name} (${t.rate}%):</span>
-                            <span>${t.value.toFixed(2)}</span>
+            },
+            async deleteWaiter(id) {
+                if(confirm("هل أنت متأكد من حذف حساب النادل؟")) {
+                    await db.collection("cafes").doc(AppState.currentCafeID).collection("waiters").doc(id).delete();
+                    WaitersManager.loadWaiters();
+                }
+            },
+            listenToWaiterCalls() {
+                db.collection("cafes").doc(AppState.currentCafeID).collection("waiter_calls")
+                  .where("status", "==", "pending")
+                  .onSnapshot(snap => {
+                    const list = document.getElementById('waiter-calls-list');
+                    list.innerHTML = "";
+                    if(snap.empty) {
+                        list.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">لا توجد نداءات جديدة حالياً</p>';
+                        return;
+                    }
+                    snap.forEach(doc => {
+                        const call = doc.data();
+                        list.innerHTML += `
+                        <div class="flex justify-between items-center p-3 bg-white rounded-xl border border-amber-200 shadow-sm animate-bounce">
+                            <div>
+                                <div class="font-bold text-xs text-amber-900"><i class="fas fa-bell text-amber-500 ml-1"></i> نداء من: ${call.table || 'طاولة غير محددة'}</div>
+                                <div class="text-[10px] text-slate-400">${call.time ? new Date(call.time.toDate()).toLocaleTimeString('ar-EG') : ''}</div>
+                            </div>
+                            <button onclick="WaitersManager.resolveCall('${doc.id}')" class="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer border-none">تمت الاستجابة</button>
                         </div>`;
                     });
-                    breakdownContainer.innerHTML = html;
+                });
+            },
+            async resolveCall(callId) {
+                await db.collection("cafes").doc(AppState.currentCafeID).collection("waiter_calls").doc(callId).update({ status: 'resolved' });
+            },
+            listenToCustomerCarts() {
+                db.collection("cafes").doc(AppState.currentCafeID).collection("customer_carts")
+                  .where("status", "==", "pending")
+                  .onSnapshot(snap => {
+                    const list = document.getElementById('customer-carts-list');
+                    const badge = document.getElementById('cart-count-badge');
+                    if(badge) badge.innerText = snap.size;
+                    list.innerHTML = "";
+                    if(snap.empty) {
+                        list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد طلبات جديدة من الطاولات حالياً</p>';
+                        return;
+                    }
+                    snap.forEach(doc => {
+                        const cart = doc.data();
+                        AppState.tempCarts[doc.id] = cart;
+
+                        list.innerHTML += `
+                        <div onclick="POSManager.loadCartToInvoiceById('${doc.id}')" class="interactive-item flex justify-between items-center p-2.5 bg-white rounded-xl border border-blue-200 shadow-sm hover:bg-blue-50 text-right">
+                            <div>
+                                <div class="font-bold text-xs text-blue-900"><i class="fas fa-utensils text-blue-500 ml-1"></i> ${cart.table || 'طاولة عامة'} - <span class="text-emerald-600">${cart.total}</span></div>
+                                <div class="text-[10px] text-slate-500 mt-0.5 line-clamp-1">${cart.itemsSummary || 'تفاصيل الطلبات'}</div>
+                            </div>
+                            <span class="bg-blue-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap">تحميل</span>
+                        </div>`;
+                    });
+                });
+            }
+        };
+
+        // 6. Tax Management
+        const TaxManager = {
+            async openTaxManager() {
+                document.getElementById('tax-manager-modal').classList.remove('hidden');
+                TaxManager.loadTaxesModalList();
+            },
+            closeTaxManager() {
+                document.getElementById('tax-manager-modal').classList.add('hidden');
+            },
+            async saveNewTaxConfig() {
+                const name = document.getElementById('new-tax-name').value.trim();
+                const rate = Number(document.getElementById('new-tax-rate').value);
+                if(!name || isNaN(rate)) { alert("يرجى إدخال اسم الضريبة والنسبة المئوية بشكل صحيح"); return; }
+                
+                await db.collection("cafes").doc(AppState.currentCafeID).collection("taxes").add({
+                    name, rate, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                document.getElementById('new-tax-name').value = "";
+                document.getElementById('new-tax-rate').value = "";
+                TaxManager.loadTaxesCheckboxes();
+                TaxManager.loadTaxesModalList();
+                alert("تم إضافة الضريبة بنجاح!");
+            },
+            async loadTaxesCheckboxes() {
+                const container = document.getElementById('taxes-checkboxes-container');
+                if(!container) return;
+                const snap = await db.collection("cafes").doc(AppState.currentCafeID).collection("taxes").get();
+                AppState.cachedTaxesList = [];
+                container.innerHTML = "";
+                
+                if(snap.empty) {
+                    container.innerHTML = '<p class="text-[11px] text-slate-400 text-center py-1">لا توجد ضرائب معرفة، أضفها من إدارة الضرائب</p>';
+                    POSManager.calculateInvoiceTotals();
+                    return;
+                }
+
+                snap.forEach(doc => {
+                    const t = { id: doc.id, ...doc.data() };
+                    AppState.cachedTaxesList.push(t);
+                    container.innerHTML += `
+                    <label class="flex items-center justify-between text-xs font-bold text-slate-700 p-1 hover:bg-slate-50 rounded cursor-pointer">
+                        <span class="flex items-center gap-1.5">
+                            <input type="checkbox" value="${t.id}" data-rate="${t.rate}" data-name="${t.name}" onchange="POSManager.calculateInvoiceTotals()" class="pos-tax-checkbox w-3.5 h-3.5 text-blue-600 rounded">
+                            ${t.name}
+                        </span>
+                        <span class="text-purple-600 font-mono">${t.rate}%</span>
+                    </label>`;
+                });
+                POSManager.calculateInvoiceTotals();
+            },
+            async loadTaxesModalList() {
+                const list = document.getElementById('taxes-list-modal');
+                if(!list) return;
+                const snap = await db.collection("cafes").doc(AppState.currentCafeID).collection("taxes").get();
+                list.innerHTML = "";
+                if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400">لا توجد ضرائب مضافة بعد</p>'; return; }
+                snap.forEach(doc => {
+                    const t = doc.data();
+                    list.innerHTML += `
+                    <div class="flex justify-between items-center p-2 bg-slate-50 rounded-lg border text-xs">
+                        <span>${t.name} (${t.rate}%)</span>
+                        <button onclick="TaxManager.deleteTax('${doc.id}')" class="text-red-500 font-bold px-2 py-1 bg-red-50 hover:bg-red-100 rounded transition-all cursor-pointer border-none">حذف</button>
+                    </div>`;
+                });
+            },
+            async deleteTax(id) {
+                if(confirm("هل أنت متأكد من حذف هذه الضريبة؟")) {
+                    await db.collection("cafes").doc(AppState.currentCafeID).collection("taxes").doc(id).delete();
+                    TaxManager.loadTaxesCheckboxes();
+                    TaxManager.loadTaxesModalList();
                 }
             }
+        };
 
-            window.activeAppliedTaxes = appliedTaxesArray;
-        }
+        // 7. POS & Invoicing Manager
+        const POSManager = {
+            generateNewSerial() {
+                const serial = 'INV-' + Math.floor(100000 + Math.random() * 900000);
+                document.getElementById('invoice-serial').innerText = serial;
+            },
+            buildPOSCategoriesFilter() {
+                const container = document.getElementById('pos-categories-filter');
+                if(!container) return;
+                const categories = ['all'];
+                AppState.globalProductsCache.forEach(p => {
+                    const cat = p.category || 'عام';
+                    if(!categories.includes(cat)) categories.push(cat);
+                });
+                
+                container.innerHTML = '';
+                categories.forEach(cat => {
+                    const active = AppState.currentPOSCategory === cat;
+                    const label = cat === 'all' ? 'الكل' : cat;
+                    container.innerHTML += `
+                    <button onclick="POSManager.filterByCategory('${cat}')" class="category-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer border-none ${active ? 'bg-blue-600 text-white shadow' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">${label}</button>`;
+                });
+            },
+            filterByCategory(cat) {
+                AppState.currentPOSCategory = cat;
+                POSManager.buildPOSCategoriesFilter();
+                POSManager.renderPOSProductsGrid();
+            },
+            filterProducts() {
+                POSManager.renderPOSProductsGrid();
+            },
+            renderPOSProductsGrid() {
+                const grid = document.getElementById('pos-products-grid');
+                if(!grid) return;
+                const searchInput = document.getElementById('pos-product-search');
+                const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
-        function clearInvoiceForm() {
-            document.getElementById('invoice-target').value = "";
-            invoiceInteractiveItems = [];
-            document.querySelectorAll('.pos-tax-checkbox').forEach(cb => cb.checked = false);
-            renderInvoiceItemsBuilder();
-            generateNewSerial();
-            window.activeCartIdToResolve = null;
-        }
+                let filtered = AppState.globalProductsCache.filter(p => {
+                    const matchCat = AppState.currentPOSCategory === 'all' || (p.category || 'عام') === AppState.currentPOSCategory;
+                    const matchSearch = !query || p.name.toLowerCase().includes(query) || (p.category && p.category.toLowerCase().includes(query));
+                    return matchCat && matchSearch;
+                });
 
-        async function issueInvoice() {
-            const target = document.getElementById('invoice-target').value.trim();
-            const subtotal = Number(document.getElementById('invoice-subtotal').innerText) || 0;
-            const tax = Number(document.getElementById('invoice-total-tax-val').innerText) || 0;
-            const appliedTaxes = window.activeAppliedTaxes || [];
-            const amount = Number(document.getElementById('invoice-amount').innerText) || 0;
-            const serial = document.getElementById('invoice-serial').innerText;
+                grid.innerHTML = '';
+                if(filtered.length === 0) {
+                    grid.innerHTML = '<p class="text-xs text-slate-400 text-center col-span-full py-8">لا توجد منتجات مطابقة في المنيو</p>';
+                    return;
+                }
 
-            if(!target || amount <= 0 || invoiceInteractiveItems.length === 0) { 
-                alert("يرجى إدخال اسم الطاولة/الزبون وبنود صحيحة للفاتورة"); 
-                return; 
-            }
+                filtered.forEach(p => {
+                    grid.innerHTML += `
+                    <div onclick="POSManager.addProductToInvoice('${p.name.replace(/'/g, "\\'")}', ${p.price})" class="pos-menu-card">
+                        <img src="${p.image || 'https://via.placeholder.com/150'}" class="w-16 h-16 object-cover rounded-xl bg-slate-100 shrink-0">
+                        <div class="flex-1 text-right">
+                            <div class="flex justify-between items-start">
+                                <h4 class="font-bold text-xs text-slate-800 line-clamp-1 mb-0.5">${p.name}</h4>
+                                <span class="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow">${p.price}</span>
+                            </div>
+                            <p class="text-[10px] text-slate-500 line-clamp-1 mb-1.5">${p.description || p.category || 'مشروبات ومأكولات'}</p>
+                            <span class="bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white px-2.5 py-1 rounded-lg text-[10px] font-bold inline-flex items-center gap-1 transition-all">
+                                <i class="fas fa-plus"></i> إضافة للفاتورة
+                            </span>
+                        </div>
+                    </div>`;
+                });
+            },
+            addProductToInvoice(name, price) {
+                const existing = AppState.invoiceInteractiveItems.find(i => i.name === name);
+                if(existing) {
+                    existing.qty = (Number(existing.qty) || 1) + 1;
+                } else {
+                    AppState.invoiceInteractiveItems.push({ name, qty: 1, price: Number(price) || 0 });
+                }
+                POSManager.renderInvoiceItemsBuilder();
+            },
+            addInvoiceItemRow() {
+                AppState.invoiceInteractiveItems.push({ name: '', qty: 1, price: 0 });
+                POSManager.renderInvoiceItemsBuilder();
+            },
+            removeInvoiceItemRow(index) {
+                AppState.invoiceInteractiveItems.splice(index, 1);
+                POSManager.renderInvoiceItemsBuilder();
+            },
+            updateItemField(index, field, val) {
+                if(AppState.invoiceInteractiveItems[index]) {
+                    AppState.invoiceInteractiveItems[index][field] = field === 'qty' || field === 'price' ? parseFloat(val) || 0 : val;
+                    POSManager.calculateInvoiceTotals();
+                }
+            },
+            renderInvoiceItemsBuilder() {
+                const container = document.getElementById('invoice-items-builder');
+                if(!container) return;
+                container.innerHTML = "";
+                
+                if(AppState.invoiceInteractiveItems.length === 0) {
+                    container.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">لا توجد بنود مضافة للفاتورة. اضغط على (إضافة بند) أو اختر من المنيو.</p>';
+                    POSManager.calculateInvoiceTotals();
+                    return;
+                }
 
-            const detailsSummary = invoiceInteractiveItems.map(i => `${i.qty}x ${i.name} (${i.price})`).join(' - ');
+                AppState.invoiceInteractiveItems.forEach((item, index) => {
+                    container.innerHTML += `
+                    <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 shadow-sm text-right space-y-2 mb-2 relative group transition-all hover:border-blue-300">
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1">
+                                <input type="text" value="${item.name || ''}" oninput="POSManager.updateItemField(${index}, 'name', this.value)" placeholder="اسم البند أو الوجبة" class="text-xs py-1.5 px-2 font-bold text-slate-800 bg-white border border-slate-300 rounded-lg w-full">
+                            </div>
+                            <button onclick="POSManager.removeInvoiceItemRow(${index})" class="text-red-500 hover:text-white hover:bg-red-500 w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all cursor-pointer border border-red-200 bg-white" title="حذف البند">
+                                <i class="fas fa-trash-alt text-xs"></i>
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200/60">
+                            <div class="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-slate-200">
+                                <span class="text-[10px] font-bold text-slate-400 shrink-0">الكمية:</span>
+                                <input type="number" value="${item.qty || 1}" min="1" oninput="POSManager.updateItemField(${index}, 'qty', this.value)" class="text-xs py-0.5 text-center font-black text-blue-600 bg-transparent border-none outline-none w-full">
+                            </div>
+                            <div class="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-slate-200">
+                                <span class="text-[10px] font-bold text-slate-400 shrink-0">السعر:</span>
+                                <input type="number" value="${item.price || 0}" oninput="POSManager.updateItemField(${index}, 'price', this.value)" class="text-xs py-0.5 text-center font-black text-emerald-600 bg-transparent border-none outline-none w-full">
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                POSManager.calculateInvoiceTotals();
+            },
+            calculateInvoiceTotals() {
+                let subtotal = 0;
+                AppState.invoiceInteractiveItems.forEach(item => {
+                    subtotal += (Number(item.qty) || 0) * (Number(item.price) || 0);
+                });
 
-            try {
-                await db.collection("cafes").doc(currentCafeID).collection("invoices").add({
+                const checkboxes = document.querySelectorAll('.pos-tax-checkbox:checked');
+                let totalTaxValue = 0;
+                let appliedTaxesArray = [];
+                let badgeNames = [];
+
+                checkboxes.forEach(cb => {
+                    const rate = Number(cb.getAttribute('data-rate')) || 0;
+                    const name = cb.getAttribute('data-name') || 'ضريبة';
+                    const taxVal = (subtotal * rate) / 100;
+                    totalTaxValue += taxVal;
+                    appliedTaxesArray.push({ name, rate, value: taxVal });
+                    badgeNames.push(`${name} (${rate}%)`);
+                });
+
+                const total = subtotal + totalTaxValue;
+
+                const subtotalEl = document.getElementById('invoice-subtotal');
+                const taxValEl = document.getElementById('invoice-total-tax-val');
+                const amountEl = document.getElementById('invoice-amount');
+
+                if(subtotalEl) subtotalEl.innerText = subtotal.toFixed(2);
+                if(taxValEl) taxValEl.innerText = totalTaxValue.toFixed(2);
+                if(amountEl) amountEl.innerText = total.toFixed(2);
+
+                const badgeLabel = document.getElementById('active-tax-badge-label');
+                if(badgeLabel) {
+                    badgeLabel.innerText = badgeNames.length > 0 ? badgeNames.join(' + ') : 'بدون ضريبة';
+                }
+
+                const breakdownContainer = document.getElementById('applied-taxes-breakdown');
+                if(breakdownContainer) {
+                    if(appliedTaxesArray.length === 0) {
+                        breakdownContainer.innerHTML = `
+                        <div class="flex justify-between text-slate-400">
+                            <span>الضرائب والخدمات:</span>
+                            <span>0.00</span>
+                        </div>`;
+                    } else {
+                        let html = '';
+                        appliedTaxesArray.forEach(t => {
+                            html += `
+                            <div class="flex justify-between text-purple-700 text-[11px] font-bold my-0.5">
+                                <span>${t.name} (${t.rate}%):</span>
+                                <span>${t.value.toFixed(2)}</span>
+                            </div>`;
+                        });
+                        breakdownContainer.innerHTML = html;
+                    }
+                }
+
+                AppState.activeAppliedTaxes = appliedTaxesArray;
+            },
+            clearInvoiceForm() {
+                document.getElementById('invoice-target').value = "";
+                AppState.invoiceInteractiveItems = [];
+                document.querySelectorAll('.pos-tax-checkbox').forEach(cb => cb.checked = false);
+                POSManager.renderInvoiceItemsBuilder();
+                POSManager.generateNewSerial();
+                AppState.activeCartIdToResolve = null;
+            },
+            async issueInvoice() {
+                const target = document.getElementById('invoice-target').value.trim();
+                const subtotal = Number(document.getElementById('invoice-subtotal').innerText) || 0;
+                const tax = Number(document.getElementById('invoice-total-tax-val').innerText) || 0;
+                const appliedTaxes = AppState.activeAppliedTaxes || [];
+                const amount = Number(document.getElementById('invoice-amount').innerText) || 0;
+                const serial = document.getElementById('invoice-serial').innerText;
+
+                if(!target || amount <= 0 || AppState.invoiceInteractiveItems.length === 0) { 
+                    alert("يرجى إدخال اسم الطاولة/الزبون وبنود صحيحة للفاتورة"); 
+                    return; 
+                }
+
+                const detailsSummary = AppState.invoiceInteractiveItems.map(i => `${i.qty}x ${i.name} (${i.price})`).join(' - ');
+
+                try {
+                    await db.collection("cafes").doc(AppState.currentCafeID).collection("invoices").add({
+                        serial,
+                        target,
+                        items: AppState.invoiceInteractiveItems,
+                        details: detailsSummary,
+                        subtotal,
+                        tax,
+                        appliedTaxes,
+                        amount,
+                        date: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    if(AppState.activeCartIdToResolve) {
+                        await db.collection("cafes").doc(AppState.currentCafeID).collection("customer_carts").doc(AppState.activeCartIdToResolve).update({ status: 'billed' });
+                        AppState.activeCartIdToResolve = null;
+                    }
+
+                    alert("تم إصدار وحفظ الفاتورة بنجاح في النظام المحاسبي!");
+                    POSManager.clearInvoiceForm();
+                    POSManager.loadInvoices();
+                } catch(e) {
+                    console.error(e);
+                    alert("حدث خطأ أثناء حفظ الفاتورة في قاعدة البيانات");
+                }
+            },
+            async loadInvoices() {
+                const snap = await db.collection("cafes").doc(AppState.currentCafeID).collection("invoices").orderBy("date", "desc").get();
+                AppState.allInvoicesCache = [];
+                snap.forEach(doc => {
+                    AppState.allInvoicesCache.push({ id: doc.id, ...doc.data() });
+                });
+                POSManager.renderInvoicesList(AppState.allInvoicesCache);
+            },
+            renderInvoicesList(invoices) {
+                const list = document.getElementById('invoices-list');
+                list.innerHTML = "";
+                if(invoices.length === 0) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد فواتير مسجلة مطابقة</p>'; return; }
+                
+                invoices.forEach(inv => {
+                    AppState.tempInvoices[inv.id] = inv;
+                    
+                    let taxDesc = '';
+                    if(inv.appliedTaxes && inv.appliedTaxes.length > 0) {
+                        taxDesc = ` | ` + inv.appliedTaxes.map(t => `${t.name} (${t.rate}%): ${t.value.toFixed(2)}`).join(', ');
+                    } else if(inv.tax > 0) {
+                        taxDesc = ` | الضريبة: ${inv.tax}`;
+                    }
+
+                    let timeStr = '';
+                    if(inv.date && typeof inv.date.toDate === 'function') {
+                        timeStr = new Date(inv.date.toDate()).toLocaleTimeString('ar-EG');
+                    }
+
+                    list.innerHTML += `
+                    <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm hover:bg-slate-50 text-right">
+                        <div class="flex items-center gap-2">
+                            <button onclick="POSManager.printSpecificInvoice('${inv.id}')" class="bg-blue-600 text-white px-2.5 py-1.5 rounded-lg text-xs shadow cursor-pointer border-none"><i class="fas fa-print"></i></button>
+                            <span class="text-[10px] text-slate-400">${timeStr}</span>
+                        </div>
+                        <div onclick="POSManager.loadInvoiceToPOS('${inv.id}')" class="customer-row text-right flex-1">
+                            <div class="font-bold text-xs text-slate-800">
+                                <span class="text-emerald-600 font-bold ml-2">(${inv.amount})</span> - ${inv.target} 
+                                <span class="text-blue-600 font-mono mr-2">${inv.serial || 'INV-000'}</span>
+                            </div>
+                            <div class="text-[10px] text-slate-500">${inv.details || 'بدون تفاصيل'}${taxDesc}</div>
+                        </div>
+                    </div>`;
+                });
+            },
+            loadInvoiceToPOS(invId) {
+                const inv = AppState.tempInvoices[invId];
+                if(!inv) return;
+
+                document.getElementById('invoice-serial').innerText = inv.serial || 'INV-' + Math.floor(100000 + Math.random() * 900000);
+                document.getElementById('invoice-target').value = inv.target || '';
+                if(inv.items && Array.isArray(inv.items) && inv.items.length > 0) {
+                    AppState.invoiceInteractiveItems = JSON.parse(JSON.stringify(inv.items));
+                } else {
+                    AppState.invoiceInteractiveItems = [{ name: inv.details || 'بند الفاتورة', qty: 1, price: inv.subtotal || inv.amount || 0 }];
+                }
+
+                document.querySelectorAll('.pos-tax-checkbox').forEach(cb => {
+                    const name = cb.getAttribute('data-name');
+                    const matched = inv.appliedTaxes && inv.appliedTaxes.some(t => t.name === name);
+                    cb.checked = Boolean(matched);
+                });
+
+                POSManager.renderInvoiceItemsBuilder();
+                NavigationManager.showSection('pos');
+            },
+            loadCartToInvoiceById(cartId) {
+                const cart = AppState.tempCarts[cartId];
+                if(!cart) return;
+                
+                document.getElementById('invoice-target').value = cart.table || 'طاولة الزبون';
+                if(cart.items && Array.isArray(cart.items) && cart.items.length > 0) {
+                    AppState.invoiceInteractiveItems = cart.items.map(i => ({ name: i.name, qty: Number(i.qty) || 1, price: Number(i.price) || 0 }));
+                } else {
+                    AppState.invoiceInteractiveItems = [{ name: cart.itemsSummary || 'طلب طاولة', qty: 1, price: Number(cart.total) || 0 }];
+                }
+                POSManager.renderInvoiceItemsBuilder();
+                NavigationManager.showSection('pos');
+                AppState.activeCartIdToResolve = cartId;
+            },
+            filterInvoices() {
+                const query = document.getElementById('invoice-search-input').value.toLowerCase().trim();
+                if(!query) {
+                    POSManager.renderInvoicesList(AppState.allInvoicesCache);
+                    return;
+                }
+                const filtered = AppState.allInvoicesCache.filter(inv => 
+                    (inv.serial && inv.serial.toLowerCase().includes(query)) || 
+                    (inv.target && inv.target.toLowerCase().includes(query))
+                );
+                POSManager.renderInvoicesList(filtered);
+            },
+            executePrintWindow(invoiceData) {
+                const cafeName = document.getElementById('display-cafe-name').innerText || 'المنشأة';
+                let itemsHTML = '';
+                
+                invoiceData.items.forEach(i => {
+                    itemsHTML += `
+                        <tr>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">${i.name}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center;">${i.qty}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center;">${i.price}</td>
+                            <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: left;">${(i.qty * i.price).toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+
+                let taxesRowsHTML = '';
+                if(invoiceData.appliedTaxes && invoiceData.appliedTaxes.length > 0) {
+                    invoiceData.appliedTaxes.forEach(t => {
+                        taxesRowsHTML += `<div><span>${t.name} (${t.rate}%):</span> <span>${t.value.toFixed(2)}</span></div>`;
+                    });
+                } else if(invoiceData.tax > 0) {
+                    taxesRowsHTML += `<div><span>الضريبة:</span> <span>${invoiceData.tax.toFixed(2)}</span></div>`;
+                }
+
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html lang="ar" dir="rtl">
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>فاتورة - ${invoiceData.serial}</title>
+                        <style>
+                            body { font-family: 'Cairo', Tahoma, sans-serif; padding: 20px; color: #111; max-width: 400px; margin: auto; direction: rtl; }
+                            .header { text-align: center; border-bottom: 2px dashed #333; padding-bottom: 10px; margin-bottom: 15px; }
+                            .header h2 { margin: 0 0 5px 0; font-size: 22px; color: #2563eb; }
+                            .info { font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; font-weight: bold; }
+                            table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 15px; }
+                            th { background: #f3f4f6; padding: 6px; border-bottom: 2px solid #333; }
+                            .totals { border-top: 1px solid #333; padding-top: 8px; font-size: 12px; }
+                            .totals div { display: flex; justify-content: space-between; margin-bottom: 5px; }
+                            .total-final { font-weight: 900; font-size: 15px; color: #059669; border-top: 1px dashed #333; padding-top: 5px; }
+                            .footer { text-align: center; margin-top: 25px; font-size: 11px; color: #666; border-top: 1px solid #eee; padding-top: 10px; }
+                            @media print {
+                                body { padding: 0; }
+                                button { display: none; }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="header">
+                            <h2>${cafeName}</h2>
+                            <p style="font-size: 12px; margin: 0; color: #555;">فاتورة مبيعات</p>
+                        </div>
+                        <div class="info">
+                            <div>الرقم: <span style="font-family: monospace;">${invoiceData.serial}</span></div>
+                            <div>التاريخ: ${invoiceData.dateStr}</div>
+                        </div>
+                        <div style="font-size: 12px; font-weight: bold; margin-bottom: 10px;">
+                            العميل / الطاولة: <span style="color: #2563eb;">${invoiceData.target}</span>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="text-align: right;">البند</th>
+                                    <th style="text-align: center;">الكمية</th>
+                                    <th style="text-align: center;">السعر</th>
+                                    <th style="text-align: left;">الإجمالي</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${itemsHTML}
+                            </tbody>
+                        </table>
+                        <div class="totals">
+                            <div><span>المبلغ الفرعي:</span> <span>${invoiceData.subtotal.toFixed(2)}</span></div>
+                            ${taxesRowsHTML}
+                            <div class="total-final"><span>الإجمالي النهائي:</span> <span>${invoiceData.amount.toFixed(2)}</span></div>
+                        </div>
+                        <div class="footer">
+                            شكراً لزيارتكم! نتشرف بخدمتكم دائماً.<br>
+                            <button onclick="window.print()" style="margin-top: 15px; background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%;">طباعة الفاتورة / حفظ PDF</button>
+                        </div>
+                        <script>
+                            window.onload = function() { setTimeout(() => { window.print(); }, 400); };
+                        <\/script>
+                    </body>
+                    </html>
+                `);
+                printWindow.document.close();
+            },
+            printCurrentInvoice() {
+                const target = document.getElementById('invoice-target').value.trim();
+                const serial = document.getElementById('invoice-serial').innerText;
+                const subtotal = Number(document.getElementById('invoice-subtotal').innerText) || 0;
+                const tax = Number(document.getElementById('invoice-total-tax-val').innerText) || 0;
+                const appliedTaxes = AppState.activeAppliedTaxes || [];
+                const amount = Number(document.getElementById('invoice-amount').innerText) || 0;
+
+                if(!target || AppState.invoiceInteractiveItems.length === 0) {
+                    alert("يرجى إدخال اسم الطاولة وبنود الفاتورة أولاً");
+                    return;
+                }
+
+                POSManager.executePrintWindow({
                     serial,
                     target,
-                    items: invoiceInteractiveItems,
-                    details: detailsSummary,
+                    items: AppState.invoiceInteractiveItems,
                     subtotal,
                     tax,
                     appliedTaxes,
                     amount,
-                    date: firebase.firestore.FieldValue.serverTimestamp()
+                    dateStr: new Date().toLocaleString('ar-EG')
                 });
+            },
+            printSpecificInvoice(invId) {
+                const inv = AppState.tempInvoices[invId];
+                if(!inv) return;
 
-                if(window.activeCartIdToResolve) {
-                    await db.collection("cafes").doc(currentCafeID).collection("customer_carts").doc(window.activeCartIdToResolve).update({ status: 'billed' });
-                    window.activeCartIdToResolve = null;
-                }
-
-                alert("تم إصدار وحفظ الفاتورة بنجاح في النظام المحاسبي!");
-                clearInvoiceForm();
-                loadInvoices();
-            } catch(e) {
-                console.error(e);
-                alert("حدث خطأ أثناء حفظ الفاتورة في قاعدة البيانات");
-            }
-        }
-
-        async function loadInvoices() {
-            const snap = await db.collection("cafes").doc(currentCafeID).collection("invoices").orderBy("date", "desc").get();
-            allInvoicesCache = [];
-            snap.forEach(doc => {
-                allInvoicesCache.push({ id: doc.id, ...doc.data() });
-            });
-            renderInvoicesList(allInvoicesCache);
-        }
-
-        function renderInvoicesList(invoices) {
-            const list = document.getElementById('invoices-list');
-            list.innerHTML = "";
-            if(invoices.length === 0) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد فواتير مسجلة مطابقة</p>'; return; }
-            
-            window._tempInvoices = window._tempInvoices || {};
-
-            invoices.forEach(inv => {
-                window._tempInvoices[inv.id] = inv;
-                
-                let taxDesc = '';
-                if(inv.appliedTaxes && inv.appliedTaxes.length > 0) {
-                    taxDesc = ` | ` + inv.appliedTaxes.map(t => `${t.name} (${t.rate}%): ${t.value.toFixed(2)}`).join(', ');
-                } else if(inv.tax > 0) {
-                    taxDesc = ` | الضريبة: ${inv.tax}`;
-                }
-
-                let timeStr = '';
+                let dateStr = new Date().toLocaleString('ar-EG');
                 if(inv.date && typeof inv.date.toDate === 'function') {
-                    timeStr = new Date(inv.date.toDate()).toLocaleTimeString('ar-EG');
+                    dateStr = new Date(inv.date.toDate()).toLocaleString('ar-EG');
                 }
 
-                list.innerHTML += `
-                <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm hover:bg-slate-50 text-right">
-                    <div class="flex items-center gap-2">
-                        <button onclick='printSpecificInvoicePrintView("${inv.id}")' class="bg-blue-600 text-white px-2.5 py-1.5 rounded-lg text-xs shadow cursor-pointer border-none"><i class="fas fa-print"></i></button>
-                        <span class="text-[10px] text-slate-400">${timeStr}</span>
-                    </div>
-                    <div onclick='loadInvoiceToPOS("${inv.id}")' class="customer-row text-right flex-1">
-                        <div class="font-bold text-xs text-slate-800">
-                            <span class="text-emerald-600 font-bold ml-2">(${inv.amount})</span> - ${inv.target} 
-                            <span class="text-blue-600 font-mono mr-2">${inv.serial || 'INV-000'}</span>
-                        </div>
-                        <div class="text-[10px] text-slate-500">${inv.details || 'بدون تفاصيل'}${taxDesc}</div>
-                    </div>
-                </div>`;
-            });
-        }
-
-        function loadInvoiceToPOS(invId) {
-            const inv = window._tempInvoices && window._tempInvoices[invId];
-            if(!inv) return;
-
-            document.getElementById('invoice-serial').innerText = inv.serial || 'INV-' + Math.floor(100000 + Math.random() * 900000);
-            document.getElementById('invoice-target').value = inv.target || '';
-            if(inv.items && Array.isArray(inv.items) && inv.items.length > 0) {
-                invoiceInteractiveItems = JSON.parse(JSON.stringify(inv.items));
-            } else {
-                invoiceInteractiveItems = [{ name: inv.details || 'بند الفاتورة', qty: 1, price: inv.subtotal || inv.amount || 0 }];
-            }
-
-            document.querySelectorAll('.pos-tax-checkbox').forEach(cb => {
-                const name = cb.getAttribute('data-name');
-                const matched = inv.appliedTaxes && inv.appliedTaxes.some(t => t.name === name);
-                cb.checked = Boolean(matched);
-            });
-
-            renderInvoiceItemsBuilder();
-            showSection('pos');
-        }
-
-        function filterInvoices() {
-            const query = document.getElementById('invoice-search-input').value.toLowerCase().trim();
-            if(!query) {
-                renderInvoicesList(allInvoicesCache);
-                return;
-            }
-            const filtered = allInvoicesCache.filter(inv => 
-                (inv.serial && inv.serial.toLowerCase().includes(query)) || 
-                (inv.target && inv.target.toLowerCase().includes(query))
-            );
-            renderInvoicesList(filtered);
-        }
-
-        function executePrintWindow(invoiceData) {
-            const cafeName = document.getElementById('display-cafe-name').innerText || 'المنشأة';
-            let itemsHTML = '';
-            
-            invoiceData.items.forEach(i => {
-                itemsHTML += `
-                    <tr>
-                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">${i.name}</td>
-                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center;">${i.qty}</td>
-                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center;">${i.price}</td>
-                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: left;">${(i.qty * i.price).toFixed(2)}</td>
-                    </tr>
-                `;
-            });
-
-            let taxesRowsHTML = '';
-            if(invoiceData.appliedTaxes && invoiceData.appliedTaxes.length > 0) {
-                invoiceData.appliedTaxes.forEach(t => {
-                    taxesRowsHTML += `<div><span>${t.name} (${t.rate}%):</span> <span>${t.value.toFixed(2)}</span></div>`;
+                const items = inv.items || [{ name: inv.details || 'تفاصيل الفاتورة', qty: 1, price: inv.subtotal || inv.amount || 0 }];
+                
+                POSManager.executePrintWindow({
+                    serial: inv.serial || 'INV-000',
+                    target: inv.target || 'عام',
+                    items,
+                    subtotal: Number(inv.subtotal) || Number(inv.amount) || 0,
+                    tax: Number(inv.tax) || 0,
+                    appliedTaxes: inv.appliedTaxes || [],
+                    amount: Number(inv.amount) || 0,
+                    dateStr
                 });
-            } else if(invoiceData.tax > 0) {
-                taxesRowsHTML += `<div><span>الضريبة:</span> <span>${invoiceData.tax.toFixed(2)}</span></div>`;
             }
+        };
 
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-                <!DOCTYPE html>
-                <html lang="ar" dir="rtl">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>فاتورة - ${invoiceData.serial}</title>
-                    <style>
-                        body { font-family: 'Cairo', Tahoma, sans-serif; padding: 20px; color: #111; max-width: 400px; margin: auto; direction: rtl; }
-                        .header { text-align: center; border-bottom: 2px dashed #333; padding-bottom: 10px; margin-bottom: 15px; }
-                        .header h2 { margin: 0 0 5px 0; font-size: 22px; color: #2563eb; }
-                        .info { font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; font-weight: bold; }
-                        table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 15px; }
-                        th { background: #f3f4f6; padding: 6px; border-bottom: 2px solid #333; }
-                        .totals { border-top: 1px solid #333; padding-top: 8px; font-size: 12px; }
-                        .totals div { display: flex; justify-content: space-between; margin-bottom: 5px; }
-                        .total-final { font-weight: 900; font-size: 15px; color: #059669; border-top: 1px dashed #333; padding-top: 5px; }
-                        .footer { text-align: center; margin-top: 25px; font-size: 11px; color: #666; border-top: 1px solid #eee; padding-top: 10px; }
-                        @media print {
-                            body { padding: 0; }
-                            button { display: none; }
+        // 8. Reports Manager
+        const ReportManager = {
+            async generateDailySalesReport() {
+                const todayStr = new Date().toDateString();
+                let todayInvoices = AppState.allInvoicesCache.filter(inv => {
+                    if(!inv.date || typeof inv.date.toDate !== 'function') return false;
+                    return new Date(inv.date.toDate()).toDateString() === todayStr;
+                });
+
+                let totalSales = 0;
+                let totalTaxes = 0;
+                let totalSub = 0;
+                let productSalesSummary = {};
+
+                todayInvoices.forEach(inv => {
+                    totalSub += Number(inv.subtotal) || Number(inv.amount) || 0;
+                    totalTaxes += Number(inv.tax) || 0;
+                    totalSales += Number(inv.amount) || 0;
+
+                    let items = inv.items || [{ name: inv.details || 'مبيعات عامة', qty: 1, price: inv.amount || 0 }];
+                    items.forEach(i => {
+                        if(!productSalesSummary[i.name]) {
+                            productSalesSummary[i.name] = { qty: 0, total: 0 };
                         }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <h2>${cafeName}</h2>
-                        <p style="font-size: 12px; margin: 0; color: #555;">فاتورة مبيعات</p>
-                    </div>
-                    <div class="info">
-                        <div>الرقم: <span style="font-family: monospace;">${invoiceData.serial}</span></div>
-                        <div>التاريخ: ${invoiceData.dateStr}</div>
-                    </div>
-                    <div style="font-size: 12px; font-weight: bold; margin-bottom: 10px;">
-                        العميل / الطاولة: <span style="color: #2563eb;">${invoiceData.target}</span>
-                    </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="text-align: right;">البند</th>
-                                <th style="text-align: center;">الكمية</th>
-                                <th style="text-align: center;">السعر</th>
-                                <th style="text-align: left;">الإجمالي</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${itemsHTML}
-                        </tbody>
-                    </table>
-                    <div class="totals">
-                        <div><span>المبلغ الفرعي:</span> <span>${invoiceData.subtotal.toFixed(2)}</span></div>
-                        ${taxesRowsHTML}
-                        <div class="total-final"><span>الإجمالي النهائي:</span> <span>${invoiceData.amount.toFixed(2)}</span></div>
-                    </div>
-                    <div class="footer">
-                        شكراً لزيارتكم! نتشرف بخدمتكم دائماً.<br>
-                        <button onclick="window.print()" style="margin-top: 15px; background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%;">طباعة الفاتورة / حفظ PDF</button>
-                    </div>
-                    <script>
-                        window.onload = function() { setTimeout(() => { window.print(); }, 400); };
-                    <\/script>
-                </body>
-                </html>
-            `);
-            printWindow.document.close();
-        }
-
-        function printCurrentPOSInvoicePrintView() {
-            const target = document.getElementById('invoice-target').value.trim();
-            const serial = document.getElementById('invoice-serial').innerText;
-            const subtotal = Number(document.getElementById('invoice-subtotal').innerText) || 0;
-            const tax = Number(document.getElementById('invoice-total-tax-val').innerText) || 0;
-            const appliedTaxes = window.activeAppliedTaxes || [];
-            const amount = Number(document.getElementById('invoice-amount').innerText) || 0;
-
-            if(!target || invoiceInteractiveItems.length === 0) {
-                alert("يرجى إدخال اسم الطاولة وبنود الفاتورة أولاً");
-                return;
-            }
-
-            executePrintWindow({
-                serial,
-                target,
-                items: invoiceInteractiveItems,
-                subtotal,
-                tax,
-                appliedTaxes,
-                amount,
-                dateStr: new Date().toLocaleString('ar-EG')
-            });
-        }
-
-        function printSpecificInvoicePrintView(invId) {
-            const inv = window._tempInvoices && window._tempInvoices[invId];
-            if(!inv) return;
-
-            let dateStr = new Date().toLocaleString('ar-EG');
-            if(inv.date && typeof inv.date.toDate === 'function') {
-                dateStr = new Date(inv.date.toDate()).toLocaleString('ar-EG');
-            }
-
-            const items = inv.items || [{ name: inv.details || 'تفاصيل الفاتورة', qty: 1, price: inv.subtotal || inv.amount || 0 }];
-            
-            executePrintWindow({
-                serial: inv.serial || 'INV-000',
-                target: inv.target || 'عام',
-                items,
-                subtotal: Number(inv.subtotal) || Number(inv.amount) || 0,
-                tax: Number(inv.tax) || 0,
-                appliedTaxes: inv.appliedTaxes || [],
-                amount: Number(inv.amount) || 0,
-                dateStr
-            });
-        }
-
-        async function generateDailySalesReport() {
-            const todayStr = new Date().toDateString();
-            let todayInvoices = allInvoicesCache.filter(inv => {
-                if(!inv.date || typeof inv.date.toDate !== 'function') return false;
-                return new Date(inv.date.toDate()).toDateString() === todayStr;
-            });
-
-            let totalSales = 0;
-            let totalTaxes = 0;
-            let totalSub = 0;
-            let productSalesSummary = {};
-
-            todayInvoices.forEach(inv => {
-                totalSub += Number(inv.subtotal) || Number(inv.amount) || 0;
-                totalTaxes += Number(inv.tax) || 0;
-                totalSales += Number(inv.amount) || 0;
-
-                let items = inv.items || [{ name: inv.details || 'مبيعات عامة', qty: 1, price: inv.amount || 0 }];
-                items.forEach(i => {
-                    if(!productSalesSummary[i.name]) {
-                        productSalesSummary[i.name] = { qty: 0, total: 0 };
-                    }
-                    productSalesSummary[i.name].qty += Number(i.qty) || 1;
-                    productSalesSummary[i.name].total += (Number(i.qty) || 1) * (Number(i.price) || 0);
+                        productSalesSummary[i.name].qty += Number(i.qty) || 1;
+                        productSalesSummary[i.name].total += (Number(i.qty) || 1) * (Number(i.price) || 0);
+                    });
                 });
-            });
 
-            let productsRowsHtml = '';
-            for(let prodName in productSalesSummary) {
-                productsRowsHtml += `
-                <div class="flex justify-between border-b py-1.5">
-                    <span class="font-bold text-emerald-700">${productSalesSummary[prodName].total.toFixed(2)}</span>
-                    <span>${prodName} (الكمية: ${productSalesSummary[prodName].qty})</span>
-                </div>`;
-            }
+                let productsRowsHtml = '';
+                for(let prodName in productSalesSummary) {
+                    productsRowsHtml += `
+                    <div class="flex justify-between border-b py-1.5">
+                        <span class="font-bold text-emerald-700">${productSalesSummary[prodName].total.toFixed(2)}</span>
+                        <span>${prodName} (الكمية: ${productSalesSummary[prodName].qty})</span>
+                    </div>`;
+                }
 
-            const content = document.getElementById('sales-report-content');
-            content.innerHTML = `
-            <div class="bg-blue-50 p-4 rounded-xl border border-blue-200 space-y-2">
-                <div class="flex justify-between font-bold"> <span class="text-blue-700">${todayInvoices.length}</span> <span>إجمالي عدد الفواتير اليوم:</span></div>
-                <div class="flex justify-between font-bold"> <span>${totalSub.toFixed(2)}</span> <span>المبلغ الفرعي للمبيعات:</span></div>
-                <div class="flex justify-between font-bold"> <span class="text-purple-700">${totalTaxes.toFixed(2)}</span> <span>إجمالي الضرائب والخدمات المطبقة:</span></div>
-                <div class="flex justify-between font-black text-sm border-t pt-2 text-emerald-700"> <span class="text-emerald-700">${totalSales.toFixed(2)}</span> <span>إجمالي المبيعات النهائية:</span></div>
-            </div>
-            <div>
-                <h4 class="font-bold text-slate-700 mb-2 mt-4">تفصيل المنتجات المباعة اليوم:</h4>
-                <div class="bg-slate-50 p-3 rounded-xl border max-h-48 overflow-y-auto space-y-1">
-                    ${productsRowsHtml || '<p class="text-slate-400 text-center">لا توجد مبيعات مسجلة اليوم حتى الآن</p>'}
+                const content = document.getElementById('sales-report-content');
+                content.innerHTML = `
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-200 space-y-2">
+                    <div class="flex justify-between font-bold"> <span class="text-blue-700">${todayInvoices.length}</span> <span>إجمالي عدد الفواتير اليوم:</span></div>
+                    <div class="flex justify-between font-bold"> <span>${totalSub.toFixed(2)}</span> <span>المبلغ الفرعي للمبيعات:</span></div>
+                    <div class="flex justify-between font-bold"> <span class="text-purple-700">${totalTaxes.toFixed(2)}</span> <span>إجمالي الضرائب والخدمات المطبقة:</span></div>
+                    <div class="flex justify-between font-black text-sm border-t pt-2 text-emerald-700"> <span class="text-emerald-700">${totalSales.toFixed(2)}</span> <span>إجمالي المبيعات النهائية:</span></div>
                 </div>
-            </div>`;
-
-            document.getElementById('sales-report-modal').classList.remove('hidden');
-        }
-
-        function closeSalesReportModal() {
-            document.getElementById('sales-report-modal').classList.add('hidden');
-        }
-
-        function startScanner() {
-            html5QrCode = new Html5Qrcode("reader");
-            document.getElementById('start-scan-btn').classList.add('hidden');
-            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
-                activeUserPhone = txt;
-                fetchUserData(txt);
-                html5QrCode.stop();
-                document.getElementById('start-scan-btn').classList.remove('hidden');
-            }).catch(() => {
-                alert("تأكد من إذن الكاميرا");
-                document.getElementById('start-scan-btn').classList.remove('hidden');
-            });
-        }
-
-        function editCustomerDirectly(phone) {
-            activeUserPhone = phone;
-            fetchUserData(phone);
-            showSection('scan');
-        }
-
-        async function fetchUserData(phone) {
-            const doc = await db.collection("cafes").doc(currentCafeID).collection("customers").doc(phone).get();
-            if(doc.exists) {
-                const data = doc.data();
-                document.getElementById('user-actions').classList.remove('hidden');
-                document.getElementById('cur-name').innerText = data.name;
-                document.getElementById('cur-phone-display').innerText = phone;
-                const label = selectedSystem === 'stamps' ? 'ختم' : (document.getElementById('label-points-unit').value || 'نقطة');
-                document.getElementById('cur-points').innerText = data.points || 0;
-                document.getElementById('points-label-view').innerText = label;
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            } else { alert("زبون غير مسجل في محلك"); }
-        }
-
-        function closeUserActions() {
-            document.getElementById('user-actions').classList.add('hidden');
-            activeUserPhone = "";
-        }
-
-        async function updatePoints(amt) {
-            if(!activeUserPhone) return;
-            try {
-                await db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone).update({
-                    points: firebase.firestore.FieldValue.increment(amt)
-                });
-                fetchUserData(activeUserPhone);
-                loadCustomers();
-            } catch(e) { alert("حدث خطأ أثناء التحديث"); }
-        }
-
-        async function resetPoints() {
-            if(!activeUserPhone) return;
-            if(confirm("هل تم تسليم الهدية وتصفير الرصيد؟")) {
-                await db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone).update({ points: 0 });
-                fetchUserData(activeUserPhone);
-                loadCustomers();
-            }
-        }
-
-        async function loadCustomers() {
-            const list = document.getElementById('customers-list');
-            const snap = await db.collection("cafes").doc(currentCafeID).collection("customers").orderBy("name").get();
-            list.innerHTML = "";
-            document.getElementById('customer-count').innerText = snap.size;
-            snap.forEach(doc => {
-                const u = doc.data();
-                list.innerHTML += `
-                <div onclick="editCustomerDirectly('${doc.id}')" class="customer-row flex justify-between items-center p-4 bg-white rounded-xl border mb-2 shadow-sm hover:border-blue-300">
-                    <div class="bg-blue-50 text-blue-600 px-4 py-1 rounded-lg font-black text-sm">
-                        ${u.points || 0}
-                    </div>
-                    <div class="text-right">
-                        <div class="font-bold text-sm text-slate-800">${u.name}</div>
-                        <div class="text-[10px] text-slate-400 font-mono">${doc.id}</div>
+                <div>
+                    <h4 class="font-bold text-slate-700 mb-2 mt-4">تفصيل المنتجات المباعة اليوم:</h4>
+                    <div class="bg-slate-50 p-3 rounded-xl border max-h-48 overflow-y-auto space-y-1">
+                        ${productsRowsHtml || '<p class="text-slate-400 text-center">لا توجد مبيعات مسجلة اليوم حتى الآن</p>'}
                     </div>
                 </div>`;
-            });
-        }
 
-        function generateCafeQR() {
-            const qrC = document.getElementById("qrcode-container");
-            qrC.innerHTML = "";
-            const customerUrl = window.location.href.replace('admin.html', 'index.html') + `?id=${currentCafeID}`;
-            new QRCode(qrC, { text: customerUrl, width: 140, height: 140 });
-        }
+                document.getElementById('sales-report-modal').classList.remove('hidden');
+            },
+            closeSalesReportModal() {
+                document.getElementById('sales-report-modal').classList.add('hidden');
+            }
+        };
 
-        function startTimer() {
-            setInterval(() => {
-                const now = new Date().getTime();
-                const diff = expiryDateGlobal - now;
-                if (diff < 0) { document.getElementById('countdown-timer').innerText = "منتهي"; return; }
-                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const secs = Math.floor((diff % (1000 * 60)) / 1000);
-                document.getElementById('countdown-timer').innerText = `${days}d ${hours}:${mins}:${secs}`;
-            }, 1000);
-        }
+        // 9. Scanner & Customers Manager
+        const ScannerManager = {
+            startScanner() {
+                AppState.html5QrCode = new Html5Qrcode("reader");
+                document.getElementById('start-scan-btn').classList.add('hidden');
+                AppState.html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
+                    AppState.activeUserPhone = txt;
+                    ScannerManager.fetchUserData(txt);
+                    AppState.html5QrCode.stop();
+                    document.getElementById('start-scan-btn').classList.remove('hidden');
+                }).catch(() => {
+                    alert("تأكد من إذن الكاميرا");
+                    document.getElementById('start-scan-btn').classList.remove('hidden');
+                });
+            },
+            editCustomerDirectly(phone) {
+                AppState.activeUserPhone = phone;
+                ScannerManager.fetchUserData(phone);
+                NavigationManager.showSection('scan');
+            },
+            async fetchUserData(phone) {
+                const doc = await db.collection("cafes").doc(AppState.currentCafeID).collection("customers").doc(phone).get();
+                if(doc.exists) {
+                    const data = doc.data();
+                    document.getElementById('user-actions').classList.remove('hidden');
+                    document.getElementById('cur-name').innerText = data.name;
+                    document.getElementById('cur-phone-display').innerText = phone;
+                    const label = AppState.selectedSystem === 'stamps' ? 'ختم' : (document.getElementById('label-points-unit').value || 'نقطة');
+                    document.getElementById('cur-points').innerText = data.points || 0;
+                    document.getElementById('points-label-view').innerText = label;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else { alert("زبون غير مسجل في محلك"); }
+            },
+            closeUserActions() {
+                document.getElementById('user-actions').classList.add('hidden');
+                AppState.activeUserPhone = "";
+            },
+            async updatePoints(amt) {
+                if(!AppState.activeUserPhone) return;
+                try {
+                    await db.collection("cafes").doc(AppState.currentCafeID).collection("customers").doc(AppState.activeUserPhone).update({
+                        points: firebase.firestore.FieldValue.increment(amt)
+                    });
+                    ScannerManager.fetchUserData(AppState.activeUserPhone);
+                    CustomersManager.loadCustomers();
+                } catch(e) { alert("حدث خطأ أثناء التحديث"); }
+            },
+            async resetPoints() {
+                if(!AppState.activeUserPhone) return;
+                if(confirm("هل تم تسليم الهدية وتصفير الرصيد؟")) {
+                    await db.collection("cafes").doc(AppState.currentCafeID).collection("customers").doc(AppState.activeUserPhone).update({ points: 0 });
+                    ScannerManager.fetchUserData(AppState.activeUserPhone);
+                    CustomersManager.loadCustomers();
+                }
+            }
+        };
 
-        function showSection(id) {
-            document.querySelectorAll('.section-content').forEach(s => s.classList.add('hidden'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-tab'));
-            document.getElementById('section-'+id).classList.remove('hidden');
-            document.getElementById('tab-'+id).classList.add('active-tab');
-            if(html5QrCode && id !== 'scan') html5QrCode.stop().catch(()=>{});
-        }
+        const CustomersManager = {
+            async loadCustomers() {
+                const list = document.getElementById('customers-list');
+                const snap = await db.collection("cafes").doc(AppState.currentCafeID).collection("customers").orderBy("name").get();
+                list.innerHTML = "";
+                document.getElementById('customer-count').innerText = snap.size;
+                snap.forEach(doc => {
+                    const u = doc.data();
+                    list.innerHTML += `
+                    <div onclick="ScannerManager.editCustomerDirectly('${doc.id}')" class="customer-row flex justify-between items-center p-4 bg-white rounded-xl border mb-2 shadow-sm hover:border-blue-300">
+                        <div class="bg-blue-50 text-blue-600 px-4 py-1 rounded-lg font-black text-sm">
+                            ${u.points || 0}
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold text-sm text-slate-800">${u.name}</div>
+                            <div class="text-[10px] text-slate-400 font-mono">${doc.id}</div>
+                        </div>
+                    </div>`;
+                });
+            },
+            generateCafeQR() {
+                const qrC = document.getElementById("qrcode-container");
+                qrC.innerHTML = "";
+                const customerUrl = window.location.href.replace('admin.html', 'index.html') + `?id=${AppState.currentCafeID}`;
+                new QRCode(qrC, { text: customerUrl, width: 140, height: 140 });
+            },
+            downloadQR() {
+                const img = document.querySelector("#qrcode-container img");
+                if(!img) return;
+                const a = document.createElement("a");
+                a.href = img.src; a.download = `QR-Cafe-${AppState.currentCafeID}.png`; a.click();
+            }
+        };
 
-        function downloadQR() {
-            const img = document.querySelector("#qrcode-container img");
-            if(!img) return;
-            const a = document.createElement("a");
-            a.href = img.src; a.download = `QR-Cafe-${currentCafeID}.png`; a.click();
-        }
+        // Main App Initializer
+        const AppInitializer = {
+            initCafe() {
+                BrandingManager.loadBranding();
+                CustomersManager.loadCustomers();
+                ProductsManager.loadProducts();
+                WaitersManager.loadWaiters();
+                WaitersManager.listenToWaiterCalls();
+                WaitersManager.listenToCustomerCarts();
+                TaxManager.loadTaxesCheckboxes();
+                POSManager.loadInvoices();
+                CustomersManager.generateCafeQR();
+                NavigationManager.startTimer();
+                AuthManager.loadBankInfo();
+                POSManager.generateNewSerial();
+                
+                AppState.invoiceInteractiveItems = [];
+                POSManager.renderInvoiceItemsBuilder();
+
+                db.collection("cafes").doc(AppState.currentCafeID).get().then(doc => {
+                    document.getElementById('expiry-date-text').innerText = AppState.expiryDateGlobal.toLocaleDateString('ar-EG');
+                    document.getElementById('display-cafe-name').innerText = doc.data().cafeName;
+                });
+            }
+        };
     </script>
 </body>
 </html>
+ 
