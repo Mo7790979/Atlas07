@@ -189,19 +189,19 @@
             </div>
         </div>
 
-        <!-- النظام المحاسبي الاحترافي وربطه بسلة العميل (محاكاة الواجهة العالمية المتقدمة) -->
+        <!-- النظام المحاسبي الاحترافي وربطه بسلة العميل -->
         <div id="section-pos" class="section-content hidden">
             
-            <!-- Top Interactive Action Bar (Inspired by global POS systems like Square / Toast) -->
+            <!-- Top Interactive Action Bar -->
             <div class="bg-slate-900 text-white p-3 rounded-2xl mb-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
                 <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                    <button onclick="printCurrentPOSInvoicePrintView()" class="top-action-bar-btn"><i class="fas fa-print"></i> <span>طباعة</span></button>
+                    <button onclick="printCurrentPOSInvoicePrintView()" class="top-action-bar-btn"><i class="fas fa-print"></i> <span>طباعة / حفظ كـ PDF</span></button>
                     <button onclick="openTaxManager()" class="top-action-bar-btn" style="background:#8b5cf6;"><i class="fas fa-percent"></i> <span>الضرائب</span></button>
                     <button onclick="generateDailySalesReport()" class="top-action-bar-btn" style="background:#d97706;"><i class="fas fa-chart-line"></i> <span>التقرير اليومي</span></button>
                     <button onclick="clearInvoiceForm()" class="top-action-bar-btn" style="background:#ef4444;"><i class="fas fa-redo"></i> <span>جديد</span></button>
                 </div>
                 <div class="text-xs font-bold text-emerald-400 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700">
-                    <i class="fas fa-cash-register ml-1 text-blue-400"></i> نظام نقاط البيع التفاعلي
+                    <i class="fas fa-cash-register ml-1 text-blue-400"></i> النظام المحاسبي - إصدار وتعديل الفاتورة التفاعلية
                 </div>
             </div>
 
@@ -237,10 +237,10 @@
                 </div>
             </div>
 
-            <!-- Global POS Grid Layout (Cart on Left/Right, Interactive Product Catalog on Right/Left) -->
+            <!-- Global POS Grid Layout -->
             <div class="pos-container">
                 
-                <!-- Cart & Invoice Management Panel (Left / Sticky on Desktop) -->
+                <!-- Cart & Invoice Management Panel -->
                 <div class="admin-card border-2 border-blue-100 bg-white shadow-xl flex flex-col justify-between">
                     <div>
                         <div class="flex justify-between items-center mb-3 pb-2 border-b">
@@ -258,8 +258,8 @@
                         <!-- Interactive Invoice Items List -->
                         <div class="mb-3">
                             <div class="flex justify-between items-center mb-1.5">
-                                <label class="text-xs font-bold text-slate-700">بنود الفاتورة</label>
-                                <button onclick="addInvoiceItemRow()" class="bg-blue-600 text-white px-2 py-0.5 rounded-md text-[10px] font-bold"><i class="fas fa-plus ml-1"></i> إضافة صنف</button>
+                                <label class="text-xs font-bold text-slate-700">بنود الفاتورة التفاعلية (أضف أو احذف مثل المنيو)</label>
+                                <button onclick="addInvoiceItemRow()" class="bg-emerald-600 text-white px-2 py-1 rounded-md text-[10px] font-bold"><i class="fas fa-plus ml-1"></i> إضافة بند</button>
                             </div>
                             <div id="invoice-items-builder" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
                         </div>
@@ -284,16 +284,16 @@
 
                         <div class="grid grid-cols-2 gap-2">
                             <button onclick="issueInvoice()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-emerald-200 text-xs flex items-center justify-center gap-1">
-                                <i class="fas fa-check-circle"></i> حفظ وإصدار الفاتورة
+                                <i class="fas fa-check-circle"></i> حفظ وإصدار الفاتورة للنظام المحاسبي
                             </button>
                             <button onclick="clearInvoiceForm()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1">
-                                <i class="fas fa-trash-alt"></i> مسح الحقل
+                                <i class="fas fa-trash-alt"></i> مسح النموذج
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Interactive POS Product Catalog (Right / Grid of Clickable Products) -->
+                <!-- Interactive POS Product Catalog -->
                 <div class="space-y-4">
                     <div class="admin-card bg-white">
                         <div class="flex flex-col sm:flex-row justify-between items-center gap-3 mb-4">
@@ -698,7 +698,7 @@
 
             filtered.forEach(p => {
                 grid.innerHTML += `
-                <div onclick='addPOSProductToInvoice("${p.name}", ${p.price})' class="pos-product-card p-2.5 flex flex-col justify-between text-right">
+                <div onclick='addPOSProductToInvoice("${p.name.replace(/"/g, '&quot;')}", ${p.price})' class="pos-product-card p-2.5 flex flex-col justify-between text-right">
                     <div class="relative mb-2">
                         <img src="${p.image || 'https://via.placeholder.com/150'}" class="w-full h-20 object-cover rounded-lg bg-slate-100">
                         <span class="absolute top-1 left-1 bg-blue-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded shadow">${p.price}</span>
@@ -712,7 +712,6 @@
         }
 
         function addPOSProductToInvoice(name, price) {
-            // Check if product already exists in invoice items
             const existing = invoiceInteractiveItems.find(i => i.name === name);
             if(existing) {
                 existing.qty = (Number(existing.qty) || 1) + 1;
@@ -812,8 +811,12 @@
                 }
                 snap.forEach(doc => {
                     const cart = doc.data();
+                    // تخزين آمن لبيانات الكارت عبر الاستدعاء المباشر
+                    window._tempCarts = window._tempCarts || {};
+                    window._tempCarts[doc.id] = cart;
+
                     list.innerHTML += `
-                    <div onclick='loadCartToInvoice(${JSON.stringify(cart).replace(/'/g, "&#39;")}, "${doc.id}")' class="interactive-item flex justify-between items-center p-2.5 bg-white rounded-xl border border-blue-200 shadow-sm hover:bg-blue-50 text-right">
+                    <div onclick='loadCartToInvoiceById("${doc.id}")' class="interactive-item flex justify-between items-center p-2.5 bg-white rounded-xl border border-blue-200 shadow-sm hover:bg-blue-50 text-right">
                         <div>
                             <div class="font-bold text-xs text-blue-900"><i class="fas fa-utensils text-blue-500 ml-1"></i> ${cart.table || 'طاولة عامة'} - <span class="text-emerald-600">${cart.total}</span></div>
                             <div class="text-[10px] text-slate-500 mt-0.5 line-clamp-1">${cart.itemsSummary || 'تفاصيل الطلبات'}</div>
@@ -824,7 +827,10 @@
             });
         }
 
-        function loadCartToInvoice(cart, cartId) {
+        function loadCartToInvoiceById(cartId) {
+            const cart = window._tempCarts && window._tempCarts[cartId];
+            if(!cart) return;
+            
             document.getElementById('invoice-target').value = cart.table || 'طاولة الزبون';
             if(cart.items && Array.isArray(cart.items) && cart.items.length > 0) {
                 invoiceInteractiveItems = cart.items.map(i => ({ name: i.name, qty: Number(i.qty) || 1, price: Number(i.price) || 0 }));
@@ -943,7 +949,7 @@
             invoiceInteractiveItems.forEach((item, index) => {
                 let optionsHtml = '<option value="">اختر من المنيو...</option>';
                 globalProductsCache.forEach(p => {
-                    optionsHtml += `<option value="${p.name}" ${p.name === item.name ? 'selected' : ''}>${p.name} (${p.price})</option>`;
+                    optionsHtml += `<option value="${p.name.replace(/"/g, '&quot;')}" ${p.name === item.name ? 'selected' : ''}>${p.name} (${p.price})</option>`;
                 });
 
                 container.innerHTML += `
@@ -1040,14 +1046,19 @@
             const list = document.getElementById('invoices-list');
             list.innerHTML = "";
             if(invoices.length === 0) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد فواتير مسجلة مطابقة</p>'; return; }
+            
+            // تخزين آمن مؤقت لتفادي أخطاء JSON في الـ HTML
+            window._tempInvoices = window._tempInvoices || {};
+
             invoices.forEach(inv => {
+                window._tempInvoices[inv.id] = inv;
                 list.innerHTML += `
                 <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm hover:bg-slate-50 text-right">
                     <div class="flex items-center gap-2">
-                        <button onclick='printSpecificInvoicePrintView(${JSON.stringify(inv).replace(/'/g, "&#39;")})' class="bg-blue-600 text-white px-2.5 py-1.5 rounded-lg text-xs shadow"><i class="fas fa-print"></i></button>
+                        <button onclick='printSpecificInvoicePrintView("${inv.id}")' class="bg-blue-600 text-white px-2.5 py-1.5 rounded-lg text-xs shadow"><i class="fas fa-print"></i></button>
                         <span class="text-[10px] text-slate-400">${inv.date ? new Date(inv.date.toDate()).toLocaleTimeString('ar-EG') : ''}</span>
                     </div>
-                    <div onclick='loadInvoiceToPOS(${JSON.stringify(inv).replace(/'/g, "&#39;")})' class="customer-row text-right flex-1">
+                    <div onclick='loadInvoiceToPOS("${inv.id}")' class="customer-row text-right flex-1">
                         <div class="font-bold text-xs text-slate-800">
                             <span class="text-emerald-600 font-bold ml-2">(${inv.amount})</span> - ${inv.target} 
                             <span class="text-blue-600 font-mono mr-2">${inv.serial || 'INV-000'}</span>
@@ -1058,11 +1069,14 @@
             });
         }
 
-        function loadInvoiceToPOS(inv) {
+        function loadInvoiceToPOS(invId) {
+            const inv = window._tempInvoices && window._tempInvoices[invId];
+            if(!inv) return;
+
             document.getElementById('invoice-serial').innerText = inv.serial || 'INV-' + Math.floor(100000 + Math.random() * 900000);
             document.getElementById('invoice-target').value = inv.target || '';
             if(inv.items && Array.isArray(inv.items) && inv.items.length > 0) {
-                invoiceInteractiveItems = inv.items;
+                invoiceInteractiveItems = JSON.parse(JSON.stringify(inv.items));
             } else {
                 invoiceInteractiveItems = [{ name: inv.details || 'بند الفاتورة', qty: 1, price: inv.subtotal || inv.amount || 0 }];
             }
@@ -1190,7 +1204,10 @@
             });
         }
 
-        function printSpecificInvoicePrintView(inv) {
+        function printSpecificInvoicePrintView(invId) {
+            const inv = window._tempInvoices && window._tempInvoices[invId];
+            if(!inv) return;
+
             const dateStr = inv.date ? new Date(inv.date.toDate()).toLocaleString('ar-EG') : new Date().toLocaleString('ar-EG');
             const items = inv.items || [{ name: inv.details || 'تفاصيل الفاتورة', qty: 1, price: inv.subtotal || inv.amount || 0 }];
             
@@ -1380,4 +1397,3 @@
     </script>
 </body>
 </html>
-
