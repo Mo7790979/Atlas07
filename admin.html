@@ -7,8 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <!-- مكتبة الطباعة وتصدير PDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Tajawal:wght@400;700&family=Almarai:wght@400;700&display=swap');
@@ -170,7 +168,7 @@
         <!-- النظام المحاسبي الاحترافي وربطه بسلة العميل -->
         <div id="section-pos" class="section-content hidden">
             
-            <!-- قائمة الطلبات الواردة من الطاولات (مستقلة تماماً) -->
+            <!-- قائمة الطلبات الواردة من الطاولات -->
             <div class="admin-card border-blue-200 bg-blue-50/30">
                 <h3 class="font-black text-blue-800 mb-3"><i class="fas fa-utensils ml-1"></i> الفواتير والطلبات الواردة من الطاولات (قائمة منفصلة)</h3>
                 <div id="customer-carts-list" class="space-y-2 max-h-60 overflow-y-auto">
@@ -178,7 +176,7 @@
                 </div>
             </div>
 
-            <!-- إعدادات النظام الضريبي المتقدمة (إضافة وحذف وتعديل مرن) -->
+            <!-- إعدادات النظام الضريبي المتقدمة -->
             <div class="admin-card border-purple-200 bg-purple-50/20">
                 <div class="flex justify-between items-center mb-3">
                     <h3 class="font-black text-purple-800"><i class="fas fa-percent ml-1"></i> إدارة النظام الضريبي والرسوم</h3>
@@ -201,7 +199,7 @@
             <div class="admin-card">
                 <div class="flex justify-between items-center mb-4 border-r-4 border-emerald-600 pr-3">
                     <h3 class="font-black text-emerald-600">النظام المحاسبي - إصدار وتعديل الفاتورة التفاعلية</h3>
-                    <button onclick="printCurrentPOSInvoicePDF()" class="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow"><i class="fas fa-file-pdf ml-1"></i> تصدير PDF للطباعة</button>
+                    <button onclick="printCurrentPOSInvoicePrintView()" class="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow"><i class="fas fa-print ml-1"></i> طباعة / حفظ كـ PDF</button>
                 </div>
                 
                 <div class="space-y-4">
@@ -216,15 +214,13 @@
                         </div>
                     </div>
 
-                    <!-- بنود الفاتورة التفاعلية (تشبه المنيو مع إمكانية الإضافة والحذف والتعديل) -->
+                    <!-- بنود الفاتورة التفاعلية -->
                     <div class="p-4 bg-slate-50 rounded-2xl border space-y-3">
                         <div class="flex justify-between items-center">
                             <label class="text-xs font-bold text-slate-700">بنود الفاتورة التفاعلية (أضف أو احذف مثل المنيو)</label>
                             <button onclick="addInvoiceItemRow()" class="bg-emerald-600 text-white px-2.5 py-1 rounded-lg text-xs font-bold"><i class="fas fa-plus ml-1"></i> إضافة بند</button>
                         </div>
-                        <div id="invoice-items-builder" class="space-y-2 max-h-48 overflow-y-auto">
-                            <!-- سيتم تعبئة البنود تفاعلياً هنا -->
-                        </div>
+                        <div id="invoice-items-builder" class="space-y-2 max-h-48 overflow-y-auto"></div>
                     </div>
                     
                     <div class="grid grid-cols-3 gap-2 p-3 bg-slate-50 rounded-xl border">
@@ -249,7 +245,7 @@
                 </div>
             </div>
 
-            <!-- قسم تقرير مبيعات اليوم المفصل -->
+            <!-- تقرير مبيعات اليوم المفصل -->
             <div class="admin-card bg-slate-900 text-white">
                 <div class="flex justify-between items-center mb-3">
                     <h3 class="font-black text-amber-400"><i class="fas fa-chart-line ml-1"></i> تقرير مبيعات اليوم المفصل</h3>
@@ -258,10 +254,10 @@
                 <p class="text-[11px] text-slate-300">يصدر تقريراً كاملاً بعدد وكميات كل منتج تم بيعه اليوم، إجمالي المبيعات، الضرائب، وصافي الأرباح.</p>
             </div>
 
-            <!-- سجل الفواتير والمبيعات المصدرة (قائمة مستقلة بعد الإصدار) -->
+            <!-- سجل الفواتير والمبيعات المصدرة -->
             <div class="admin-card">
                 <div class="flex flex-col md:flex-row justify-between items-center gap-3 mb-4">
-                    <h3 class="font-bold text-slate-700 text-xs">سجل الفواتير الصادرة (اضغط لتحميلها أو تصديرها PDF)</h3>
+                    <h3 class="font-bold text-slate-700 text-xs">سجل الفواتير الصادرة (اضغط لطباعتها أو مراجعتها)</h3>
                     <div class="w-full md:w-1/2">
                         <input type="text" id="invoice-search-input" placeholder="بحث برقم الفاتورة التسلسلي أو رقم الطاولة..." oninput="filterInvoices()" class="text-xs py-2">
                     </div>
@@ -389,7 +385,7 @@
         </div>
     </div>
 
-    <!-- نافذة منبثقة لإدارة الضرائب (Modal) -->
+    <!-- نافذة منبثقة لإدارة الضرائب -->
     <div id="tax-manager-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
             <h3 class="font-black text-lg text-purple-800">إدارة الضرائب والخدمات</h3>
@@ -412,42 +408,6 @@
         </div>
     </div>
 
-    <!-- قالب مخفي لتصدير الفاتورة إلى PDF (محدث بتنسيق آمن خارج الشاشة تماماً لتفادي مشكلة الصفحة البيضاء) -->
-    <div id="pdf-invoice-template" style="position: absolute; left: -9999px; top: 0; padding: 20px; background: #ffffff; color: #1e293b; font-family: 'Cairo', sans-serif; direction: rtl; width: 450px; box-sizing: border-box; z-index: -1000;">
-        <div style="text-align: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 15px;">
-            <h2 id="pdf-cafe-name" style="font-size: 20px; font-weight: 900; color: #2563eb; margin: 0 0 5px 0;">اسم المنشأة</h2>
-            <p style="font-size: 11px; color: #64748b; margin: 0;">فاتورة ضريبية / مبيعات</p>
-        </div>
-        <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 10px;">
-            <div>الرقم التسلسلي: <span id="pdf-serial" style="font-family: monospace;">--</span></div>
-            <div>التاريخ: <span id="pdf-date">--</span></div>
-        </div>
-        <div style="margin-bottom: 12px; font-size: 11px; font-weight: bold;">
-            العميل / الطاولة: <span id="pdf-target" style="color: #2563eb;">--</span>
-        </div>
-        <table style="width: 100%; font-size: 11px; border-collapse: collapse; margin-bottom: 15px;">
-            <thead>
-                <tr style="background-color: #f1f5f9; border-bottom: 1px solid #cbd5e1;">
-                    <th style="padding: 6px; text-align: right;">المنتج / البند</th>
-                    <th style="padding: 6px; text-align: center;">الكمية</th>
-                    <th style="padding: 6px; text-align: center;">السعر</th>
-                    <th style="padding: 6px; text-align: left;">الإجمالي</th>
-                </tr>
-            </thead>
-            <tbody id="pdf-items-tbody">
-                <!-- البنود -->
-            </tbody>
-        </table>
-        <div style="border-top: 1px solid #cbd5e1; padding-top: 10px; font-size: 11px;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>المبلغ الفرعي:</span> <span id="pdf-subtotal">0.00</span></div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span id="pdf-tax-label">الضريبة:</span> <span id="pdf-tax">0.00</span></div>
-            <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13px; border-top: 1px dashed #cbd5e1; padding-top: 6px; color: #059669;"><span>الإجمالي النهائي:</span> <span id="pdf-total">0.00</span></div>
-        </div>
-        <div style="text-align: center; margin-top: 25px; font-size: 10px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 10px;">
-            شكراً لتزيينكم محلنا بزيارتكم! نتشرف بخدمتكم دائماً.
-        </div>
-    </div>
-
     <!-- نافذة تقرير مبيعات اليوم المفصل المنبثقة -->
     <div id="sales-report-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
@@ -455,9 +415,7 @@
                 <h3 class="font-black text-lg text-slate-800"><i class="fas fa-file-invoice-dollar text-amber-600 ml-1"></i> تقرير مبيعات اليوم المفصل</h3>
                 <button onclick="closeSalesReportModal()" class="text-slate-400 hover:text-red-500 font-bold text-xl">&times;</button>
             </div>
-            <div id="sales-report-content" class="space-y-4 text-xs">
-                <!-- محتوى التقرير -->
-            </div>
+            <div id="sales-report-content" class="space-y-4 text-xs"></div>
             <button onclick="closeSalesReportModal()" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold">إغلاق التقرير</button>
         </div>
     </div>
@@ -484,7 +442,7 @@
         let activeUserPhone = "";
         let allInvoicesCache = [];
         let globalProductsCache = [];
-        let invoiceInteractiveItems = []; // بنود الفاتورة التفاعلية الحالية
+        let invoiceInteractiveItems = [];
 
         async function login() {
             const user = document.getElementById('admin-user-input').value;
@@ -567,7 +525,7 @@
             startTimer();
             loadAdminBankInfo();
             generateNewSerial();
-            if(invoiceInteractiveItems.length === 0) addInvoiceItemRow(); // بند افتراضي فارغ بالفاتورة التفاعلية
+            if(invoiceInteractiveItems.length === 0) addInvoiceItemRow();
             db.collection("cafes").doc(currentCafeID).get().then(doc => {
                 document.getElementById('expiry-date-text').innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
                 document.getElementById('display-cafe-name').innerText = doc.data().cafeName;
@@ -735,7 +693,6 @@
             window.activeCartIdToResolve = cartId;
         }
 
-        // إدارة النظام الضريبي المتقدم
         async function openTaxManager() {
             document.getElementById('tax-manager-modal').classList.remove('hidden');
             loadTaxesModalList();
@@ -803,7 +760,6 @@
             calculateInvoiceTotals();
         }
 
-        // بنود الفاتورة التفاعلية (إضافة وتعديل وحذف مثل المنيو)
         function addInvoiceItemRow() {
             invoiceInteractiveItems.push({ name: '', qty: 1, price: 0 });
             renderInvoiceItemsBuilder();
@@ -950,7 +906,7 @@
                         <div class="text-[10px] text-slate-500">${inv.details || 'بدون تفاصيل'} ${inv.tax > 0 ? `| ${inv.taxNameUsed || 'ضريبة'}: ${inv.tax}` : ''}</div>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button onclick='printSpecificInvoicePDF(${JSON.stringify(inv).replace(/'/g, "&#39;")})' class="bg-blue-600 text-white px-2.5 py-1.5 rounded-lg text-xs shadow"><i class="fas fa-file-pdf"></i></button>
+                        <button onclick='printSpecificInvoicePrintView(${JSON.stringify(inv).replace(/'/g, "&#39;")})' class="bg-blue-600 text-white px-2.5 py-1.5 rounded-lg text-xs shadow"><i class="fas fa-print"></i></button>
                         <span class="text-[10px] text-slate-400">${inv.date ? new Date(inv.date.toDate()).toLocaleTimeString('ar-EG') : ''}</span>
                     </div>
                 </div>`;
@@ -982,91 +938,130 @@
             renderInvoicesList(filtered);
         }
 
-        // تصدير الفاتورة إلى PDF (محدث بنمط الآمن تماماً لضمان عدم ظهور الملف فارغاً)
-        async function printCurrentPOSInvoicePDF() {
+        // --- نظام الطباعة والتصدير الآمن المتوافق مع الهواتف والطابعات ---
+        function executePrintWindow(invoiceData) {
+            const cafeName = document.getElementById('display-cafe-name').innerText || 'المنشأة';
+            let itemsHTML = '';
+            
+            invoiceData.items.forEach(i => {
+                itemsHTML += `
+                    <tr>
+                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">${i.name}</td>
+                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center;">${i.qty}</td>
+                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center;">${i.price}</td>
+                        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: left;">${(i.qty * i.price).toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="ar" dir="rtl">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>فاتورة - ${invoiceData.serial}</title>
+                    <style>
+                        body { font-family: 'Cairo', Tahoma, sans-serif; padding: 20px; color: #111; max-width: 400px; margin: auto; direction: rtl; }
+                        .header { text-align: center; border-bottom: 2px dashed #333; padding-bottom: 10px; margin-bottom: 15px; }
+                        .header h2 { margin: 0 0 5px 0; font-size: 22px; color: #2563eb; }
+                        .info { font-size: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; font-weight: bold; }
+                        table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 15px; }
+                        th { background: #f3f4f6; padding: 6px; border-bottom: 2px solid #333; }
+                        .totals { border-top: 1px solid #333; padding-top: 8px; font-size: 12px; }
+                        .totals div { display: flex; justify-content: space-between; margin-bottom: 5px; }
+                        .total-final { font-weight: 900; font-size: 15px; color: #059669; border-top: 1px dashed #333; padding-top: 5px; }
+                        .footer { text-align: center; margin-top: 25px; font-size: 11px; color: #666; border-top: 1px solid #eee; padding-top: 10px; }
+                        @media print {
+                            body { padding: 0; }
+                            button { display: none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h2>${cafeName}</h2>
+                        <p style="font-size: 12px; margin: 0; color: #555;">فاتورة مبيعات وضريبية</p>
+                    </div>
+                    <div class="info">
+                        <div>الرقم: <span style="font-family: monospace;">${invoiceData.serial}</span></div>
+                        <div>التاريخ: ${invoiceData.dateStr}</div>
+                    </div>
+                    <div style="font-size: 12px; font-weight: bold; margin-bottom: 10px;">
+                        العميل / الطاولة: <span style="color: #2563eb;">${invoiceData.target}</span>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="text-align: right;">البند</th>
+                                <th style="text-align: center;">الكمية</th>
+                                <th style="text-align: center;">السعر</th>
+                                <th style="text-align: left;">الإجمالي</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${itemsHTML}
+                        </tbody>
+                    </table>
+                    <div class="totals">
+                        <div><span>المبلغ الفرعي:</span> <span>${invoiceData.subtotal.toFixed(2)}</span></div>
+                        <div><span>${invoiceData.taxNameUsed}:</span> <span>${invoiceData.tax.toFixed(2)}</span></div>
+                        <div class="total-final"><span>الإجمالي النهائي:</span> <span>${invoiceData.amount.toFixed(2)}</span></div>
+                    </div>
+                    <div class="footer">
+                        شكراً لزيارتكم! نتشرف بخدمتكم دائماً.<br>
+                        <button onclick="window.print()" style="margin-top: 15px; background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%;">طباعة الفاتورة / حفظ PDF</button>
+                    </div>
+                    <script>
+                        window.onload = function() { setTimeout(() => { window.print(); }, 400); };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
+        function printCurrentPOSInvoicePrintView() {
             const target = document.getElementById('invoice-target').value;
             const serial = document.getElementById('invoice-serial').value;
-            const subtotal = document.getElementById('invoice-subtotal').value;
-            const tax = document.getElementById('invoice-tax').value;
-            const total = document.getElementById('invoice-amount').value;
-            const cafeName = document.getElementById('display-cafe-name').innerText;
+            const subtotal = Number(document.getElementById('invoice-subtotal').value) || 0;
+            const tax = Number(document.getElementById('invoice-tax').value) || 0;
+            const taxNameUsed = window.activeTaxName || "الضريبة";
+            const amount = Number(document.getElementById('invoice-amount').value) || 0;
 
             if(!target || invoiceInteractiveItems.length === 0) {
-                alert("يرجى إدخال البيانات وبنود الفاتورة أولاً");
+                alert("يرجى إدخال اسم الطاولة وبنود الفاتورة أولاً");
                 return;
             }
 
-            document.getElementById('pdf-cafe-name').innerText = cafeName;
-            document.getElementById('pdf-serial').innerText = serial;
-            document.getElementById('pdf-date').innerText = new Date().toLocaleString('ar-EG');
-            document.getElementById('pdf-target').innerText = target;
-            document.getElementById('pdf-subtotal').innerText = subtotal;
-            document.getElementById('pdf-tax').innerText = tax;
-            document.getElementById('pdf-total').innerText = total;
-            document.getElementById('pdf-tax-label').innerText = (window.activeTaxName || "الضريبة") + ":";
-
-            let tbody = document.getElementById('pdf-items-tbody');
-            tbody.innerHTML = "";
-            invoiceInteractiveItems.forEach(i => {
-                tbody.innerHTML += `
-                <tr style="border-bottom: 1px solid #e2e8f0;">
-                    <td style="padding: 6px; text-align: right;">${i.name}</td>
-                    <td style="padding: 6px; text-align: center;">${i.qty}</td>
-                    <td style="padding: 6px; text-align: center;">${i.price}</td>
-                    <td style="padding: 6px; text-align: left;">${(i.qty * i.price).toFixed(2)}</td>
-                </tr>`;
+            executePrintWindow({
+                serial,
+                target,
+                items: invoiceInteractiveItems,
+                subtotal,
+                tax,
+                taxNameUsed,
+                amount,
+                dateStr: new Date().toLocaleString('ar-EG')
             });
-
-            const element = document.getElementById('pdf-invoice-template');
-
-            // مهلة زمنية قصيرة لضمان تحديث الـ DOM وتفادي مشاكل الأبعاد
-            setTimeout(async () => {
-                await html2pdf().from(element).set({
-                    margin: 10,
-                    filename: `Invoice-${serial}.pdf`,
-                    html2canvas: { scale: 2, useCORS: true },
-                    jsPDF: { unit: 'mm', format: 'a5', orientation: 'portrait' }
-                }).save();
-            }, 200);
         }
 
-        async function printSpecificInvoicePDF(inv) {
-            const cafeName = document.getElementById('display-cafe-name').innerText;
-            document.getElementById('pdf-cafe-name').innerText = cafeName;
-            document.getElementById('pdf-serial').innerText = inv.serial || 'INV-000';
-            document.getElementById('pdf-date').innerText = inv.date ? new Date(inv.date.toDate()).toLocaleString('ar-EG') : new Date().toLocaleString('ar-EG');
-            document.getElementById('pdf-target').innerText = inv.target || '--';
-            document.getElementById('pdf-subtotal').innerText = inv.subtotal || inv.amount || 0;
-            document.getElementById('pdf-tax').innerText = inv.tax || 0;
-            document.getElementById('pdf-total').innerText = inv.amount || 0;
-            document.getElementById('pdf-tax-label').innerText = (inv.taxNameUsed || "الضريبة") + ":";
-
-            let tbody = document.getElementById('pdf-items-tbody');
-            tbody.innerHTML = "";
-            let itemsToPrint = inv.items || [{ name: inv.details || 'تفاصيل الفاتورة', qty: 1, price: inv.subtotal || inv.amount || 0 }];
-            itemsToPrint.forEach(i => {
-                tbody.innerHTML += `
-                <tr style="border-bottom: 1px solid #e2e8f0;">
-                    <td style="padding: 6px; text-align: right;">${i.name}</td>
-                    <td style="padding: 6px; text-align: center;">${i.qty}</td>
-                    <td style="padding: 6px; text-align: center;">${i.price}</td>
-                    <td style="padding: 6px; text-align: left;">${(i.qty * i.price).toFixed(2)}</td>
-                </tr>`;
+        function printSpecificInvoicePrintView(inv) {
+            const dateStr = inv.date ? new Date(inv.date.toDate()).toLocaleString('ar-EG') : new Date().toLocaleString('ar-EG');
+            const items = inv.items || [{ name: inv.details || 'تفاصيل الفاتورة', qty: 1, price: inv.subtotal || inv.amount || 0 }];
+            
+            executePrintWindow({
+                serial: inv.serial || 'INV-000',
+                target: inv.target || 'عام',
+                items,
+                subtotal: Number(inv.subtotal) || Number(inv.amount) || 0,
+                tax: Number(inv.tax) || 0,
+                taxNameUsed: inv.taxNameUsed || 'الضريبة',
+                amount: Number(inv.amount) || 0,
+                dateStr
             });
-
-            const element = document.getElementById('pdf-invoice-template');
-
-            setTimeout(async () => {
-                await html2pdf().from(element).set({
-                    margin: 10,
-                    filename: `Invoice-${inv.serial || 'INV'}.pdf`,
-                    html2canvas: { scale: 2, useCORS: true },
-                    jsPDF: { unit: 'mm', format: 'a5', orientation: 'portrait' }
-                }).save();
-            }, 200);
         }
 
-        // تقرير مبيعات اليوم المفصل
         async function generateDailySalesReport() {
             const todayStr = new Date().toDateString();
             let todayInvoices = allInvoicesCache.filter(inv => {
