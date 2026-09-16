@@ -24,6 +24,9 @@
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .animate-slide-up { animation: slideUp 0.5s ease-out; }
         #menu-modal { transition: 0.3s; }
+        /* إخفاء شريط التمرير للأقسام */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
@@ -85,12 +88,18 @@
         <p id="bye-msg" class="text-xs text-slate-400 italic">شكراً لزيارتك!</p>
     </div>
 
-    <!-- نافذة المنيو التفاعلي -->
+    <!-- نافذة المنيو التفاعلي مع الأقسام -->
     <div id="menu-modal" class="hidden fixed inset-0 bg-black/90 z-[1000] flex flex-col p-4">
-        <div class="flex justify-between items-center text-white mb-4">
+        <div class="flex justify-between items-center text-white mb-3">
             <h2 class="text-lg font-black"><i class="fas fa-utensils ml-1"></i> قائمة الطعام التفاعلية</h2>
             <button onclick="toggleMenu(false)" class="text-white text-3xl">&times;</button>
         </div>
+        
+        <!-- شريط الأقسام التفاعلي -->
+        <div id="categories-bar" class="flex gap-2 overflow-x-auto no-scrollbar mb-3 py-1 shrink-0">
+            <!-- يتم تعبئة الأقسام هنا تلقائياً -->
+        </div>
+
         <div id="interactive-menu-list" class="flex-1 overflow-auto space-y-3 pb-20">
             <!-- يتم تعبئة المنتجات هنا تلقائياً -->
         </div>
@@ -182,6 +191,8 @@
         let cafeSettings = {};
         let userData = null;
         let cart = [];
+        let allProducts = [];
+        let currentCategory = 'all';
 
         if (!cafeID) {
             document.body.innerHTML = "<div class='text-center font-bold p-10'>خطأ: الرابط غير صحيح.</div>";
@@ -232,15 +243,51 @@
         }
 
         async function loadInteractiveMenu() {
-            const menuContainer = document.getElementById('interactive-menu-list');
             const snap = await db.collection("cafes").doc(cafeID).collection("products").get();
+            allProducts = [];
+            snap.forEach(doc => {
+                allProducts.push({ id: doc.id, ...doc.data() });
+            });
+            renderCategories();
+            renderProducts();
+        }
+
+        function renderCategories() {
+            const categoriesBar = document.getElementById('categories-bar');
+            const categories = ['all', ...new Set(allProducts.map(p => p.category).filter(Boolean))];
+            
+            categoriesBar.innerHTML = '';
+            categories.forEach(cat => {
+                const displayName = cat === 'all' ? 'الكل' : cat;
+                const isActive = currentCategory === cat;
+                categoriesBar.innerHTML += `
+                    <button onclick="filterCategory('${cat}')` + `" class="px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${isActive ? 'bg-blue-600 text-white shadow-lg' : 'bg-white/20 text-white hover:bg-white/30'}">
+                        ${displayName}
+                    </button>
+                `;
+            });
+        }
+
+        function filterCategory(cat) {
+            currentCategory = cat;
+            renderCategories();
+            renderProducts();
+        }
+
+        function renderProducts() {
+            const menuContainer = document.getElementById('interactive-menu-list');
             menuContainer.innerHTML = "";
-            if(snap.empty) {
-                menuContainer.innerHTML = '<p class="text-white text-center py-10">لا توجد منتجات مضافة حالياً في القائمة</p>';
+
+            const filtered = currentCategory === 'all' 
+                ? allProducts 
+                : allProducts.filter(p => p.category === currentCategory);
+
+            if(filtered.length === 0) {
+                menuContainer.innerHTML = '<p class="text-white text-center py-10">لا توجد منتجات في هذا القسم حالياً</p>';
                 return;
             }
-            snap.forEach(doc => {
-                const p = doc.data();
+
+            filtered.forEach(p => {
                 menuContainer.innerHTML += `
                 <div class="bg-white/90 p-4 rounded-2xl flex justify-between items-center shadow-md">
                     <div class="flex items-center gap-3">
@@ -251,7 +298,7 @@
                             <span class="text-xs font-black text-blue-600">${p.price}</span>
                         </div>
                     </div>
-                    <button onclick="addToCart('${doc.id}', '${p.name}', ${p.price})" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow"><i class="fas fa-plus"></i> إضافة</button>
+                    <button onclick="addToCart('${p.id}', '${p.name}', ${p.price})" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow"><i class="fas fa-plus"></i> إضافة</button>
                 </div>`;
             });
         }
