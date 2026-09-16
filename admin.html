@@ -8,6 +8,11 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- استيراد مكتبات Firebase بالنسخ المتوافقة الصحيحة -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Tajawal:wght@400;700&family=Almarai:wght@400;700&display=swap');
         body { font-family: 'Cairo', sans-serif; background: #f0f4f8; color: #1e293b; }
@@ -420,9 +425,6 @@
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-firestore-compat.js"></script>
-
     <script>
         const firebaseConfig = { 
             apiKey: "AIzaSyCCBwr2b_9In1_gpqxkT3qKJ9ua-D80ZuE", 
@@ -445,16 +447,22 @@
         let invoiceInteractiveItems = [];
 
         async function login() {
-            const user = document.getElementById('admin-user-input').value;
+            const user = document.getElementById('admin-user-input').value.trim();
             const pass = document.getElementById('admin-pass-input').value;
-            const doc = await db.collection("cafes").doc(user).get();
-            if(doc.exists && doc.data().password === pass) {
-                currentCafeID = user;
-                expiryDateGlobal = doc.data().expiryDate.toDate();
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('main-admin').classList.remove('hidden');
-                initCafe();
-            } else { alert("بيانات الدخول غير صحيحة"); }
+            if(!user || !pass) { alert("يرجى إدخال اسم المستخدم وكلمة المرور"); return; }
+            try {
+                const doc = await db.collection("cafes").doc(user).get();
+                if(doc.exists && doc.data().password === pass) {
+                    currentCafeID = user;
+                    expiryDateGlobal = doc.data().expiryDate.toDate();
+                    document.getElementById('login-screen').classList.add('hidden');
+                    document.getElementById('main-admin').classList.remove('hidden');
+                    initCafe();
+                } else { alert("بيانات الدخول غير صحيحة"); }
+            } catch(e) {
+                console.error(e);
+                alert("حدث خطأ أثناء الاتصال بقاعدة البيانات");
+            }
         }
 
         async function loadAdminBankInfo() {
@@ -938,7 +946,6 @@
             renderInvoicesList(filtered);
         }
 
-        // --- نظام الطباعة والتصدير الآمن المتوافق مع الهواتف والطابعات ---
         function executePrintWindow(invoiceData) {
             const cafeName = document.getElementById('display-cafe-name').innerText || 'المنشأة';
             let itemsHTML = '';
