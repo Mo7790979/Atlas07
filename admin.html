@@ -643,7 +643,6 @@
                     <button onclick="deleteProduct('${doc.id}')" class="text-red-500 hover:text-red-700 text-xs px-2 py-1 cursor-pointer bg-transparent border-none"><i class="fas fa-trash"></i></button>
                 </div>`;
             });
-            renderInvoiceItemsBuilder();
             renderPOSProductsGrid();
             buildPOSCategoriesFilter();
         }
@@ -934,7 +933,7 @@
             }
         }
 
-        // دالة بناء بنود الفاتورة المُحسّنة (تصميم صف مدمج مانع للتداخل)
+        // دالة بناء بنود الفاتورة المُحسّنة لمنع تداخل وتحديث حقول الإدخال أثناء الكتابة
         function renderInvoiceItemsBuilder() {
             const container = document.getElementById('invoice-items-builder');
             if(!container) return;
@@ -947,31 +946,43 @@
             }
 
             invoiceInteractiveItems.forEach((item, index) => {
-                container.innerHTML += `
-                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 shadow-sm text-right space-y-2 mb-2 relative group transition-all hover:border-blue-300">
-                    <!-- الصف الأول: اسم البند وزر الحذف -->
+                const itemDiv = document.createElement('div');
+                itemDiv.className = "bg-slate-50 p-2.5 rounded-xl border border-slate-200 shadow-sm text-right space-y-2 mb-2 relative group transition-all hover:border-blue-300";
+                itemDiv.innerHTML = `
                     <div class="flex items-center gap-2">
                         <div class="flex-1">
-                            <input type="text" value="${item.name || ''}" oninput="updateItemField(${index}, 'name', this.value)" placeholder="اسم البند أو الوجبة" class="text-xs py-1.5 px-2 font-bold text-slate-800 bg-white border border-slate-300 rounded-lg w-full">
+                            <input type="text" value="${item.name || ''}" data-index="${index}" data-field="name" class="invoice-item-input text-xs py-1.5 px-2 font-bold text-slate-800 bg-white border border-slate-300 rounded-lg w-full" placeholder="اسم البند أو الوجبة">
                         </div>
-                        <button onclick="removeInvoiceItemRow(${index})" class="text-red-500 hover:text-white hover:bg-red-500 w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all cursor-pointer border border-red-200 bg-white" title="حذف البند">
+                        <button type="button" onclick="removeInvoiceItemRow(${index})" class="text-red-500 hover:text-white hover:bg-red-500 w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all cursor-pointer border border-red-200 bg-white" title="حذف البند">
                             <i class="fas fa-trash-alt text-xs"></i>
                         </button>
                     </div>
-                    
-                    <!-- الصف الثاني: الكمية والسعر الإجمالي الفرعي للبند -->
                     <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200/60">
                         <div class="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-slate-200">
                             <span class="text-[10px] font-bold text-slate-400 shrink-0">الكمية:</span>
-                            <input type="number" value="${item.qty || 1}" min="1" oninput="updateItemField(${index}, 'qty', this.value)" class="text-xs py-0.5 text-center font-black text-blue-600 bg-transparent border-none outline-none w-full">
+                            <input type="number" value="${item.qty || 1}" min="1" data-index="${index}" data-field="qty" class="invoice-item-input text-xs py-0.5 text-center font-black text-blue-600 bg-transparent border-none outline-none w-full">
                         </div>
                         <div class="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-slate-200">
                             <span class="text-[10px] font-bold text-slate-400 shrink-0">السعر:</span>
-                            <input type="number" value="${item.price || 0}" oninput="updateItemField(${index}, 'price', this.value)" class="text-xs py-0.5 text-center font-black text-emerald-600 bg-transparent border-none outline-none w-full">
+                            <input type="number" value="${item.price || 0}" data-index="${index}" data-field="price" class="invoice-item-input text-xs py-0.5 text-center font-black text-emerald-600 bg-transparent border-none outline-none w-full">
                         </div>
-                    </div>
-                </div>`;
+                    </div>`;
+                container.appendChild(itemDiv);
             });
+
+            // ربط أحداث الإدخال مباشرة لتجنب فقدان التركيز (Focus Loss)
+            container.querySelectorAll('.invoice-item-input').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const idx = parseInt(e.target.getAttribute('data-index'));
+                    const field = e.target.getAttribute('data-field');
+                    const val = e.target.value;
+                    if(invoiceInteractiveItems[idx]) {
+                        invoiceInteractiveItems[idx][field] = field === 'qty' || field === 'price' ? parseFloat(val) || 0 : val;
+                        calculateInvoiceTotals();
+                    }
+                });
+            });
+
             calculateInvoiceTotals();
         }
 
@@ -1481,3 +1492,4 @@
     </script>
 </body>
 </html>
+ 
