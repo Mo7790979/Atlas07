@@ -1403,7 +1403,7 @@
             const cafeNameEl = document.getElementById('display-cafe-name');
             const cafeName = cafeNameEl ? cafeNameEl.innerText : 'المنشأة';
             const reportContentHtml = document.getElementById('sales-report-content').innerHTML;
-            const currentDateStr = new Date().toLocaleDateString('ar-EG');
+            const currentDateTimeStr = new Date().toLocaleString('ar-EG');
 
             const printWindow = window.open('', '_blank');
             if(!printWindow) {
@@ -1416,7 +1416,7 @@
                 <html lang="ar" dir="rtl">
                 <head>
                     <meta charset="UTF-8">
-                    <title>تقرير مبيعات اليوم - ${currentDateStr}</title>
+                    <title>تقرير مبيعات اليوم - ${currentDateTimeStr}</title>
                     <style>
                         body { font-family: 'Cairo', Tahoma, sans-serif; padding: 25px; color: #1e293b; max-width: 600px; margin: auto; direction: rtl; background: #fff; }
                         .header { text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 12px; margin-bottom: 20px; }
@@ -1449,7 +1449,7 @@
                         <p style="font-size: 14px; margin: 0; font-weight: bold; color: #475569;">تقرير مبيعات اليوم المفصل</p>
                     </div>
                     <div class="date-box">
-                        تاريخ التقرير: ${currentDateStr}
+                        تاريخ ووقت الإصدار: ${currentDateTimeStr}
                     </div>
                     ${reportContentHtml}
                     <div class="footer">
