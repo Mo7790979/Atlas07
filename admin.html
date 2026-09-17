@@ -191,7 +191,7 @@
         <!-- النظام المحاسبي الاحترافي بالمنيو التفاعلي المطابق للعميل -->
         <div id="section-pos" class="section-content hidden">
             
-            <!-- Top Interactive Action Bar (تم إزالة زر الطباعة بناءً على طلبك) -->
+            <!-- Top Interactive Action Bar -->
             <div class="bg-slate-900 text-white p-3 rounded-2xl mb-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
                 <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
                     <button onclick="openTaxManager()" class="top-action-bar-btn" style="background:#8b5cf6;"><i class="fas fa-percent"></i> <span>إدارة الضرائب</span></button>
@@ -468,7 +468,14 @@
                 <h3 class="font-black text-lg text-slate-800"><i class="fas fa-file-invoice-dollar text-amber-600 ml-1"></i> تقرير مبيعات اليوم المفصل</h3>
             </div>
             <div id="sales-report-content" class="space-y-4 text-xs"></div>
-            <button onclick="closeSalesReportModal()" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold cursor-pointer border-none">إغلاق التقرير</button>
+            
+            <!-- أزرار التحكم والطباعة داخل نافذة التقرير -->
+            <div class="grid grid-cols-2 gap-2 pt-2">
+                <button onclick="printDailySalesReport()" class="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold cursor-pointer border-none flex items-center justify-center gap-2">
+                    <i class="fas fa-print"></i> طباعة التقرير
+                </button>
+                <button onclick="closeSalesReportModal()" class="bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-xl font-bold cursor-pointer border-none">إغلاق التقرير</button>
+            </div>
         </div>
     </div>
 
@@ -1392,6 +1399,72 @@
             if(modal) modal.classList.remove('hidden');
         }
 
+        function printDailySalesReport() {
+            const cafeNameEl = document.getElementById('display-cafe-name');
+            const cafeName = cafeNameEl ? cafeNameEl.innerText : 'المنشأة';
+            const reportContentHtml = document.getElementById('sales-report-content').innerHTML;
+            const currentDateStr = new Date().toLocaleDateString('ar-EG');
+
+            const printWindow = window.open('', '_blank');
+            if(!printWindow) {
+                alert("يرجى السماح بفتح النوافذ المنبثقة (Pop-ups) لطباعة التقرير.");
+                return;
+            }
+
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="ar" dir="rtl">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>تقرير مبيعات اليوم - ${currentDateStr}</title>
+                    <style>
+                        body { font-family: 'Cairo', Tahoma, sans-serif; padding: 25px; color: #1e293b; max-width: 600px; margin: auto; direction: rtl; background: #fff; }
+                        .header { text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 12px; margin-bottom: 20px; }
+                        .header h2 { margin: 0 0 5px 0; font-size: 24px; color: #2563eb; }
+                        .date-box { font-size: 13px; font-weight: bold; margin-bottom: 15px; text-align: center; color: #64748b; }
+                        .bg-blue-50 { background: #eff6ff !important; border: 1px solid #bfdbfe; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
+                        .bg-slate-50 { background: #f8fafc !important; border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; }
+                        .flex { display: flex; }
+                        .justify-between { justify-content: space-between; }
+                        .font-bold { font-weight: bold; }
+                        .font-black { font-weight: 900; }
+                        .text-blue-700 { color: #1d4ed8; }
+                        .text-purple-700 { color: #6b21a8; }
+                        .text-emerald-700 { color: #047857; }
+                        .text-slate-700 { color: #334155; }
+                        .border-t { border-top: 1px solid #cbd5e1; margin-top: 8px; padding-top: 8px; }
+                        .border-b { border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 8px; }
+                        .space-y-2 > * + * { margin-top: 8px; }
+                        h4 { font-size: 15px; margin: 0 0 10px 0; color: #1e293b; }
+                        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #666; border-top: 1px dashed #cbd5e1; padding-top: 15px; }
+                        @media print {
+                            body { padding: 0; }
+                            button { display: none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h2>${cafeName}</h2>
+                        <p style="font-size: 14px; margin: 0; font-weight: bold; color: #475569;">تقرير مبيعات اليوم المفصل</p>
+                    </div>
+                    <div class="date-box">
+                        تاريخ التقرير: ${currentDateStr}
+                    </div>
+                    ${reportContentHtml}
+                    <div class="footer">
+                        تم استخراج هذا التقرير من نظام لوحة التحكم الاحترافية.<br>
+                        <button onclick="window.print()" style="margin-top: 20px; background: #2563eb; color: white; border: none; padding: 12px 25px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; font-size: 14px;">طباعة التقرير / حفظ PDF</button>
+                    </div>
+                    <script>
+                        window.onload = function() { setTimeout(() => { window.print(); }, 400); };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
         function closeSalesReportModal() {
             const modal = document.getElementById('sales-report-modal');
             if(modal) modal.classList.add('hidden');
@@ -1503,7 +1576,7 @@
                 const timerEl = document.getElementById('countdown-timer');
                 if(!timerEl || !expiryDateGlobal) return;
                 const now = new Date().getTime();
-                const diff = expiryDate_Global - now; // note variable check
+                const diff = expiryDateGlobal - now;
                 if (diff < 0) { timerEl.innerText = "منتهي"; return; }
                 const days = Math.floor(diff / (1000 * 60 * 60 * 24));
                 const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
