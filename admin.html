@@ -1086,7 +1086,7 @@
             renderInvoiceItemsBuilder();
             generateNewSerial();
             window.activeCartIdToResolve = null;
-            window.activeZeroInvoiceId = null; // تفريغ معرف الفاتورة الصفرية النشطة
+            window.activeZeroInvoiceId = null;
         }
 
         async function issueInvoice() {
@@ -1165,6 +1165,20 @@
             }
         }
 
+        // دالة لحذف الفاتورة الصفرية مباشرة من قاعدة البيانات دون تصديرها
+        async function deleteZeroInvoiceDirectly(invId) {
+            if(confirm("هل أنت متأكد من حذف هذه الفاتورة الصفرية نهائياً من قاعدة البيانات؟")) {
+                try {
+                    await db.collection("cafes").doc(currentCafeID).collection("invoices").doc(invId).delete();
+                    alert("تم حذف الفاتورة بنجاح.");
+                    loadInvoices();
+                } catch(e) {
+                    console.error("خطأ في الحذف:", e);
+                    alert("حدث خطأ أثناء حذف الفاتورة.");
+                }
+            }
+        }
+
         // دالة لفلترة وتوزيع الفواتير: القادمة من صفحة العميل (أرقام صفرية أو INV-000) في قائمة منفصلة والإدارية في القائمة الأخرى
         function renderSeparatedInvoicesLists(invoices) {
             const adminInvoicesList = document.getElementById('invoices-list');
@@ -1194,7 +1208,7 @@
             window._tempCustomerInvoices = window._tempCustomerInvoices || {};
             window._tempAdminInvoices = window._tempAdminInvoices || {};
 
-            // عرض فواتير العملاء في القائمة المنفصلة
+            // عرض فواتير العملاء في القائمة المنفصلة مع زر الطباعة وزر الحذف المباشر
             if(customerInvoices.length === 0) {
                 customerInvoicesList.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">لا توجد فواتير قادمة من صفحة العملاء حالياً</p>';
             } else {
@@ -1214,11 +1228,12 @@
 
                     customerInvoicesList.innerHTML += `
                     <div class="flex justify-between items-center p-3 bg-white rounded-xl border border-emerald-200 mb-2 shadow-sm hover:bg-emerald-50/50 text-right">
-                        <div class="flex items-center gap-2">
-                            <button onclick='printCustomerInvoicePrintView("${inv.id}")' class="bg-emerald-600 text-white px-2.5 py-1.5 rounded-lg text-xs shadow cursor-pointer border-none"><i class="fas fa-print"></i></button>
-                            <span class="text-[10px] text-slate-400">${timeStr}</span>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick='printCustomerInvoicePrintView("${inv.id}")' class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg text-xs shadow cursor-pointer border-none" title="طباعة"><i class="fas fa-print"></i></button>
+                            <button onclick='deleteZeroInvoiceDirectly("${inv.id}")' class="bg-red-500 hover:bg-red-600 text-white px-2.5 py-1.5 rounded-lg text-xs shadow cursor-pointer border-none" title="حذف من قاعدة البيانات"><i class="fas fa-trash-alt"></i></button>
+                            <span class="text-[10px] text-slate-400 mr-1">${timeStr}</span>
                         </div>
-                        <div onclick='loadInvoiceToPOS("${inv.id}")' class="customer-row text-right flex-1">
+                        <div onclick='loadInvoiceToPOS("${inv.id}")' class="customer-row text-right flex-1 mr-2">
                             <div class="font-bold text-xs text-slate-800">
                                 <span class="text-emerald-700 font-bold ml-2">(${inv.amount})</span> - ${inv.target} 
                                 <span class="text-emerald-600 font-mono mr-2">${inv.serial || 'INV-000'}</span>
@@ -1765,3 +1780,4 @@
     </script>
 </body>
 </html>
+ 
