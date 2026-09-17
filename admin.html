@@ -246,13 +246,13 @@
                             <input type="text" id="invoice-target" placeholder="مثال: طاولة 4 أو اسم العميل" class="font-bold text-slate-800">
                         </div>
 
-                        <!-- Interactive Invoice Items List -->
+                        <!-- Interactive Invoice Items List (حسب الطلب: تصميم صف مدمج مانع للتداخل) -->
                         <div class="mb-3">
                             <div class="flex justify-between items-center mb-1.5">
                                 <label class="text-xs font-bold text-slate-700">بنود الفاتورة</label>
                                 <button onclick="addInvoiceItemRow()" class="bg-emerald-600 text-white px-2.5 py-1 rounded-md text-[11px] font-bold shadow-sm flex items-center gap-1 hover:bg-emerald-700 cursor-pointer border-none"><i class="fas fa-plus"></i> إضافة بند</button>
                             </div>
-                            <div id="invoice-items-builder" class="space-y-2.5 max-h-60 overflow-y-auto pr-1"></div>
+                            <div id="invoice-items-builder" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
                         </div>
                     </div>
 
@@ -928,10 +928,13 @@
         }
 
         function updateItemField(index, field, val) {
-            invoiceInteractiveItems[index][field] = field === 'qty' || field === 'price' ? Number(val) : val;
-            calculateInvoiceTotals();
+            if(invoiceInteractiveItems[index]) {
+                invoiceInteractiveItems[index][field] = field === 'qty' || field === 'price' ? parseFloat(val) || 0 : val;
+                calculateInvoiceTotals();
+            }
         }
 
+        // دالة بناء بنود الفاتورة المُحسّنة (تصميم صف مدمج مانع للتداخل)
         function renderInvoiceItemsBuilder() {
             const container = document.getElementById('invoice-items-builder');
             if(!container) return;
@@ -945,22 +948,26 @@
 
             invoiceInteractiveItems.forEach((item, index) => {
                 container.innerHTML += `
-                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm text-right space-y-2 mb-2.5">
-                    <div class="flex gap-2 items-center">
+                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 shadow-sm text-right space-y-2 mb-2 relative group transition-all hover:border-blue-300">
+                    <!-- الصف الأول: اسم البند وزر الحذف -->
+                    <div class="flex items-center gap-2">
                         <div class="flex-1">
-                            <label class="text-[10px] font-bold text-slate-500 mb-1">اسم البند</label>
-                            <input type="text" value="${item.name || ''}" oninput="updateItemField(${index}, 'name', this.value)" placeholder="اسم الوجبة أو المنتج" class="text-xs py-1.5 font-bold text-slate-800 bg-slate-50">
+                            <input type="text" value="${item.name || ''}" oninput="updateItemField(${index}, 'name', this.value)" placeholder="اسم البند أو الوجبة" class="text-xs py-1.5 px-2 font-bold text-slate-800 bg-white border border-slate-300 rounded-lg w-full">
                         </div>
-                        <button onclick="removeInvoiceItemRow(${index})" class="text-red-400 hover:text-red-600 p-2 mt-4 shrink-0 transition-colors cursor-pointer bg-transparent border-none" title="حذف البند"><i class="fas fa-trash text-xs"></i></button>
+                        <button onclick="removeInvoiceItemRow(${index})" class="text-red-500 hover:text-white hover:bg-red-500 w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all cursor-pointer border border-red-200 bg-white" title="حذف البند">
+                            <i class="fas fa-trash-alt text-xs"></i>
+                        </button>
                     </div>
-                    <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
-                        <div>
-                            <label class="text-[9px] font-bold text-slate-500 mb-0.5">الكمية</label>
-                            <input type="number" value="${item.qty || 1}" min="1" oninput="updateItemField(${index}, 'qty', this.value)" class="text-xs py-1.5 text-center font-bold bg-slate-50">
+                    
+                    <!-- الصف الثاني: الكمية والسعر الإجمالي الفرعي للبند -->
+                    <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200/60">
+                        <div class="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-slate-200">
+                            <span class="text-[10px] font-bold text-slate-400 shrink-0">الكمية:</span>
+                            <input type="number" value="${item.qty || 1}" min="1" oninput="updateItemField(${index}, 'qty', this.value)" class="text-xs py-0.5 text-center font-black text-blue-600 bg-transparent border-none outline-none w-full">
                         </div>
-                        <div>
-                            <label class="text-[9px] font-bold text-slate-500 mb-0.5">السعر للوحدة</label>
-                            <input type="number" value="${item.price || 0}" oninput="updateItemField(${index}, 'price', this.value)" class="text-xs py-1.5 text-center font-bold bg-slate-50">
+                        <div class="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-slate-200">
+                            <span class="text-[10px] font-bold text-slate-400 shrink-0">السعر:</span>
+                            <input type="number" value="${item.price || 0}" oninput="updateItemField(${index}, 'price', this.value)" class="text-xs py-0.5 text-center font-black text-emerald-600 bg-transparent border-none outline-none w-full">
                         </div>
                     </div>
                 </div>`;
@@ -1036,9 +1043,6 @@
             window.activeCartIdToResolve = null;
         }
 
-        // ==========================================
-        // دالة إصدار وحفظ الفاتورة المصححة بالكامل
-        // ==========================================
         async function issueInvoice() {
             const target = document.getElementById('invoice-target').value.trim();
             const subtotal = Number(document.getElementById('invoice-subtotal').innerText) || 0;
@@ -1047,21 +1051,9 @@
             const amount = Number(document.getElementById('invoice-amount').innerText) || 0;
             const serial = document.getElementById('invoice-serial').innerText;
 
-            // التحقق من صحة المدخلات بناءً على المصفوفة التفاعلية
-            if(!target) {
-                alert("يرجى إدخال اسم الطاولة أو اسم الزبون");
-                return;
-            }
-            if(invoiceInteractiveItems.length === 0) {
-                alert("يرجى إضافة بند واحد على الأقل للفاتورة");
-                return;
-            }
-            // التأكد من أن كل بند يحتوي على اسم وسعر صحيح
-            for(let i = 0; i < invoiceInteractiveItems.length; i++) {
-                if(!invoiceInteractiveItems[i].name || invoiceInteractiveItems[i].name.trim() === "") {
-                    alert(`يرجى كتابة اسم البند رقم (${i + 1})`);
-                    return;
-                }
+            if(!target || amount <= 0 || invoiceInteractiveItems.length === 0) { 
+                alert("يرجى إدخال اسم الطاولة/الزبون وبنود صحيحة للفاتورة"); 
+                return; 
             }
 
             const detailsSummary = invoiceInteractiveItems.map(i => `${i.qty}x ${i.name} (${i.price})`).join(' - ');
