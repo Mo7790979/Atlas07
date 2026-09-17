@@ -193,7 +193,7 @@
         const db = firebase.firestore();
 
         const urlParams = new URLSearchParams(window.location.search);
-        const cafeID = urlParams.get('id');
+        const cafeID = urlParams.get('id') || 'atlas07';
 
         let cafeSettings = {};
         let userData = null;
@@ -490,3 +490,4 @@
     </script>
 </body>
 </html>
+ 
