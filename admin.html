@@ -352,7 +352,63 @@
                         <input type="text" id="general-log-search" placeholder="بحث شامل برقم الفاتورة، العميل، أو التفاصيل..." oninput="filterGeneralLog()" class="text-xs py-2">
                     </div>
                 </div>
-                <div id="general-log-list" class="space-y-2 max-h-[500px] overflow-y-auto">
+
+                <!-- أدوات الفلترة المتقدمة وتقارير الطباعة للسجل العام -->
+                <div class="bg-slate-50 p-3 rounded-xl border mb-4 space-y-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div>
+                            <label>فترة التقرير / السجل</label>
+                            <select id="general-report-period" onchange="toggleCustomDateInputs()" class="text-xs py-2 font-bold">
+                                <option value="all">كل الفترات (السجل الكامل)</option>
+                                <option value="today">اليوم الحالي</option>
+                                <option value="week">الأسبوع الحالي</option>
+                                <option value="month">الشهر الحالي</option>
+                                <option value="quarter">الربع سنوي (آخر 3 أشهر)</option>
+                                <option value="year">السنة الحالية</option>
+                                <option value="custom">تحديد يدوي (فترة مخصصة)</option>
+                            </select>
+                        </div>
+                        <div id="custom-date-from-container" class="hidden">
+                            <label>من تاريخ</label>
+                            <input type="date" id="general-date-from" class="text-xs py-2">
+                        </div>
+                        <div id="custom-date-to-container" class="hidden">
+                            <label>إلى تاريخ</label>
+                            <input type="date" id="general-date-to" class="text-xs py-2">
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200">
+                        <button onclick="applyGeneralFilterAndRender()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold cursor-pointer border-none flex items-center gap-1.5 shadow">
+                            <i class="fas fa-filter"></i> تطبيق الفلتر وتحديث العرض
+                        </button>
+                        <button onclick="printGeneralDetailedReport()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold cursor-pointer border-none flex items-center gap-1.5 shadow">
+                            <i class="fas fa-print"></i> طباعة التقرير المفصل المخصص
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ملخص الإحصائيات للفترة المحددة -->
+                <div id="general-report-summary-box" class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4 p-3 bg-blue-50/70 rounded-xl border border-blue-200 text-xs">
+                    <div class="bg-white p-2.5 rounded-lg border shadow-sm text-center">
+                        <span class="text-[10px] text-slate-400 block font-bold">عدد الفواتير</span>
+                        <span id="sum-count" class="font-black text-blue-900 text-sm">0</span>
+                    </div>
+                    <div class="bg-white p-2.5 rounded-lg border shadow-sm text-center">
+                        <span class="text-[10px] text-slate-400 block font-bold">إجمالي الإيرادات</span>
+                        <span id="sum-subtotal" class="font-black text-slate-800 text-sm">0.00</span>
+                    </div>
+                    <div class="bg-white p-2.5 rounded-lg border shadow-sm text-center">
+                        <span class="text-[10px] text-slate-400 block font-bold">إجمالي الضرائب</span>
+                        <span id="sum-tax" class="font-black text-purple-700 text-sm">0.00</span>
+                    </div>
+                    <div class="bg-white p-2.5 rounded-lg border shadow-sm text-center">
+                        <span class="text-[10px] text-slate-400 block font-bold">الإجمالي الصافي</span>
+                        <span id="sum-total" class="font-black text-emerald-700 text-sm">0.00</span>
+                    </div>
+                </div>
+
+                <div id="general-log-list" class="space-y-2 max-h-[450px] overflow-y-auto">
                     <p class="text-xs text-slate-400 text-center py-8">جاري تحميل السجل العام...</p>
                 </div>
             </div>
@@ -1183,7 +1239,7 @@
                     allInvoicesCache.push({ id: doc.id, ...doc.data() });
                 });
                 renderSeparatedInvoicesLists(allInvoicesCache);
-                renderGeneralLogList(allInvoicesCache);
+                applyGeneralFilterAndRender();
             } catch(e) {
                 console.log("جاري تهيئة سجل الفواتير...");
             }
@@ -1299,14 +1355,115 @@
             }
         }
 
-        // دالة عرض السجل العام الشامل
+        // --- دوال السجل العام مع التقرير المفصل المخصص والطباعة ---
+        function toggleCustomDateInputs() {
+            const period = document.getElementById('general-report-period').value;
+            const fromContainer = document.getElementById('custom-date-from-container');
+            const toContainer = document.getElementById('custom-date-to-container');
+            if(period === 'custom') {
+                if(fromContainer) fromContainer.classList.remove('hidden');
+                if(toContainer) toContainer.classList.remove('hidden');
+            } else {
+                if(fromContainer) fromContainer.classList.add('hidden');
+                if(toContainer) toContainer.classList.add('hidden');
+            }
+        }
+
+        function getFilteredInvoicesForGeneralReport() {
+            const period = document.getElementById('general-report-period').value;
+            const searchInput = document.getElementById('general-log-search');
+            const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+            const now = new Date();
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+            let filtered = allInvoicesCache.filter(inv => {
+                if (!inv.date || typeof inv.date.toDate !== 'function') return false;
+                const d = inv.date.toDate();
+
+                // فلترة الفترة الزمنية
+                if (period === 'today') {
+                    if (d < todayStart) return false;
+                } else if (period === 'week') {
+                    const firstDayOfWeek = new Date(now);
+                    firstDayOfWeek.setDate(now.getDate() - now.getDay());
+                    firstDayOfWeek.setHours(0,0,0,0);
+                    if (d < firstDayOfWeek) return false;
+                } else if (period === 'month') {
+                    if (d.getMonth() !== now.getMonth() || d.getFullYear() !== now.getFullYear()) return false;
+                } else if (period === 'quarter') {
+                    const currentQuarter = Math.floor(now.getMonth() / 3);
+                    const dQuarter = Math.floor(d.getMonth() / 3);
+                    if (dQuarter !== currentQuarter || d.getFullYear() !== now.getFullYear()) return false;
+                } else if (period === 'year') {
+                    if (d.getFullYear() !== now.getFullYear()) return false;
+                } else if (period === 'custom') {
+                    const fromStr = document.getElementById('general-date-from').value;
+                    const toStr = document.getElementById('general-date-to').value;
+                    if (fromStr) {
+                        const fromDate = new Date(fromStr);
+                        fromDate.setHours(0,0,0,0);
+                        if (d < fromDate) return false;
+                    }
+                    if (toStr) {
+                        const toDate = new Date(toStr);
+                        toDate.setHours(23,59,59,999);
+                        if (d > toDate) return false;
+                    }
+                }
+
+                // فلترة البحث النصي
+                if (query) {
+                    const matchSerial = inv.serial && inv.serial.toLowerCase().includes(query);
+                    const matchTarget = inv.target && inv.target.toLowerCase().includes(query);
+                    const matchDetails = inv.details && inv.details.toLowerCase().includes(query);
+                    if (!matchSerial && !matchTarget && !matchDetails) return false;
+                }
+
+                return true;
+            });
+
+            return filtered;
+        }
+
+        function applyGeneralFilterAndRender() {
+            const filtered = getFilteredInvoicesForGeneralReport();
+            renderGeneralLogList(filtered);
+            updateGeneralReportSummary(filtered);
+        }
+
+        function updateGeneralReportSummary(invoices) {
+            let totalCount = invoices.length;
+            let totalSub = 0;
+            let totalTax = 0;
+            let totalAmount = 0;
+
+            invoices.forEach(inv => {
+                const sub = Number(inv.subtotal) || Number(inv.amount) || 0;
+                let tax = Number(inv.tax) || 0;
+                if(inv.appliedTaxes && inv.appliedTaxes.length > 0) {
+                    tax = inv.appliedTaxes.reduce((acc, t) => acc + (Number(t.value) || 0), 0);
+                }
+                const amt = Number(inv.amount) || (sub + tax);
+
+                totalSub += sub;
+                totalTax += tax;
+                totalAmount += amt;
+            });
+
+            document.getElementById('sum-count').innerText = totalCount;
+            document.getElementById('sum-subtotal').innerText = totalSub.toFixed(2);
+            document.getElementById('sum-tax').innerText = totalTax.toFixed(2);
+            document.getElementById('sum-total').innerText = totalAmount.toFixed(2);
+        }
+
         function renderGeneralLogList(invoices) {
             const container = document.getElementById('general-log-list');
             if(!container) return;
             container.innerHTML = "";
 
             if(invoices.length === 0) {
-                container.innerHTML = '<p class="text-xs text-slate-400 text-center py-8">لا توجد أي فواتير مسجلة في السجل العام حالياً</p>';
+                container.innerHTML = '<p class="text-xs text-slate-400 text-center py-8">لا توجد أي فواتير مسجلة مطابقة للفلتر الحالي</p>';
                 return;
             }
 
@@ -1325,9 +1482,16 @@
                 }
 
                 let taxDesc = '';
+                let calculatedTaxVal = Number(inv.tax) || 0;
                 if(inv.appliedTaxes && inv.appliedTaxes.length > 0) {
                     taxDesc = inv.appliedTaxes.map(t => `${t.name} (${t.rate}%): ${t.value.toFixed(2)}`).join(' | ');
+                    calculatedTaxVal = inv.appliedTaxes.reduce((acc, t) => acc + (Number(t.value) || 0), 0);
+                } else if(calculatedTaxVal > 0) {
+                    taxDesc = `الضريبة: ${calculatedTaxVal.toFixed(2)}`;
                 }
+
+                const subVal = Number(inv.subtotal) || Number(inv.amount) || 0;
+                const finalAmt = Number(inv.amount) || (subVal + calculatedTaxVal);
 
                 container.innerHTML += `
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 bg-white rounded-xl border border-slate-200 mb-2.5 shadow-sm hover:bg-slate-50 transition-all text-right gap-3">
@@ -1345,9 +1509,10 @@
                         </div>
                         <p class="text-[11px] text-slate-600 font-medium mb-1">${inv.details || 'بدون تفاصيل البنود'}</p>
                         <div class="flex flex-wrap items-center gap-3 text-[10px] font-bold text-slate-500 border-t pt-1 border-slate-100">
-                            <span>المبلغ الفرعي: <strong class="text-slate-700">${Number(inv.subtotal || inv.amount).toFixed(2)}</strong></span>
-                            ${taxDesc ? `<span>الضرائب: <strong class="text-purple-700">${taxDesc}</strong></span>` : ''}
-                            <span class="mr-auto text-emerald-700 text-xs font-black">الإجمالي: ${Number(inv.amount || 0).toFixed(2)}</span>
+                            <span>الإيراد (الفرعي): <strong class="text-slate-700">${subVal.toFixed(2)}</strong></span>
+                            ${taxDesc ? `<span>الضريبة: <strong class="text-purple-700">${taxDesc}</strong></span>` : ''}
+                            <span class="text-emerald-700">الإجمالي: <strong class="text-emerald-800">${finalAmt.toFixed(2)}</strong></span>
+                            <span class="mr-auto text-blue-700 font-black">الصافي: ${subVal.toFixed(2)}</span>
                         </div>
                     </div>
                 </div>`;
@@ -1355,19 +1520,140 @@
         }
 
         function filterGeneralLog() {
-            const input = document.getElementById('general-log-search');
-            if(!input) return;
-            const query = input.value.toLowerCase().trim();
-            if(!query) {
-                renderGeneralLogList(allInvoicesCache);
+            applyGeneralFilterAndRender();
+        }
+
+        async function printGeneralDetailedReport() {
+            const filteredInvoices = getFilteredInvoicesForGeneralReport();
+            if(filteredInvoices.length === 0) {
+                alert("لا توجد فواتير مطابقة للفترة المحددة لطباعة التقرير.");
                 return;
             }
-            const filtered = allInvoicesCache.filter(inv => 
-                (inv.serial && inv.serial.toLowerCase().includes(query)) || 
-                (inv.target && inv.target.toLowerCase().includes(query)) ||
-                (inv.details && inv.details.toLowerCase().includes(query))
-            );
-            renderGeneralLogList(filtered);
+
+            const cafeName = await getCafeNameForReport();
+            const periodSelectText = document.getElementById('general-report-period').selectedOptions[0].text;
+            const currentDateTimeStr = new Date().toLocaleString('ar-EG');
+
+            let totalCount = filteredInvoices.length;
+            let totalRevenue = 0;
+            let totalTax = 0;
+            let totalNet = 0;
+            let totalFinal = 0;
+
+            let rowsHtml = '';
+            filteredInvoices.forEach((inv, index) => {
+                const sub = Number(inv.subtotal) || Number(inv.amount) || 0;
+                let tax = Number(inv.tax) || 0;
+                if(inv.appliedTaxes && inv.appliedTaxes.length > 0) {
+                    tax = inv.appliedTaxes.reduce((acc, t) => acc + (Number(t.value) || 0), 0);
+                }
+                const amt = Number(inv.amount) || (sub + tax);
+                const net = sub;
+
+                totalRevenue += sub;
+                totalTax += tax;
+                totalNet += net;
+                totalFinal += amt;
+
+                let dateStr = '';
+                if(inv.date && typeof inv.date.toDate === 'function') {
+                    dateStr = new Date(inv.date.toDate()).toLocaleDateString('ar-EG');
+                }
+
+                rowsHtml += `
+                    <tr>
+                        <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center;">${index + 1}</td>
+                        <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center; font-family: monospace;">${inv.serial || 'INV-000'}</td>
+                        <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: right;">${inv.target || '-'}</td>
+                        <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: right; font-size: 11px;">${inv.details || '-'}</td>
+                        <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center;">${sub.toFixed(2)}</td>
+                        <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center;">${tax.toFixed(2)}</td>
+                        <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center;">${amt.toFixed(2)}</td>
+                        <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center; font-weight: bold; color: #047857;">${net.toFixed(2)}</td>
+                        <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center; font-size: 10px;">${dateStr}</td>
+                    </tr>
+                `;
+            });
+
+            const printWindow = window.open('', '_blank');
+            if(!printWindow) {
+                alert("يرجى السماح بفتح النوافذ المنبثقة (Pop-ups) لطباعة التقرير المفصل.");
+                return;
+            }
+
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="ar" dir="rtl">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>التقرير المفصل - ${cafeName}</title>
+                    <style>
+                        body { font-family: 'Cairo', Tahoma, sans-serif; padding: 20px; color: #1e293b; max-width: 900px; margin: auto; direction: rtl; background: #fff; }
+                        .header { text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 10px; margin-bottom: 15px; }
+                        .header h2 { margin: 0 0 5px 0; font-size: 22px; color: #2563eb; }
+                        .meta-info { display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; margin-bottom: 15px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; }
+                        .summary-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px; }
+                        .summary-card { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; text-align: center; font-size: 11px; }
+                        .summary-card span { display: block; color: #64748b; font-weight: bold; margin-bottom: 3px; }
+                        .summary-card strong { font-size: 14px; font-weight: 900; color: #1e293b; }
+                        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 20px; }
+                        th { background: #2563eb; color: white; padding: 8px 6px; border: 1px solid #1d4ed8; text-align: center; }
+                        td { border: 1px solid #cbd5e1; }
+                        .footer { text-align: center; margin-top: 25px; font-size: 11px; color: #666; border-top: 1px dashed #cbd5e1; padding-top: 10px; }
+                        @media print {
+                            body { padding: 0; }
+                            button { display: none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h2>${cafeName}</h2>
+                        <p style="font-size: 13px; margin: 0; font-weight: bold; color: #475569;">تقرير السجل العام المفصل (الإيراد، الضريبة، الإجمالي، الصافي)</p>
+                    </div>
+                    <div class="meta-info">
+                        <div>نطاق التقرير: <span style="color: #2563eb;">${periodSelectText}</span></div>
+                        <div>تاريخ ووقت الإصدار: ${currentDateTimeStr}</div>
+                    </div>
+
+                    <div class="summary-grid">
+                        <div class="summary-card"><span>عدد الفواتير</span><strong>${totalCount}</strong></div>
+                        <div class="summary-card"><span>الإيراد الفرعي</span><strong>${totalRevenue.toFixed(2)}</strong></div>
+                        <div class="summary-card"><span>إجمالي الضريبة</span><strong style="color: #6b21a8;">${totalTax.toFixed(2)}</strong></div>
+                        <div class="summary-card"><span>الإجمالي النهائي</span><strong style="color: #047857;">${totalFinal.toFixed(2)}</strong></div>
+                        <div class="summary-card"><span>الصافي</span><strong style="color: #1d4ed8;">${totalNet.toFixed(2)}</strong></div>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>رقم الفاتورة</th>
+                                <th>العميل / الطاولة</th>
+                                <th>تفاصيل البنود</th>
+                                <th>الإيراد</th>
+                                <th>الضريبة</th>
+                                <th>الإجمالي</th>
+                                <th>الصافي</th>
+                                <th>التاريخ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+
+                    <div class="footer">
+                        تم استخراج هذا التقرير التفصيلي من لوحة التحكم الاحترافية.<br>
+                        <button onclick="window.print()" style="margin-top: 15px; background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 13px;">طباعة التقرير / حفظ PDF</button>
+                    </div>
+                    <script>
+                        window.onload = function() { setTimeout(() => { window.print(); }, 400); };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
         }
 
         function loadInvoiceToPOS(invId) {
@@ -1419,29 +1705,7 @@
         }
 
         async function executePrintWindow(invoiceData) {
-            let cafeName = "";
-            const brandInput = document.getElementById('set-brand-name');
-            if(brandInput && brandInput.value.trim() !== "" && brandInput.value.trim() !== "--") {
-                cafeName = brandInput.value.trim();
-            } else {
-                try {
-                    const brandingDoc = await db.collection("cafes").doc(currentCafeID).collection("settings").doc("branding").get();
-                    if(brandingDoc.exists && brandingDoc.data().brandName) {
-                        cafeName = brandingDoc.data().brandName.trim();
-                    }
-                } catch(e) {}
-            }
-            
-            if(!cafeName || cafeName === "--") {
-                const cafeNameEl = document.getElementById('display-cafe-name');
-                if(cafeNameEl && cafeNameEl.innerText !== '--' && cafeNameEl.innerText.trim() !== "") {
-                    cafeName = cafeNameEl.innerText.trim();
-                }
-            }
-
-            if(!cafeName || cafeName === "--") {
-                cafeName = currentCafeID || 'اسم المنشأة';
-            }
+            let cafeName = await getCafeNameForReport();
             
             let itemsHTML = '';
             invoiceData.items.forEach(i => {
@@ -1534,6 +1798,33 @@
                 </html>
             `);
             printWindow.document.close();
+        }
+
+        async function getCafeNameForReport() {
+            let cafeName = "";
+            const brandInput = document.getElementById('set-brand-name');
+            if(brandInput && brandInput.value.trim() !== "" && brandInput.value.trim() !== "--") {
+                cafeName = brandInput.value.trim();
+            } else {
+                try {
+                    const brandingDoc = await db.collection("cafes").doc(currentCafeID).collection("settings").doc("branding").get();
+                    if(brandingDoc.exists && brandingDoc.data().brandName) {
+                        cafeName = brandingDoc.data().brandName.trim();
+                    }
+                } catch(e) {}
+            }
+
+            if(!cafeName || cafeName === "--") {
+                const cafeNameEl = document.getElementById('display-cafe-name');
+                if(cafeNameEl && cafeNameEl.innerText !== '--' && cafeNameEl.innerText.trim() !== "") {
+                    cafeName = cafeNameEl.innerText.trim();
+                }
+            }
+
+            if(!cafeName || cafeName === "--") {
+                cafeName = currentCafeID || 'اسم المنشأة';
+            }
+            return cafeName;
         }
 
         function printSpecificInvoicePrintView(invId) {
@@ -1685,7 +1976,7 @@
                 </div>
             </div>`;
 
-            currentReportPrintFunction = printMonthlySalesReportWindow;
+            currentReportPrintFunction = printDailySalesReportWindow;
             const modal = document.getElementById('sales-report-modal');
             if(modal) modal.classList.remove('hidden');
         }
@@ -1748,7 +2039,7 @@
                 </div>
             </div>`;
 
-            currentReportPrintFunction = printYearlySalesReportWindow;
+            currentReportPrintFunction = printDailySalesReportWindow;
             const modal = document.getElementById('sales-report-modal');
             if(modal) modal.classList.remove('hidden');
         }
@@ -1759,33 +2050,6 @@
             } else {
                 printDailySalesReportWindow();
             }
-        }
-
-        async function getCafeNameForReport() {
-            let cafeName = "";
-            const brandInput = document.getElementById('set-brand-name');
-            if(brandInput && brandInput.value.trim() !== "" && brandInput.value.trim() !== "--") {
-                cafeName = brandInput.value.trim();
-            } else {
-                try {
-                    const brandingDoc = await db.collection("cafes").doc(currentCafeID).collection("settings").doc("branding").get();
-                    if(brandingDoc.exists && brandingDoc.data().brandName) {
-                        cafeName = brandingDoc.data().brandName.trim();
-                    }
-                } catch(e) {}
-            }
-
-            if(!cafeName || cafeName === "--") {
-                const cafeNameEl = document.getElementById('display-cafe-name');
-                if(cafeNameEl && cafeNameEl.innerText !== '--' && cafeNameEl.innerText.trim() !== "") {
-                    cafeName = cafeNameEl.innerText.trim();
-                }
-            }
-
-            if(!cafeName || cafeName === "--") {
-                cafeName = currentCafeID || 'اسم المنشأة';
-            }
-            return cafeName;
         }
 
         async function printDailySalesReportWindow() {
@@ -1854,14 +2118,6 @@
             printWindow.document.close();
         }
 
-        async function printMonthlySalesReportWindow() {
-            printDailySalesReportWindow();
-        }
-
-        async function printYearlySalesReportWindow() {
-            printDailySalesReportWindow();
-        }
-
         function closeSalesReportModal() {
             const modal = document.getElementById('sales-report-modal');
             if(modal) modal.classList.add('hidden');
@@ -1871,102 +2127,108 @@
             document.querySelectorAll('.section-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active-tab'));
             
-            const targetSec = document.getElementById('section-' + secId);
-            const targetTab = document.getElementById('tab-' + secId);
-
-            if(targetSec) targetSec.classList.remove('hidden');
-            if(targetTab) targetTab.classList.add('active-tab');
+            const sec = document.getElementById('section-' + secId);
+            const tab = document.getElementById('tab-' + secId);
+            if(sec) sec.classList.remove('hidden');
+            if(tab) tab.classList.add('active-tab');
 
             if(secId === 'scan') {
                 closeUserActions();
             }
         }
 
+        function closeUserActions() {
+            const ua = document.getElementById('user-actions');
+            if(ua) ua.classList.add('hidden');
+            if(html5QrCode && html5QrCode.isScanning) {
+                html5QrCode.stop().catch(err => console.log(err));
+            }
+            const btn = document.getElementById('start-scan-btn');
+            if(btn) btn.classList.remove('hidden');
+        }
+
         function startScanner() {
-            const scanBtn = document.getElementById('start-scan-btn');
-            if(scanBtn) scanBtn.classList.add('hidden');
+            const btn = document.getElementById('start-scan-btn');
+            if(btn) btn.classList.add('hidden');
             
             html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start(
                 { facingMode: "environment" },
                 { fps: 10, qrbox: { width: 250, height: 250 } },
                 async (decodedText) => {
-                    await stopScanner();
-                    fetchUserData(decodedText);
+                    try {
+                        if(html5QrCode && html5QrCode.isScanning) {
+                            await html5QrCode.stop();
+                        }
+                    } catch(e) {}
+                    handleScannedUser(decodedText);
                 },
-                (error) => {}
+                (errorMessage) => {}
             ).catch(err => {
-                alert("تعذر تشغيل كاميرا الماسح الضوئي");
-                if(scanBtn) scanBtn.classList.remove('hidden');
+                alert("تعذر تشغيل كاميرا الماسح الضوئي. تأكد من إعطاء الصلاحيات.");
+                if(btn) btn.classList.remove('hidden');
             });
         }
 
-        async function stopScanner() {
-            if(html5QrCode) {
-                try {
-                    await html5QrCode.stop();
-                    html5QrCode.clear();
-                } catch(e) {}
-            }
-            const scanBtn = document.getElementById('start-scan-btn');
-            if(scanBtn) scanBtn.classList.remove('hidden');
-        }
-
-        async function fetchUserData(phone) {
-            activeUserPhone = phone;
-            const docRef = db.collection("cafes").doc(currentCafeID).collection("customers").doc(phone);
-            const doc = await docRef.get();
+        async function handleScannedUser(phone) {
+            activeUserPhone = phone.trim();
+            const snap = await db.collection("cafes").doc(currentCafeID).collection("customers").where("phone", "==", activeUserPhone).get();
             
-            if(!doc.exists) {
-                await docRef.set({
-                    name: "زبيب جديد",
-                    phone: phone,
+            const ua = document.getElementById('user-actions');
+            if(ua) ua.classList.remove('hidden');
+
+            const nameEl = document.getElementById('cur-name');
+            const phoneEl = document.getElementById('cur-phone-display');
+            const pointsEl = document.getElementById('cur-points');
+            const labelView = document.getElementById('points-label-view');
+
+            if(snap.empty) {
+                if(nameEl) nameEl.innerText = "زبون جديد";
+                if(phoneEl) phoneEl.innerText = activeUserPhone;
+                if(pointsEl) pointsEl.innerText = "0";
+                if(labelView) labelView.innerText = selectedSystem === 'stamps' ? 'الأختام الحالية' : 'النقاط الحالية';
+                
+                await db.collection("cafes").doc(currentCafeID).collection("customers").add({
+                    name: "زبون جديد",
+                    phone: activeUserPhone,
                     points: 0,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
+            } else {
+                const doc = snap.docs[0];
+                window.activeCustomerDocId = doc.id;
+                const data = doc.data();
+                if(nameEl) nameEl.innerText = data.name || "بدون اسم";
+                if(phoneEl) phoneEl.innerText = activeUserPhone;
+                if(pointsEl) pointsEl.innerText = data.points || 0;
+                if(labelView) labelView.innerText = selectedSystem === 'stamps' ? (document.getElementById('label-stamps').value || 'أختامك الحالية') : (document.getElementById('label-points-unit').value || 'النقاط الحالية');
             }
-
-            const updatedDoc = await docRef.get();
-            const data = updatedDoc.data();
-
-            document.getElementById('cur-name').innerText = data.name || "زبون دائم";
-            document.getElementById('cur-phone-display').innerText = "رقم الهاتف / المعرف: " + phone;
-            document.getElementById('cur-points').innerText = data.points || 0;
-            
-            const labelEl = document.getElementById('points-label-view');
-            if(labelEl) {
-                labelEl.innerText = selectedSystem === 'stamps' ? "رصيد الأختام الحالي" : "رصيد النقاط الحالي";
-            }
-
-            document.getElementById('user-actions').classList.remove('hidden');
+            loadCustomers();
         }
 
-        function closeUserActions() {
-            document.getElementById('user-actions').classList.add('hidden');
-            activeUserPhone = "";
-        }
-
-        async function updatePoints(amount) {
-            if(!activeUserPhone) return;
-            const docRef = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone);
-            const doc = await docRef.get();
+        async function updatePoints(delta) {
+            if(!window.activeCustomerDocId) return;
+            const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(window.activeCustomerDocId);
+            const doc = await ref.get();
             if(!doc.exists) return;
+            
+            let current = Number(doc.data().points) || 0;
+            let newVal = current + delta;
+            if(newVal < 0) newVal = 0;
 
-            let cur = Number(doc.data().points) || 0;
-            let nxt = cur + amount;
-            if(nxt < 0) nxt = 0;
-
-            await docRef.update({ points: nxt });
-            document.getElementById('cur-points').innerText = nxt;
+            await ref.update({ points: newVal });
+            const pointsEl = document.getElementById('cur-points');
+            if(pointsEl) pointsEl.innerText = newVal;
             loadCustomers();
         }
 
         async function resetPoints() {
-            if(!activeUserPhone) return;
-            if(confirm("هل أنت متأكد من تصفير رصيد العميل (تسليم الهدية)؟")) {
-                const docRef = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone);
-                await docRef.update({ points: 0 });
-                document.getElementById('cur-points').innerText = 0;
+            if(!window.activeCustomerDocId) return;
+            if(confirm("هل أنت متأكد من تصفير الرصيد / تسليم الهدية؟")) {
+                const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(window.activeCustomerDocId);
+                await ref.update({ points: 0 });
+                const pointsEl = document.getElementById('cur-points');
+                if(pointsEl) pointsEl.innerText = "0";
                 loadCustomers();
                 alert("تم تصفير الحساب بنجاح!");
             }
@@ -1982,27 +2244,29 @@
             if(countEl) countEl.innerText = snap.size;
 
             if(snap.empty) {
-                list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد عملاء مسجلين بعد</p>';
+                list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا يوجد عملاء مسجلون بعد</p>';
                 return;
             }
 
             snap.forEach(doc => {
                 const c = doc.data();
                 list.innerHTML += `
-                <div onclick='editCustomerName("${doc.id}", "${c.name || ''}")' class="customer-row flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm">
+                <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm">
                     <div class="text-right">
-                        <div class="font-bold text-xs text-slate-800">${c.name || 'زبون'}</div>
+                        <div class="font-bold text-xs text-slate-800">${c.name || 'بدون اسم'}</div>
                         <div class="text-[10px] text-slate-400 font-mono">${c.phone}</div>
                     </div>
-                    <span class="bg-blue-50 text-blue-700 font-black text-xs px-3 py-1 rounded-lg border border-blue-100">${c.points || 0} رصيد</span>
+                    <div class="flex items-center gap-2">
+                        <span class="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg text-xs font-black">الرصيد: ${c.points || 0}</span>
+                        <button onclick="deleteCustomer('${doc.id}')" class="text-red-500 text-xs px-2 py-1 cursor-pointer bg-transparent border-none"><i class="fas fa-trash"></i></button>
+                    </div>
                 </div>`;
             });
         }
 
-        async function editCustomerName(phone, oldName) {
-            const newName = prompt("تعديل اسم العميل:", oldName);
-            if(newName !== null && newName.trim() !== "") {
-                await db.collection("cafes").doc(currentCafeID).collection("customers").doc(phone).update({ name: newName.trim() });
+        async function deleteCustomer(id) {
+            if(confirm("هل أنت متأكد من حذف هذا العميل؟")) {
+                await db.collection("cafes").doc(currentCafeID).collection("customers").doc(id).delete();
                 loadCustomers();
             }
         }
@@ -2011,12 +2275,13 @@
             const container = document.getElementById('qrcode-container');
             if(!container) return;
             container.innerHTML = "";
-            const clientUrl = window.location.origin + "/client.html?cafe=" + currentCafeID;
+            
+            const clientURL = window.location.origin + "/client.html?cafe=" + encodeURIComponent(currentCafeID);
             new QRCode(container, {
-                text: clientUrl,
-                width: 160,
-                height: 160,
-                colorDark: "#000000",
+                text: clientURL,
+                width: 180,
+                height: 180,
+                colorDark: "#1e293b",
                 colorLight: "#ffffff",
                 correctLevel: QRCode.CorrectLevel.H
             });
@@ -2024,36 +2289,39 @@
 
         function downloadQR() {
             const img = document.querySelector('#qrcode-container img');
-            if(!img) { alert("الكود لم ينشأ بعد"); return; }
-            const link = document.createElement('a');
-            link.download = 'cafe-qr-' + currentCafeID + '.png';
-            link.href = img.src;
-            link.click();
+            if(img && img.src) {
+                const a = document.createElement('a');
+                a.href = img.src;
+                a.download = `QR-${currentCafeID}.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } else {
+                alert("جاري إنشاء الكود، يرجى المحاولة بعد قليل");
+            }
         }
 
         function startTimer() {
-            if(!expiryDateGlobal) return;
+            const timerEl = document.getElementById('countdown-timer');
+            const expiryEl = document.getElementById('expiry-date-text');
+            if(expiryDateGlobal && expiryEl) {
+                expiryEl.innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
+            }
+
             setInterval(() => {
+                if(!expiryDateGlobal) return;
                 const now = new Date();
                 const diff = expiryDateGlobal - now;
-                const timerEl = document.getElementById('countdown-timer');
-                const expiryTextEl = document.getElementById('expiry-date-text');
-
-                if(expiryTextEl) expiryTextEl.innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
-
                 if(diff <= 0) {
-                    if(timerEl) timerEl.innerText = "انتهى الاشتراك";
+                    if(timerEl) timerEl.innerText = "منتهي الاشتراك";
                     return;
                 }
-
                 const days = Math.floor(diff / (1000 * 60 * 60 * 24));
                 const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-                if(timerEl) {
-                    timerEl.innerText = `${days}ي ${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
-                }
+                const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const secs = Math.floor((diff % (1000 * 60)) / 1000);
+                
+                if(timerEl) timerEl.innerText = `${days} يوم | ${hours}:${mins}:${secs}`;
             }, 1000);
         }
     </script>
