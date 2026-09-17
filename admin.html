@@ -3,208 +3,893 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام نقاط البيع والولاء - متصل بـ Firestore</title>
+    <title>لوحة التحكم الاحترافية - الدعم الفني ونقاط البيع</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- مكتبات Firebase المتوافقة -->
+    <!-- استيراد مكتبات Firebase بالنسخ المتوافقة الصحيحة -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@400;700&display=swap');
         body { font-family: 'Cairo', sans-serif; background: #f8fafc; color: #1e293b; }
         .admin-card { background: white; border-radius: 1.25rem; padding: 1.25rem; border: 1px solid #e2e8f0; margin-bottom: 1rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03); }
         .hidden { display: none !important; }
-        input, select, textarea { width: 100%; padding: 0.65rem 0.85rem; border-radius: 0.65rem; border: 1px solid #cbd5e1; outline: none; background: #f8fafc; font-family: inherit; font-size: 0.85rem; }
+        .active-tab { background: #2563eb !important; color: white !important; transform: translateY(-2px); box-shadow: 0 8px 12px -3px rgba(37, 99, 235, 0.3); }
+        input, select, textarea { width: 100%; padding: 0.65rem 0.85rem; border-radius: 0.65rem; border: 1px solid #cbd5e1; outline: none; background: #f8fafc; transition: 0.3s; font-family: inherit; font-size: 0.85rem; }
         input:focus, select:focus { border-color: #2563eb; background: #fff; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
         label { font-size: 0.75rem; font-weight: 700; color: #64748b; margin-bottom: 0.35rem; display: block; }
+        .system-select-btn { border: 2px solid #e2e8f0; padding: 1rem; border-radius: 1rem; cursor: pointer; transition: 0.3s; text-align: center; background: white; }
+        .system-select-btn.active { border-color: #2563eb; background: #eff6ff; color: #2563eb; }
+        .customer-row, .interactive-item { cursor: pointer; transition: 0.2s; }
+        .customer-row:active, .interactive-item:active { background-color: #f1f5f9; transform: scale(0.98); }
+        .contact-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; border-radius: 12px; font-weight: bold; font-size: 13px; transition: 0.3s; }
+        .wa-sa { background: #e8f5e9; color: #2e7d32; }
+        .wa-sy { background: #f3e5f5; color: #7b1fa2; }
+        
+        /* طباعة الفاتورة */
+        @media print {
+            body * { visibility: hidden; }
+            #printable-invoice, #printable-invoice * { visibility: visible; }
+            #printable-invoice { position: absolute; left: 0; top: 0; width: 100%; }
+        }
     </style>
 </head>
 <body class="max-w-3xl mx-auto pb-24 px-3 sm:px-6">
 
-    <!-- شاشة تسجيل الدخول للربط -->
     <div id="login-screen" class="p-8 text-center mt-20 bg-white rounded-[2.5rem] shadow-2xl border max-w-md mx-auto">
-        <div class="w-20 h-20 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-            <i class="fas fa-cash-register text-3xl"></i>
+        <div class="w-20 h-20 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-200">
+            <i class="fas fa-shield-alt text-3xl"></i>
         </div>
-        <h2 class="text-2xl font-black mb-6 text-slate-800">تسجيل دخول النظام</h2>
+        <h2 class="text-2xl font-black mb-6 text-slate-800">دخول الإدارة ونقاط البيع</h2>
         <div class="space-y-4 text-right">
             <div>
-                <label>معرف المتجر / المطعم (Cafe ID)</label>
-                <input type="text" id="cafe-id-input" placeholder="مثال: store1">
+                <label>اسم المستخدم</label>
+                <input type="text" id="admin-user-input" placeholder="اسم المستخدم">
             </div>
-            <button onclick="AppManager.initSystem()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-bold transition-all shadow-lg cursor-pointer">دخول لوحة النقاط والبيع</button>
+            <div>
+                <label>كلمة المرور</label>
+                <input type="password" id="admin-pass-input" placeholder="كلمة المرور">
+            </div>
+            <button onclick="AuthManager.login()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-bold transition-all shadow-lg mt-2 cursor-pointer">تسجيل الدخول</button>
         </div>
     </div>
 
-    <!-- الواجهة الرئيسية لنقاط البيع -->
-    <div id="main-app" class="hidden mt-4">
+    <div id="main-admin" class="hidden mt-4 animate-in fade-in duration-500">
+        
         <div class="bg-slate-900 text-white p-4 rounded-2xl mb-5 flex justify-between items-center shadow-xl">
             <div>
-                <p class="text-[10px] text-slate-400 font-bold uppercase">المتجر المتصل</p>
-                <h1 id="display-store-name" class="font-black text-lg text-blue-400">--</h1>
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">الوقت المتبقي للاشتراك</p>
+                <div id="countdown-timer" class="text-lg font-mono font-bold text-emerald-400 leading-none mt-1">--:--:--</div>
             </div>
-            <button onclick="location.reload()" class="text-xs text-red-400 cursor-pointer bg-transparent border-none font-bold">خروج</button>
+            <div class="text-left">
+                <h1 id="display-cafe-name" class="font-black text-lg italic text-blue-400 leading-none">--</h1>
+                <button onclick="location.reload()" class="text-[10px] text-red-400 mt-1 underline cursor-pointer bg-transparent border-none">خروج</button>
+            </div>
         </div>
 
-        <!-- قسم الكاشير السريع والمنتجات -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- قائمة المنتجات القادمة من فايرستور -->
-            <div class="admin-card">
-                <h3 class="font-black text-blue-600 mb-3 border-r-4 border-blue-600 pr-3">قائمة المنتجات</h3>
-                <div id="products-grid" class="grid grid-cols-2 gap-2 max-h-80 overflow-y-auto p-1">
-                    <p class="text-xs text-slate-400 text-center col-span-2">الرجاء الانتظار...</p>
+        <!-- Main Navigation Tabs -->
+        <div class="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-6 py-1">
+            <button onclick="NavigationManager.showSection('pos')" id="tab-pos" class="tab-btn active-tab bg-white border p-3 rounded-xl font-bold text-xs shadow-sm cursor-pointer text-center">الكاشير (POS)</button>
+            <button onclick="NavigationManager.showSection('scan')" id="tab-scan" class="tab-btn bg-white border p-3 rounded-xl font-bold text-xs shadow-sm cursor-pointer text-center">المسح / التحكم</button>
+            <button onclick="NavigationManager.showSection('products')" id="tab-products" class="tab-btn bg-white border p-3 rounded-xl font-bold text-xs shadow-sm cursor-pointer text-center">المنيو</button>
+            <button onclick="NavigationManager.showSection('waiters')" id="tab-waiters" class="tab-btn bg-white border p-3 rounded-xl font-bold text-xs shadow-sm cursor-pointer text-center">النُدل والنداء</button>
+            <button onclick="NavigationManager.showSection('branding')" id="tab-branding" class="tab-btn bg-white border p-3 rounded-xl font-bold text-xs shadow-sm cursor-pointer text-center">التخصيص</button>
+            <button onclick="NavigationManager.showSection('customers')" id="tab-customers" class="tab-btn bg-white border p-3 rounded-xl font-bold text-xs shadow-sm cursor-pointer text-center">العملاء</button>
+            <button onclick="NavigationManager.showSection('billing')" id="tab-billing" class="tab-btn bg-white border p-3 rounded-xl font-bold text-xs shadow-sm cursor-pointer text-center text-emerald-600">الاشتراك</button>
+        </div>
+
+        <!-- قسم الكاشير ونقاط البيع الاحترافي (POS) -->
+        <div id="section-pos" class="section-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- قائمة المنتجات السريعة والتصنيفات -->
+                <div class="admin-card">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-black text-blue-600 border-r-4 border-blue-600 pr-3">قائمة المنتجات السريعة</h3>
+                    </div>
+                    <!-- فلتر التصنيفات -->
+                    <div id="pos-categories-filter" class="flex gap-1 overflow-x-auto pb-2 mb-2 text-xs">
+                        <button onclick="POSManager.filterCategory('all')" class="bg-blue-600 text-white px-3 py-1 rounded-lg font-bold whitespace-nowrap cursor-pointer">الكل</button>
+                    </div>
+                    <div id="pos-products-grid" class="grid grid-cols-2 gap-2 max-h-[400px] overflow-y-auto p-1">
+                        <!-- تعبئة برمجية -->
+                    </div>
+                </div>
+
+                <!-- سلة المشتريات وخيارات الفاتورة المتقدمة -->
+                <div class="admin-card flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-black text-slate-800 mb-3"><i class="fas fa-shopping-cart ml-1"></i> فاتورة الطلب الحالي</h3>
+                        <div id="pos-cart-items" class="space-y-2 max-h-48 overflow-y-auto mb-4 border-b pb-2">
+                            <p class="text-xs text-slate-400 text-center py-4">السلة فارغة</p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <!-- خيارات إضافية للكاشير الاحترافي -->
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label>نوع الطلب</label>
+                                <select id="pos-order-type">
+                                    <option value="محلي">محلي (صالة)</option>
+                                    <option value="سفري">سفري (تغليف)</option>
+                                    <option value="توصيل">توصيل دليفري</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>طريقة الدفع</label>
+                                <select id="pos-payment-method">
+                                    <option value="نقدي">نقدي (كاش)</option>
+                                    <option value="شبكة">شبكة / إلكتروني</option>
+                                    <option value="آجل">قيد على الحساب</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label>رقم هاتف الزبون (اختياري لربط النقاط)</label>
+                            <input type="text" id="pos-customer-phone" placeholder="أدخل رقم الهاتف لتسجيل النقاط">
+                        </div>
+
+                        <div class="bg-slate-50 p-3 rounded-xl space-y-1">
+                            <div class="flex justify-between items-center text-xs text-slate-500">
+                               <span>المجموع الفرعي:</span>
+                               <span id="pos-subtotal">0</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm font-bold">
+                                <span>الإجمالي النهائي:</span>
+                                <span id="pos-cart-total" class="text-blue-600 text-lg">0</span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="POSManager.checkout()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-emerald-100 cursor-pointer border-none text-xs">إتمام وتدوين النقاط</button>
+                            <button onclick="POSManager.printInvoice()" class="bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-xl font-bold shadow-lg cursor-pointer border-none text-xs"><i class="fas fa-print ml-1"></i> طباعة الفاتورة</button>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <!-- سلة المشتريات -->
-            <div class="admin-card flex flex-col justify-between">
-                <div>
-                    <h3 class="font-black text-slate-800 mb-3 border-r-4 border-slate-800 pr-3">سلة الطلب الحالي</h3>
-                    <div id="cart-items" class="space-y-2 max-h-48 overflow-y-auto mb-3 p-1">
-                        <p class="text-xs text-slate-400 text-center py-6">السلة فارغة حالياً</p>
+        <div id="section-scan" class="section-content hidden">
+            <div class="admin-card text-center">
+                <div id="reader" class="mb-4 overflow-hidden rounded-xl"></div>
+                <button id="start-scan-btn" onclick="ScannerManager.startScanner()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-200 cursor-pointer"><i class="fas fa-qrcode ml-2"></i> مسح كود الزبون</button>
+                
+                <div id="user-actions" class="p-6 bg-slate-50 rounded-2xl hidden border-2 border-dashed border-blue-200 mt-4 animate-in slide-in-from-top duration-300 text-right">
+                    <div class="flex justify-between items-start mb-4">
+                        <button onclick="ScannerManager.closeUserActions()" class="text-slate-400 hover:text-red-500 cursor-pointer bg-transparent border-none"><i class="fas fa-times-circle text-xl"></i></button>
+                        <div>
+                            <h2 id="cur-name" class="font-black text-xl text-blue-900 leading-tight"></h2>
+                            <p id="cur-phone-display" class="text-[10px] font-mono text-slate-400"></p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white p-4 rounded-xl shadow-sm mb-6 border border-blue-50 text-center">
+                        <p id="cur-points" class="text-2xl font-black text-blue-600"></p>
+                        <p id="points-label-view" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest"></p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="ScannerManager.updatePoints(1)" class="bg-emerald-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-emerald-100 flex flex-col items-center cursor-pointer border-none">
+                            <i class="fas fa-plus mb-1"></i>
+                            <span>إضافة</span>
+                        </button>
+                        <button onclick="ScannerManager.updatePoints(-1)" class="bg-red-500 text-white py-4 rounded-xl font-bold shadow-lg shadow-red-100 flex flex-col items-center cursor-pointer border-none">
+                            <i class="fas fa-minus mb-1"></i>
+                            <span>خصم</span>
+                        </button>
+                    </div>
+                    <button onclick="ScannerManager.resetPoints()" class="w-full mt-3 py-3 text-xs font-bold text-orange-600 bg-orange-50 rounded-xl border border-orange-100 cursor-pointer">تصفير الحساب / تسليم الهدية</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- قسم إدارة المنتجات والمنيو -->
+        <div id="section-products" class="section-content hidden">
+            <div class="admin-card">
+                <h3 class="font-black text-blue-600 mb-4 border-r-4 border-blue-600 pr-3">إضافة منتج جديد للمنيو ونقاط البيع</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label>اسم المنتج</label>
+                        <input type="text" id="prod-name" placeholder="مثال: قهوة تركية">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label>السعر</label>
+                            <input type="number" id="prod-price" placeholder="السعر">
+                        </div>
+                        <div>
+                            <label>القسم</label>
+                            <input type="text" id="prod-category" placeholder="مشروبات ساخنة">
+                        </div>
+                    </div>
+                    <div>
+                        <label>رابط صورة المنتج</label>
+                        <input type="text" id="prod-image" placeholder="https://...">
+                    </div>
+                    <div>
+                        <label>وصف مختصر</label>
+                        <textarea id="prod-desc" placeholder="مكونات أو وصف المنتج..."></textarea>
+                    </div>
+                    <button onclick="ProductsManager.saveProduct()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg cursor-pointer border-none">إضافة المنتج للمنيو</button>
+                </div>
+            </div>
+            <div class="admin-card">
+                <h3 class="font-bold text-slate-700 text-xs mb-3">المنتجات الحالية في المنيو</h3>
+                <div id="products-list" class="space-y-2 max-h-96 overflow-y-auto"></div>
+            </div>
+        </div>
+
+        <!-- قسم النُدل ونداء النادل -->
+        <div id="section-waiters" class="section-content hidden">
+            <div class="admin-card border-amber-200 bg-amber-50/30">
+                <h3 class="font-black text-amber-800 mb-3"><i class="fas fa-bell ml-1"></i> تنبيهات نداء النادل من الطاولات</h3>
+                <div id="waiter-calls-list" class="space-y-2 max-h-60 overflow-y-auto">
+                    <p class="text-xs text-slate-400 text-center py-4">لا توجد نداءات جديدة حالياً</p>
+                </div>
+            </div>
+            <div class="admin-card">
+                <h3 class="font-black text-blue-600 mb-4 border-r-4 border-blue-600 pr-3">إضافة حساب نادل جديد</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label>اسم أو رقم المستخدم للنادل</label>
+                        <input type="text" id="waiter-username" placeholder="مثال: waiter1">
+                    </div>
+                    <div>
+                        <label>كلمة المرور</label>
+                        <input type="password" id="waiter-password" placeholder="كلمة المرور الخاصة بالنادل">
+                    </div>
+                    <div>
+                        <label>اسم النادل (للعرض)</label>
+                        <input type="text" id="waiter-fullname" placeholder="مثال: أحمد محمد">
+                    </div>
+                    <button onclick="WaitersManager.saveWaiter()" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold shadow-lg cursor-pointer border-none">إنشاء حساب النادل</button>
+                </div>
+            </div>
+            <div class="admin-card">
+                <h3 class="font-bold text-slate-700 text-xs mb-3">حسابات النُدل المفعلة</h3>
+                <div id="waiters-list" class="space-y-2 max-h-60 overflow-y-auto"></div>
+            </div>
+        </div>
+
+        <div id="section-branding" class="section-content hidden">
+            <div class="admin-card text-right">
+                <h3 class="font-black text-blue-600 mb-6 border-r-4 border-blue-600 pr-3">تخصيص نظام الولاء والهوية</h3>
+                
+                <div class="space-y-6">
+                    <div>
+                        <label>اختر نوع البرنامج</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div id="btn-sys-stamps" onclick="BrandingManager.selectSystem('stamps')" class="system-select-btn active">
+                                <i class="fas fa-stamp text-2xl mb-2"></i>
+                                <p class="font-bold text-xs">نظام الأختام</p>
+                            </div>
+                            <div id="btn-sys-points" onclick="BrandingManager.selectSystem('points')" class="system-select-btn">
+                                <i class="fas fa-coins text-2xl mb-2"></i>
+                                <p class="font-bold text-xs">نظام النقاط</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="area-stamps" class="p-4 bg-blue-50 rounded-2xl space-y-4">
+                        <p class="text-[10px] font-bold text-blue-400 uppercase">إعدادات الأختام</p>
+                        <input type="number" id="set-max-stamps" placeholder="عدد الأختام للهدية">
+                        <input type="text" id="label-stamps" placeholder="مسمى رصيد الأختام (مثلاً: أختامك)">
+                    </div>
+
+                    <div id="area-points" class="p-4 bg-amber-50 rounded-2xl space-y-4 hidden">
+                        <p class="text-[10px] font-bold text-amber-500 uppercase">إعدادات النقاط</p>
+                        <input type="text" id="label-points-unit" placeholder="مسمى العملة (نقطة، ريال...)">
+                        <input type="text" id="label-points-title" placeholder="عنوان الرصيد">
+                    </div>
+
+                    <hr class="border-slate-100">
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label>اسم المنشأة</label>
+                            <input type="text" id="set-brand-name">
+                        </div>
+                        <div>
+                            <label>اللون الرئيسي</label>
+                            <input type="color" id="set-theme-color" class="h-12 p-1">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label>رابط اللوغو (Logo)</label>
+                        <input type="text" id="set-logo-url">
+                    </div>
+
+                    <div>
+                        <label>رابط صورة الخلفية (صفحة العميل)</label>
+                        <input type="text" id="set-bg-url">
+                    </div>
+
+                    <div>
+                        <label>رابط صورة المنيو (Menu)</label>
+                        <input type="text" id="set-menu-url" placeholder="ضع رابط صورة قائمة الطعام هنا">
+                    </div>
+
+                    <div class="p-4 bg-slate-50 rounded-xl space-y-3">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase">نصوص الواجهة</p>
+                        <input type="text" id="set-msg-welcome" placeholder="رسالة الترحيب">
+                        <input type="text" id="set-msg-bye" placeholder="كلمة الوداع">
+                    </div>
+
+                    <button onclick="BrandingManager.saveBranding()" class="w-full bg-slate-800 text-white py-4 rounded-xl font-bold shadow-xl cursor-pointer border-none">حفظ جميع الإعدادات</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-customers" class="section-content hidden">
+            <div class="admin-card text-right">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-slate-700 text-xs">قائمة العملاء (اضغط للتعديل)</h3>
+                    <span id="customer-count" class="bg-blue-600 text-white text-[10px] px-2 py-1 rounded-full font-bold">0</span>
+                </div>
+                <div id="customers-list" class="space-y-2 max-h-80 overflow-y-auto"></div>
+            </div>
+            <div class="admin-card text-center">
+                <div id="qrcode-container" class="flex justify-center p-4 bg-white border rounded-2xl mx-auto w-fit mb-3"></div>
+                <p class="text-[10px] text-slate-400 mb-2">كود QR الخاص بمحلك لدخول الزبائن</p>
+                <button onclick="CustomersManager.downloadQR()" class="text-[10px] text-blue-600 font-bold underline bg-transparent border-none cursor-pointer">تحميل الصورة للطباعة</button>
+            </div>
+        </div>
+
+        <div id="section-billing" class="section-content hidden">
+            <div class="admin-card bg-emerald-50 border-emerald-200 text-right">
+                <h3 class="font-bold text-emerald-800 mb-2 italic"><i class="fas fa-clock ml-1"></i> معلومات الاشتراك</h3>
+                <p class="text-xs text-emerald-600 mb-6">تاريخ الانتهاء الحالي: <span id="expiry-date-text" class="font-bold underline">--</span></p>
+                
+                <div class="bg-white p-5 rounded-3xl border border-emerald-100 shadow-sm">
+                    <h4 class="text-sm font-black text-slate-700 mb-3">تجديد الاشتراك</h4>
+                    <p class="text-[11px] text-slate-500 mb-4 leading-relaxed">يرجى التحويل إلى الحساب أدناه، ثم إرسال صورة التحويل عبر واتساب **الدعم الفني** لتفعيل الحساب.</p>
+                    
+                    <div class="relative mb-6">
+                        <p class="text-[9px] font-bold text-emerald-600 mb-1 uppercase tracking-tighter">حساب الدفع المعتمد:</p>
+                        <img id="admin-bank-img" src="" class="w-full rounded-2xl border-2 border-slate-50 shadow-md bg-slate-50 min-h-[120px] object-contain" alt="جاري تحميل معلومات البنك...">
+                    </div>
+
+                    <div class="space-y-3">
+                        <p class="text-[10px] font-black text-slate-400 text-center uppercase tracking-widest">للتواصل مع الدعم الفني</p>
+                        <a href="https://wa.me/966555179976" target="_blank" class="contact-btn wa-sa">
+                            <i class="fab fa-whatsapp text-lg"></i>
+                            واتساب السعودية: 0555179976
+                        </a>
+                        <a href="https://wa.me/963985896931" target="_blank" class="contact-btn wa-sy">
+                            <i class="fab fa-whatsapp text-lg"></i>
+                            واتساب سوريا: 0985896931
+                        </a>
                     </div>
                 </div>
                 
-                <div class="border-t pt-3 mt-3">
-                    <div class="flex justify-between font-bold text-sm mb-3">
-                        <span>إجمالي السلة:</span>
-                        <span id="cart-total" class="text-blue-600 text-lg">0</span> ليرة
-                    </div>
-                    <button onclick="POSManager.checkout()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold shadow-lg cursor-pointer border-none transition-all">إتمام الطلب وحفظه في Firestore</button>
+                <div class="mt-4 p-4 bg-slate-900 rounded-2xl text-center">
+                    <p class="text-white text-[10px] font-bold italic">نحن هنا لخدمتك على مدار الساعة</p>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- حاوية مخفية لطباعة الفاتورة -->
+    <div id="printable-invoice" class="hidden p-6 text-right text-black bg-white">
+        <h2 class="text-center font-bold text-xl" id="inv-cafe-name">--</h2>
+        <p class="text-center text-xs mb-4" id="inv-date">--</p>
+        <hr class="my-2">
+        <div id="inv-items-list" class="space-y-1 text-xs"></div>
+        <hr class="my-2">
+        <div class="flex justify-between font-bold text-sm">
+            <span>الإجمالي:</span>
+            <span id="inv-total">0</span>
+        </div>
+        <p class="text-center text-[10px] mt-6">شكراً لزيارتكم!</p>
     </div>
 
     <script>
-        // إعدادات Firebase الخاصة بك
         const firebaseConfig = { 
-            apiKey: "YOUR_API_KEY", 
-            authDomain: "YOUR_AUTH_DOMAIN", 
-            projectId: "YOUR_PROJECT_ID", 
-            storageBucket: "YOUR_STORAGE_BUCKET", 
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID", 
-            appId: "YOUR_APP_ID" 
+            apiKey: "AIzaSyCCBwr2b_9In1_gpqxkT3qKJ9ua-D80ZuE", 
+            authDomain: "mywarehouseapp-e0132.firebaseapp.com", 
+            projectId: "mywarehouseapp-e0132", 
+            storageBucket: "mywarehouseapp-e0132.firebasestorage.app", 
+            messagingSenderId: "720074658896", 
+            appId: "1:720074658896:web:09d084916b9dbc28556d55" 
         };
-        
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
+        firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        let cart = [];
+        window.AppState = {
+            currentCafeID: "",
+            selectedSystem: "stamps",
+            html5QrCode: null,
+            expiryDateGlobal: null,
+            activeUserPhone: "",
+            posCart: [],
+            posProducts: [],
+            currentCategoryFilter: "all"
+        };
 
-        const AppManager = {
-            cafeId: "",
-            initSystem() {
-                const id = document.getElementById('cafe-id-input').value.trim();
-                if(!id) { alert("الرجاء إدخال معرف المتجر"); return; }
-                AppManager.cafeId = id;
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('main-app').classList.remove('hidden');
-                document.getElementById('display-store-name').innerText = id;
-                POSManager.loadProducts();
+        const AuthManager = {
+            async login() {
+                const user = document.getElementById('admin-user-input').value.trim();
+                const pass = document.getElementById('admin-pass-input').value;
+                if(!user || !pass) { alert("يرجى إدخال اسم المستخدم وكلمة المرور"); return; }
+                try {
+                    const doc = await db.collection("cafes").doc(user).get();
+                    if(doc.exists && doc.data().password === pass) {
+                        AppState.currentCafeID = user;
+                        AppState.expiryDateGlobal = doc.data().expiryDate.toDate();
+                        document.getElementById('login-screen').classList.add('hidden');
+                        document.getElementById('main-admin').classList.remove('hidden');
+                        AppInitializer.initCafe();
+                    } else { alert("بيانات الدخول غير صحيحة"); }
+                } catch(e) {
+                    console.error(e);
+                    alert("حدث خطأ أثناء الاتصال بقاعدة البيانات");
+                }
+            },
+            async loadBankInfo() {
+                try {
+                    const doc = await db.collection("admin_settings").doc("global_config").get();
+                    if(doc.exists) {
+                        document.getElementById('admin-bank-img').src = doc.data().bankImageUrl || "";
+                    }
+                } catch(e) { console.log("خطأ في جلب بيانات الإدارة"); }
             }
         };
 
+        const NavigationManager = {
+            showSection(id) {
+                document.querySelectorAll('.section-content').forEach(s => s.classList.add('hidden'));
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-tab'));
+                document.getElementById('section-'+id).classList.remove('hidden');
+                document.getElementById('tab-'+id).classList.add('active-tab');
+                if(AppState.html5QrCode && id !== 'scan') AppState.html5QrCode.stop().catch(()=>{});
+            },
+            startTimer() {
+                setInterval(() => {
+                    const now = new Date().getTime();
+                    const diff = AppState.expiryDateGlobal - now;
+                    if (diff < 0) { document.getElementById('countdown-timer').innerText = "منتهي"; return; }
+                    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const secs = Math.floor((diff % (1000 * 60)) / 1000);
+                    document.getElementById('countdown-timer').innerText = `${days}d ${hours}:${mins}:${secs}`;
+                }, 1000);
+            }
+        };
+
+        // إدارة الكاشير ونقاط البيع المطورة
         const POSManager = {
-            async loadProducts() {
-                const grid = document.getElementById('products-grid');
-                grid.innerHTML = '<p class="text-xs text-slate-400 text-center col-span-2">جاري التحميل من Firestore...</p>';
-                try {
-                    const snapshot = await db.collection("cafes").doc(AppManager.cafeId).collection("products").get();
-                    grid.innerHTML = "";
-                    if(snapshot.empty) {
-                        grid.innerHTML = '<p class="text-xs text-slate-400 text-center col-span-2">لا توجد منتجات مسجلة في قاعدة البيانات</p>';
-                        return;
+            filterCategory(cat) {
+                AppState.currentCategoryFilter = cat;
+                document.querySelectorAll('#pos-categories-filter button').forEach(b => {
+                    b.classList.toggle('bg-blue-600', b.innerText === cat || (cat === 'all' && b.innerText === 'الكل'));
+                    b.classList.toggle('text-white', b.innerText === cat || (cat === 'all' && b.innerText === 'الكل'));
+                    b.classList.toggle('bg-white', b.innerText !== cat && !(cat === 'all' && b.innerText === 'الكل'));
+                    b.classList.toggle('text-slate-600', b.innerText !== cat && !(cat === 'all' && b.innerText === 'الكل'));
+                });
+                POSManager.renderPOSProducts();
+            },
+            renderCategoriesFilter() {
+                const container = document.getElementById('pos-categories-filter');
+                const categories = ['all', ...new Set(AppState.posProducts.map(p => p.category || 'عام'))];
+                container.innerHTML = `<button onclick="POSManager.filterCategory('all')" class="px-3 py-1 rounded-lg font-bold whitespace-nowrap cursor-pointer ${AppState.currentCategoryFilter === 'all' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 border'}">الكل</button>`;
+                categories.forEach(c => {
+                    if(c !== 'all') {
+                        container.innerHTML += `<button onclick="POSManager.filterCategory('${c}')" class="px-3 py-1 rounded-lg font-bold whitespace-nowrap cursor-pointer ${AppState.currentCategoryFilter === c ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 border'}">${c}</button>`;
                     }
-                    snapshot.forEach(doc => {
-                        const p = doc.data();
-                        const pId = doc.id;
-                        grid.innerHTML += `
-                        <div onclick="POSManager.addToCart('${pId}', '${p.name}', ${p.price})" class="p-3 bg-slate-50 border rounded-xl shadow-sm cursor-pointer hover:border-blue-500 hover:bg-blue-50/35 transition-all">
-                            <div class="font-bold text-xs text-slate-800 truncate">${p.name}</div>
-                            <div class="text-[11px] text-blue-600 font-black mt-1">${p.price} ل.س</div>
-                        </div>`;
-                    });
-                } catch(e) {
-                    console.error(e);
-                    grid.innerHTML = '<p class="text-xs text-red-400 text-center col-span-2">خطأ في الاتصال بقاعدة البيانات</p>';
-                }
+                });
             },
-            
-            addToCart(id, name, price) {
-                const existing = cart.find(item => item.id === id);
-                if (existing) {
-                    existing.qty += 1;
-                } else {
-                    cart.push({ id, name, price, qty: 1 });
-                }
-                this.renderCart();
-            },
-
-            removeFromCart(id) {
-                cart = cart.filter(item => item.id !== id);
-                this.renderCart();
-            },
-
-            renderCart() {
-                const container = document.getElementById('cart-items');
-                const totalEl = document.getElementById('cart-total');
-                if (cart.length === 0) {
-                    container.innerHTML = '<p class="text-xs text-slate-400 text-center py-6">السلة فارغة حالياً</p>';
-                    totalEl.innerText = '0';
+            renderPOSProducts() {
+                const grid = document.getElementById('pos-products-grid');
+                grid.innerHTML = "";
+                const filtered = AppState.posProducts.filter(p => AppState.currentCategoryFilter === 'all' || p.category === AppState.currentCategoryFilter);
+                if(filtered.length === 0) {
+                    grid.innerHTML = '<p class="text-xs text-slate-400 col-span-2 text-center py-4">لا توجد منتجات مطابقة</p>';
                     return;
                 }
-                
-                container.innerHTML = '';
+                filtered.forEach(p => {
+                    grid.innerHTML += `
+                    <div onclick="POSManager.addToCart('${p.id}')" class="p-3 bg-white border rounded-xl shadow-sm cursor-pointer hover:border-blue-500 transition-all flex flex-col justify-between">
+                        <div>
+                            <div class="font-bold text-xs text-slate-800 truncate">${p.name}</div>
+                            <div class="text-[10px] text-blue-600 font-bold mt-1">${p.price}</div>
+                        </div>
+                        <div class="text-[9px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded mt-2 w-fit">${p.category}</div>
+                    </div>`;
+                });
+            },
+            addToCart(prodId) {
+                const prod = AppState.posProducts.find(p => p.id === prodId);
+                if(!prod) return;
+                const existing = AppState.posCart.find(item => item.id === prodId);
+                if(existing) { existing.qty += 1; } else { AppState.posCart.push({ ...prod, qty: 1 }); }
+                POSManager.renderCart();
+            },
+            updateQty(prodId, delta) {
+                const item = AppState.posCart.find(i => i.id === prodId);
+                if(!item) return;
+                item.qty += delta;
+                if(item.qty <= 0) {
+                    POSManager.removeFromCart(prodId);
+                } else {
+                    POSManager.renderCart();
+                }
+            },
+            removeFromCart(prodId) {
+                AppState.posCart = AppState.posCart.filter(item => item.id !== prodId);
+                POSManager.renderCart();
+            },
+            renderCart() {
+                const container = document.getElementById('pos-cart-items');
+                container.innerHTML = "";
                 let total = 0;
-                cart.forEach(item => {
+                if(AppState.posCart.length === 0) {
+                    container.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">السلة فارغة</p>';
+                    document.getElementById('pos-subtotal').innerText = "0";
+                    document.getElementById('pos-cart-total').innerText = "0";
+                    return;
+                }
+                AppState.posCart.forEach(item => {
                     total += item.price * item.qty;
                     container.innerHTML += `
-                    <div class="flex justify-between items-center bg-slate-50 p-2 rounded-lg border text-xs">
+                    <div class="flex justify-between items-center bg-white p-2 rounded-lg border text-xs">
                         <div>
-                            <span class="font-bold">${item.name}</span>
-                            <span class="text-slate-500 mr-2">(${item.qty}x)</span>
+                            <span class="font-bold text-slate-800">${item.name}</span>
+                            <span class="text-[10px] text-slate-400 mr-2">(${item.price})</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <span class="font-bold text-blue-600">${item.price * item.qty}</span>
-                            <button onclick="POSManager.removeFromCart('${item.id}')" class="text-red-500 cursor-pointer bg-transparent border-none"><i class="fas fa-trash"></i></button>
+                            <div class="flex items-center border rounded bg-slate-50">
+                                <button onclick="POSManager.updateQty('${item.id}', -1)" class="px-2 text-slate-600 font-bold cursor-pointer bg-transparent border-none">-</button>
+                                <span class="px-2 font-bold">${item.qty}</span>
+                                <button onclick="POSManager.updateQty('${item.id}', 1)" class="px-2 text-slate-600 font-bold cursor-pointer bg-transparent border-none">+</button>
+                            </div>
+                            <span class="font-bold text-blue-600 w-12 text-left">${item.price * item.qty}</span>
+                            <button onclick="POSManager.removeFromCart('${item.id}')" class="text-red-500 text-xs bg-transparent border-none cursor-pointer"><i class="fas fa-times"></i></button>
                         </div>
                     </div>`;
                 });
-                totalEl.innerText = total;
+                document.getElementById('pos-subtotal').innerText = total;
+                document.getElementById('pos-cart-total').innerText = total;
             },
-
             async checkout() {
-                if (cart.length === 0) {
-                    alert("السلة فارغة، أضف بعض المنتجات أولاً!");
-                    return;
-                }
+                if(AppState.posCart.length === 0) { alert("السلة فارغة!"); return; }
+                const phone = document.getElementById('pos-customer-phone').value.trim();
+                const orderType = document.getElementById('pos-order-type').value;
+                const paymentMethod = document.getElementById('pos-payment-method').value;
                 
                 try {
-                    const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-                    const orderData = {
-                        items: cart,
-                        total: totalAmount,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        status: "completed"
-                    };
+                    await db.collection("cafes").doc(AppState.currentCafeID).collection("orders").add({
+                        items: AppState.posCart,
+                        total: AppState.posCart.reduce((sum, i) => sum + (i.price * i.qty), 0),
+                        orderType,
+                        paymentMethod,
+                        customerPhone: phone || "غير محدد",
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
 
-                    // حفظ الطلب في مجموعة orders الخاصة بالمتجر داخل Firestore
-                    await db.collection("cafes").doc(AppManager.cafeId).collection("orders").add(orderData);
-                    
-                    alert("تم إرسال الطلب وحفظه في Firestore بنجاح! 🎉");
-                    cart = [];
-                    this.renderCart();
-                } catch (error) {
-                    console.error("خطأ أثناء إتمام الطلب: ", error);
-                    alert("حدث خطأ أثناء حفظ الطلب، تأكد من الاتصال وقواعد الأمان.");
+                    if(phone) {
+                        const custRef = db.collection("cafes").doc(AppState.currentCafeID).collection("customers").doc(phone);
+                        const custDoc = await custRef.get();
+                        if(custDoc.exists) {
+                            await custRef.update({ points: firebase.firestore.FieldValue.increment(1) });
+                        } else {
+                            await custRef.set({ name: "زبون كاشير", points: 1 });
+                        }
+                    }
+
+                    alert("تم إتمام الطلب بنجاح وتحديث النظام!");
+                    AppState.posCart = [];
+                    document.getElementById('pos-customer-phone').value = "";
+                    POSManager.renderCart();
+                    CustomersManager.loadCustomers();
+                } catch(e) {
+                    console.error(e);
+                    alert("حدث خطأ أثناء إتمام الطلب");
                 }
+            },
+            printInvoice() {
+                if(AppState.posCart.length === 0) { alert("السلة فارغة للطباعة!"); return; }
+                document.getElementById('inv-cafe-name').innerText = document.getElementById('display-cafe-name').innerText;
+                document.getElementById('inv-date').innerText = new Date().toLocaleString('ar-EG');
+                let listHtml = "";
+                let total = 0;
+                AppState.posCart.forEach(i => {
+                    total += i.price * i.qty;
+                    listHtml += `<div class="flex justify-between"><span>${i.name} (x${i.qty})</span><span>${i.price * i.qty}</span></div>`;
+                });
+                document.getElementById('inv-items-list').innerHTML = listHtml;
+                document.getElementById('inv-total').innerText = total;
+                window.print();
+            }
+        };
+
+        const BrandingManager = {
+            selectSystem(sys) {
+                AppState.selectedSystem = sys;
+                document.getElementById('btn-sys-stamps').classList.toggle('active', sys === 'stamps');
+                document.getElementById('btn-sys-points').classList.toggle('active', sys === 'points');
+                document.getElementById('area-stamps').classList.toggle('hidden', sys !== 'stamps');
+                document.getElementById('area-points').classList.toggle('hidden', sys !== 'points');
+            },
+            async saveBranding() {
+                const data = {
+                    systemType: AppState.selectedSystem,
+                    brandName: document.getElementById('set-brand-name').value,
+                    logo: document.getElementById('set-logo-url').value,
+                    bgImage: document.getElementById('set-bg-url').value,
+                    menuImage: document.getElementById('set-menu-url').value,
+                    color: document.getElementById('set-theme-color').value,
+                    maxStamps: document.getElementById('set-max-stamps').value,
+                    labelStamps: document.getElementById('label-stamps').value,
+                    labelPointsUnit: document.getElementById('label-points-unit').value,
+                    labelPointsTitle: document.getElementById('label-points-title').value,
+                    msgWelcome: document.getElementById('set-msg-welcome').value,
+                    msgBye: document.getElementById('set-msg-bye').value
+                };
+                await db.collection("cafes").doc(AppState.currentCafeID).collection("settings").doc("branding").set(data, {merge: true});
+                alert("تم حفظ التعديلات بنجاح!");
+            },
+            async loadBranding() {
+                const doc = await db.collection("cafes").doc(AppState.currentCafeID).collection("settings").doc("branding").get();
+                if(doc.exists) {
+                    const b = doc.data();
+                    document.getElementById('set-brand-name').value = b.brandName || "";
+                    document.getElementById('set-logo-url').value = b.logo || "";
+                    document.getElementById('set-bg-url').value = b.bgImage || "";
+                    document.getElementById('set-menu-url').value = b.menuImage || "";
+                    document.getElementById('set-theme-color').value = b.color || "#2563eb";
+                    document.getElementById('set-max-stamps').value = b.maxStamps || 6;
+                    document.getElementById('label-stamps').value = b.labelStamps || "أختامك الحالية";
+                    document.getElementById('label-points-unit').value = b.labelPointsUnit || "نقطة";
+                    document.getElementById('label-points-title').value = b.labelPointsTitle || "إجمالي النقاط";
+                    document.getElementById('set-msg-welcome').value = b.msgWelcome || "";
+                    document.getElementById('set-msg-bye').value = b.msgBye || "";
+                    BrandingManager.selectSystem(b.systemType || "stamps");
+                }
+            }
+        };
+
+        const ProductsManager = {
+            async saveProduct() {
+                const name = document.getElementById('prod-name').value;
+                const price = document.getElementById('prod-price').value;
+                const category = document.getElementById('prod-category').value;
+                const image = document.getElementById('prod-image').value;
+                const description = document.getElementById('prod-desc').value;
+                if(!name || !price) { alert("يرجى إدخال اسم المنتج والسعر على الأقل"); return; }
+                
+                await db.collection("cafes").doc(AppState.currentCafeID).collection("products").add({
+                    name, price: Number(price), category: category || 'عام', image, description, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert("تم إضافة المنتج بنجاح!");
+                document.getElementById('prod-name').value = "";
+                document.getElementById('prod-price').value = "";
+                document.getElementById('prod-category').value = "";
+                document.getElementById('prod-image').value = "";
+                document.getElementById('prod-desc').value = "";
+                ProductsManager.loadProducts();
+            },
+            async loadProducts() {
+                const list = document.getElementById('products-list');
+                const snap = await db.collection("cafes").doc(AppState.currentCafeID).collection("products").orderBy("createdAt", "desc").get();
+                if(list) list.innerHTML = "";
+                AppState.posProducts = [];
+                if(snap.empty) { 
+                    if(list) list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد منتجات مضافة بعد</p>'; 
+                    POSManager.renderPOSProducts();
+                    POSManager.renderCategoriesFilter();
+                    return; 
+                }
+                snap.forEach(doc => {
+                    const p = { id: doc.id, ...doc.data() };
+                    AppState.posProducts.push(p);
+                    if(list) {
+                        list.innerHTML += `
+                        <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm">
+                            <div class="flex items-center gap-3">
+                                <img src="${p.image || 'https://via.placeholder.com/50'}" class="w-10 h-10 object-cover rounded-lg">
+                                <div>
+                                    <div class="font-bold text-xs text-slate-800">${p.name}</div>
+                                    <div class="text-[10px] text-blue-600 font-bold">${p.price} - ${p.category}</div>
+                                </div>
+                            </div>
+                            <button onclick="ProductsManager.deleteProduct('${doc.id}')" class="text-red-500 hover:text-red-700 text-xs px-2 py-1 cursor-pointer bg-transparent border-none"><i class="fas fa-trash"></i></button>
+                        </div>`;
+                    }
+                });
+                POSManager.renderPOSProducts();
+                POSManager.renderCategoriesFilter();
+            },
+            async deleteProduct(id) {
+                if(confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
+                    await db.collection("cafes").doc(AppState.currentCafeID).collection("products").doc(id).delete();
+                    ProductsManager.loadProducts();
+                }
+            }
+        };
+
+        const WaitersManager = {
+            async saveWaiter() {
+                const username = document.getElementById('waiter-username').value;
+                const password = document.getElementById('waiter-password').value;
+                const fullname = document.getElementById('waiter-fullname').value;
+                if(!username || !password) { alert("يرجى إدخال اسم المستخدم وكلمة المرور للنادل"); return; }
+                
+                await db.collection("cafes").doc(AppState.currentCafeID).collection("waiters").doc(username).set({
+                    password, fullname: fullname || username, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert("تم إنشاء حساب النادل بنجاح!");
+                document.getElementById('waiter-username').value = "";
+                document.getElementById('waiter-password').value = "";
+                document.getElementById('waiter-fullname').value = "";
+                WaitersManager.loadWaiters();
+            },
+            async loadWaiters() {
+                const list = document.getElementById('waiters-list');
+                const snap = await db.collection("cafes").doc(AppState.currentCafeID).collection("waiters").get();
+                if(!list) return;
+                list.innerHTML = "";
+                if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد حسابات نُدل مضافة</p>'; return; }
+                snap.forEach(doc => {
+                    const w = doc.data();
+                    list.innerHTML += `
+                    <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm">
+                        <div class="text-right">
+                            <div class="font-bold text-xs text-slate-800">${w.fullname}</div>
+                            <div class="text-[10px] text-slate-400 font-mono">المستخدم: ${doc.id}</div>
+                        </div>
+                        <button onclick="WaitersManager.deleteWaiter('${doc.id}')" class="text-red-500 text-xs px-2 py-1 cursor-pointer bg-transparent border-none"><i class="fas fa-trash"></i></button>
+                    </div>`;
+                });
+            },
+            async deleteWaiter(id) {
+                if(confirm("هل أنت متأكد من حذف حساب النادل؟")) {
+                    await db.collection("cafes").doc(AppState.currentCafeID).collection("waiters").doc(id).delete();
+                    WaitersManager.loadWaiters();
+                }
+            },
+            listenToWaiterCalls() {
+                db.collection("cafes").doc(AppState.currentCafeID).collection("waiter_calls")
+                  .where("status", "==", "pending")
+                  .onSnapshot(snap => {
+                    const list = document.getElementById('waiter-calls-list');
+                    if(!list) return;
+                    list.innerHTML = "";
+                    if(snap.empty) {
+                        list.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">لا توجد نداءات جديدة حالياً</p>';
+                        return;
+                    }
+                    snap.forEach(doc => {
+                        const call = doc.data();
+                        list.innerHTML += `
+                        <div class="flex justify-between items-center p-3 bg-white rounded-xl border border-amber-200 shadow-sm animate-bounce">
+                            <div>
+                                <div class="font-bold text-xs text-amber-900"><i class="fas fa-bell text-amber-500 ml-1"></i> نداء من: ${call.table || 'طاولة غير محددة'}</div>
+                                <div class="text-[10px] text-slate-400">${call.time ? new Date(call.time.toDate()).toLocaleTimeString('ar-EG') : ''}</div>
+                            </div>
+                            <button onclick="WaitersManager.resolveCall('${doc.id}')" class="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer border-none">تمت الاستجابة</button>
+                        </div>`;
+                    });
+                });
+            },
+            async resolveCall(callId) {
+                await db.collection("cafes").doc(AppState.currentCafeID).collection("waiter_calls").doc(callId).update({ status: 'resolved' });
+            }
+        };
+
+        const ScannerManager = {
+            startScanner() {
+                AppState.html5QrCode = new Html5Qrcode("reader");
+                document.getElementById('start-scan-btn').classList.add('hidden');
+                AppState.html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
+                    AppState.activeUserPhone = txt;
+                    ScannerManager.fetchUserData(txt);
+                    AppState.html5QrCode.stop();
+                    document.getElementById('start-scan-btn').classList.remove('hidden');
+                }).catch(() => {
+                    alert("تأكد من إذن الكاميرا");
+                    document.getElementById('start-scan-btn').classList.remove('hidden');
+                });
+            },
+            editCustomerDirectly(phone) {
+                AppState.activeUserPhone = phone;
+                ScannerManager.fetchUserData(phone);
+                NavigationManager.showSection('scan');
+            },
+            async fetchUserData(phone) {
+                const doc = await db.collection("cafes").doc(AppState.currentCafeID).collection("customers").doc(phone).get();
+                if(doc.exists) {
+                    const data = doc.data();
+                    document.getElementById('user-actions').classList.remove('hidden');
+                    document.getElementById('cur-name').innerText = data.name;
+                    document.getElementById('cur-phone-display').innerText = phone;
+                    const label = AppState.selectedSystem === 'stamps' ? 'ختم' : (document.getElementById('label-points-unit').value || 'نقطة');
+                    document.getElementById('cur-points').innerText = data.points || 0;
+                    document.getElementById('points-label-view').innerText = label;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else { alert("زبون غير مسجل في محلك"); }
+            },
+            closeUserActions() {
+                document.getElementById('user-actions').classList.add('hidden');
+                AppState.activeUserPhone = "";
+            },
+            async updatePoints(amt) {
+                if(!AppState.activeUserPhone) return;
+                try {
+                    await db.collection("cafes").doc(AppState.currentCafeID).collection("customers").doc(AppState.activeUserPhone).update({
+                        points: firebase.firestore.FieldValue.increment(amt)
+                    });
+                    ScannerManager.fetchUserData(AppState.activeUserPhone);
+                    CustomersManager.loadCustomers();
+                } catch(e) { alert("حدث خطأ أثناء التحديث"); }
+            },
+            async resetPoints() {
+                if(!AppState.activeUserPhone) return;
+                if(confirm("هل تم تسليم الهدية وتصفير الرصيد؟")) {
+                    await db.collection("cafes").doc(AppState.currentCafeID).collection("customers").doc(AppState.activeUserPhone).update({ points: 0 });
+                    ScannerManager.fetchUserData(AppState.activeUserPhone);
+                    CustomersManager.loadCustomers();
+                }
+            }
+        };
+
+        const CustomersManager = {
+            async loadCustomers() {
+                const list = document.getElementById('customers-list');
+                const snap = await db.collection("cafes").doc(AppState.currentCafeID).collection("customers").orderBy("name").get();
+                if(!list) return;
+                list.innerHTML = "";
+                document.getElementById('customer-count').innerText = snap.size;
+                snap.forEach(doc => {
+                    const u = doc.data();
+                    list.innerHTML += `
+                    <div onclick="ScannerManager.editCustomerDirectly('${doc.id}')" class="customer-row flex justify-between items-center p-4 bg-white rounded-xl border mb-2 shadow-sm hover:border-blue-300">
+                        <div class="bg-blue-50 text-blue-600 px-4 py-1 rounded-lg font-black text-sm">
+                            ${u.points || 0}
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold text-sm text-slate-800">${u.name}</div>
+                            <div class="text-[10px] text-slate-400 font-mono">${doc.id}</div>
+                        </div>
+                    </div>`;
+                });
+            },
+            generateCafeQR() {
+                const qrC = document.getElementById("qrcode-container");
+                if(!qrC) return;
+                qrC.innerHTML = "";
+                const customerUrl = window.location.href.replace('admin.html', 'index.html') + `?id=${AppState.currentCafeID}`;
+                new QRCode(qrC, { text: customerUrl, width: 140, height: 140 });
+            },
+            downloadQR() {
+                const img = document.querySelector("#qrcode-container img");
+                if(!img) return;
+                const a = document.createElement("a");
+                a.href = img.src; a.download = `QR-Cafe-${AppState.currentCafeID}.png`; a.click();
+            }
+        };
+
+        const AppInitializer = {
+            initCafe() {
+                BrandingManager.loadBranding();
+                CustomersManager.loadCustomers();
+                ProductsManager.loadProducts();
+                WaitersManager.loadWaiters();
+                WaitersManager.listenToWaiterCalls();
+                CustomersManager.generateCafeQR();
+                NavigationManager.startTimer();
+                AuthManager.loadBankInfo();
+
+                db.collection("cafes").doc(AppState.currentCafeID).get().then(doc => {
+                    document.getElementById('expiry-date-text').innerText = AppState.expiryDateGlobal.toLocaleDateString('ar-EG');
+                    document.getElementById('display-cafe-name').innerText = doc.data().cafeName;
+                });
             }
         };
     </script>
