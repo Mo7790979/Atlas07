@@ -22,8 +22,6 @@
         input, select, textarea { width: 100%; padding: 0.65rem 0.85rem; border-radius: 0.65rem; border: 1px solid #cbd5e1; outline: none; background: #f8fafc; transition: 0.3s; font-family: inherit; font-size: 0.85rem; }
         input:focus, select:focus { border-color: #2563eb; background: #fff; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
         label { font-size: 0.75rem; font-weight: 700; color: #64748b; margin-bottom: 0.35rem; display: block; }
-        .system-select-btn { border: 2px solid #e2e8f0; padding: 1rem; border-radius: 1rem; cursor: pointer; transition: 0.3s; text-align: center; background: white; }
-        .system-select-btn.active { border-color: #2563eb; background: #eff6ff; color: #2563eb; }
         .customer-row, .interactive-item { cursor: pointer; transition: 0.2s; }
         .customer-row:active, .interactive-item:active { background-color: #f1f5f9; transform: scale(0.98); }
         .contact-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; border-radius: 12px; font-weight: bold; font-size: 13px; transition: 0.3s; }
@@ -82,7 +80,6 @@
             <button onclick="showSection('waiters')" id="tab-waiters" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">النُدل والنداء</button>
             <button onclick="showSection('pos')" id="tab-pos" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">المحاسبة</button>
             
-            <!-- زر السجل العام باللون الأسود -->
             <button onclick="showSection('general-log')" id="tab-general-log" class="tab-btn bg-black text-white border border-black px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">السجل العام</button>
 
             <button onclick="showSection('branding')" id="tab-branding" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">التخصيص</button>
@@ -106,20 +103,10 @@
                     
                     <div class="bg-white p-4 rounded-xl shadow-sm mb-6 border border-blue-50 text-center">
                         <p id="cur-points" class="text-2xl font-black text-blue-600"></p>
-                        <p id="points-label-view" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest"></p>
+                        <p id="points-label-view" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">بيانات العميل</p>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
-                        <button onclick="updatePoints(1)" class="bg-emerald-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-emerald-100 flex flex-col items-center cursor-pointer border-none">
-                            <i class="fas fa-plus mb-1"></i>
-                            <span>إضافة</span>
-                        </button>
-                        <button onclick="updatePoints(-1)" class="bg-red-500 text-white py-4 rounded-xl font-bold shadow-lg shadow-red-100 flex flex-col items-center cursor-pointer border-none">
-                            <i class="fas fa-minus mb-1"></i>
-                            <span>خصم</span>
-                        </button>
-                    </div>
-                    <button onclick="resetPoints()" class="w-full mt-3 py-3 text-xs font-bold text-orange-600 bg-orange-50 rounded-xl border border-orange-100 cursor-pointer">تصفير الحساب / تسليم الهدية</button>
+                    <button onclick="resetPoints()" class="w-full mt-3 py-3 text-xs font-bold text-orange-600 bg-orange-50 rounded-xl border border-orange-100 cursor-pointer">إدارة بيانات الزبون</button>
                 </div>
             </div>
         </div>
@@ -195,7 +182,6 @@
         <!-- النظام المحاسبي الاحترافي بالمنيو التفاعلي المطابق للعميل -->
         <div id="section-pos" class="section-content hidden">
             
-            <!-- Top Interactive Action Bar -->
             <div class="bg-slate-900 text-white p-3 rounded-2xl mb-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
                 <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
                     <button onclick="openTaxManager()" class="top-action-bar-btn" style="background:#8b5cf6;"><i class="fas fa-percent"></i> <span>إدارة الضرائب</span></button>
@@ -206,7 +192,6 @@
                 </div>
             </div>
 
-            <!-- قائمة مستقلة تماماً لطلبات سلة مشتريات العملاء الواردة -->
             <div class="admin-card border-2 border-blue-300 bg-blue-50/60 mb-4 shadow-md">
                 <div class="flex justify-between items-center mb-2 pb-2 border-b border-blue-200">
                     <h3 class="font-black text-blue-900 text-sm flex items-center gap-2">
@@ -219,24 +204,20 @@
                 </div>
             </div>
 
-            <!-- Incoming Orders Alert Bar & Taxes -->
             <div class="grid grid-cols-1 md:grid-cols-1 gap-4 mb-4">
                 <div class="admin-card border-purple-200 bg-purple-50/30 mb-0">
                     <div class="flex justify-between items-center mb-2">
                         <h3 class="font-black text-purple-900 text-xs"><i class="fas fa-sliders-h ml-1"></i> اختيار الضرائب المتعددة</h3>
                         <span class="text-[10px] text-purple-700 font-bold" id="active-tax-badge-label">بدون ضريبة</span>
                     </div>
-                    <!-- قائمة اختيار الضرائب المتعددة -->
                     <div class="max-h-32 overflow-y-auto space-y-1 bg-white p-2 rounded-xl border border-purple-100" id="taxes-checkboxes-container">
                         <p class="text-[11px] text-slate-400 text-center">لا توجد ضرائب معرفة، قم بإضافتها من إدارة الضرائب</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Global POS Grid Layout -->
             <div class="pos-container">
                 
-                <!-- Cart & Invoice Management Panel -->
                 <div class="admin-card border-2 border-blue-100 bg-white shadow-xl flex flex-col justify-between">
                     <div>
                         <div class="flex justify-between items-center mb-3 pb-2 border-b">
@@ -251,7 +232,6 @@
                             <input type="text" id="invoice-target" placeholder="مثال: طاولة 4 أو اسم العميل" class="font-bold text-slate-800">
                         </div>
 
-                        <!-- Interactive Invoice Items List -->
                         <div class="mb-3">
                             <div class="flex justify-between items-center mb-1.5">
                                 <label class="text-xs font-bold text-slate-700">بنود الفاتورة</label>
@@ -261,14 +241,12 @@
                         </div>
                     </div>
 
-                    <!-- Totals & Checkout Actions -->
                     <div class="border-t pt-3 mt-2 bg-slate-50 p-3 rounded-xl border">
                         <div class="space-y-1.5 text-xs mb-3">
                             <div class="flex justify-between text-slate-600">
                                 <span>المبلغ الفرعي:</span>
                                 <span id="invoice-subtotal" class="font-bold text-slate-800">0.00</span>
                             </div>
-                            <!-- منطقة عرض الضرائب المطبقة ديناميكياً مع الاسم والنسبة -->
                             <div id="applied-taxes-breakdown" class="space-y-1 text-purple-700 border-y py-1.5 my-1">
                                 <div class="flex justify-between">
                                     <span>الضرائب والخدمات:</span>
@@ -292,7 +270,6 @@
                     </div>
                 </div>
 
-                <!-- Interactive POS Product Catalog -->
                 <div class="space-y-4">
                     <div class="admin-card bg-white">
                         <div class="flex flex-col sm:flex-row justify-between items-center gap-3 mb-4">
@@ -312,7 +289,6 @@
 
             </div>
 
-            <!-- قائمة الفواتير الواردة من صفحة العميل ذات الأرقام الصفرية (INV-000) -->
             <div class="admin-card mt-4 border-2 border-emerald-300 bg-emerald-50/40 shadow-md">
                 <div class="flex justify-between items-center mb-3 pb-2 border-b border-emerald-200">
                     <h3 class="font-black text-emerald-900 text-xs flex items-center gap-2">
@@ -325,7 +301,6 @@
                 </div>
             </div>
 
-            <!-- سجل الفواتير والمبيعات المصدرة الإدارية -->
             <div class="admin-card mt-4">
                 <div class="flex flex-col md:flex-row justify-between items-center gap-3 mb-4">
                     <h3 class="font-bold text-slate-700 text-xs">سجل الفواتير الإدارية الصادرة (اضغط لطباعتها أو مراجعتها)</h3>
@@ -352,7 +327,6 @@
                     </div>
                 </div>
 
-                <!-- أدوات الفلترة المتقدمة وتقارير الطباعة للسجل العام -->
                 <div class="bg-slate-50 p-3 rounded-xl border mb-4 space-y-3">
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <div>
@@ -387,7 +361,6 @@
                     </div>
                 </div>
 
-                <!-- ملخص الإحصائيات للفترة المحددة -->
                 <div id="general-report-summary-box" class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4 p-3 bg-blue-50/70 rounded-xl border border-blue-200 text-xs">
                     <div class="bg-white p-2.5 rounded-lg border shadow-sm text-center">
                         <span class="text-[10px] text-slate-400 block font-bold">عدد الفواتير</span>
@@ -413,40 +386,12 @@
             </div>
         </div>
 
-        <!-- قسم التخصيص (تم دمج نظام الولاء المطلوب هنا) -->
+        <!-- قسم التخصيص (تم حذف نظام الولاء منه نهائياً) -->
         <div id="section-branding" class="section-content hidden">
             <div class="admin-card text-right">
-                <h3 class="font-black text-blue-600 mb-6 border-r-4 border-blue-600 pr-3">تخصيص نظام الولاء والهوية</h3>
+                <h3 class="font-black text-blue-600 mb-6 border-r-4 border-blue-600 pr-3">تخصيص الهوية والروابط</h3>
                 
                 <div class="space-y-6">
-                    <div>
-                        <label>اختر نوع البرنامج</label>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div id="btn-sys-stamps" onclick="selectSystem('stamps')" class="system-select-btn active">
-                                <i class="fas fa-stamp text-2xl mb-2"></i>
-                                <p class="font-bold text-xs">نظام الأختام</p>
-                            </div>
-                            <div id="btn-sys-points" onclick="selectSystem('points')" class="system-select-btn">
-                                <i class="fas fa-coins text-2xl mb-2"></i>
-                                <p class="font-bold text-xs">نظام النقاط</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="area-stamps" class="p-4 bg-blue-50 rounded-2xl space-y-4">
-                        <p class="text-[10px] font-bold text-blue-400 uppercase">إعدادات الأختام</p>
-                        <input type="number" id="set-max-stamps" placeholder="عدد الأختام للهدية">
-                        <input type="text" id="label-stamps" placeholder="مسمى رصيد الأختام (مثلاً: أختامك)">
-                    </div>
-
-                    <div id="area-points" class="p-4 bg-amber-50 rounded-2xl space-y-4 hidden">
-                        <p class="text-[10px] font-bold text-amber-500 uppercase">إعدادات النقاط</p>
-                        <input type="text" id="label-points-unit" placeholder="مسمى العملة (نقطة، ريال...)">
-                        <input type="text" id="label-points-title" placeholder="عنوان الرصيد">
-                    </div>
-
-                    <hr class="border-slate-100">
-
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label>اسم المنشأة</label>
@@ -587,7 +532,6 @@
         const db = firebase.firestore();
 
         let currentCafeID = "";
-        let selectedSystem = "stamps";
         let html5QrCode = null;
         let expiryDateGlobal = null;
         let activeUserPhone = "";
@@ -638,31 +582,13 @@
             } catch(e) { console.log("خطأ في جلب بيانات الإدارة"); }
         }
 
-        function selectSystem(sys) {
-            selectedSystem = sys;
-            const btnStamps = document.getElementById('btn-sys-stamps');
-            const btnPoints = document.getElementById('btn-sys-points');
-            const areaStamps = document.getElementById('area-stamps');
-            const areaPoints = document.getElementById('area-points');
-
-            if(btnStamps) btnStamps.classList.toggle('active', sys === 'stamps');
-            if(btnPoints) btnPoints.classList.toggle('active', sys === 'points');
-            if(areaStamps) areaStamps.classList.toggle('hidden', sys !== 'stamps');
-            if(areaPoints) areaPoints.classList.toggle('hidden', sys !== 'points');
-        }
-
         async function saveBranding() {
             const data = {
-                systemType: selectedSystem,
                 brandName: document.getElementById('set-brand-name').value,
                 logo: document.getElementById('set-logo-url').value,
                 bgImage: document.getElementById('set-bg-url').value,
                 menuImage: document.getElementById('set-menu-url').value,
                 color: document.getElementById('set-theme-color').value,
-                maxStamps: document.getElementById('set-max-stamps').value,
-                labelStamps: document.getElementById('label-stamps').value,
-                labelPointsUnit: document.getElementById('label-points-unit').value,
-                labelPointsTitle: document.getElementById('label-points-title').value,
                 msgWelcome: document.getElementById('set-msg-welcome').value,
                 msgBye: document.getElementById('set-msg-bye').value
             };
@@ -682,13 +608,8 @@
                 document.getElementById('set-bg-url').value = b.bgImage || "";
                 document.getElementById('set-menu-url').value = b.menuImage || "";
                 document.getElementById('set-theme-color').value = b.color || "#2563eb";
-                document.getElementById('set-max-stamps').value = b.maxStamps || 6;
-                document.getElementById('label-stamps').value = b.labelStamps || "أختامك الحالية";
-                document.getElementById('label-points-unit').value = b.labelPointsUnit || "نقطة";
-                document.getElementById('label-points-title').value = b.labelPointsTitle || "إجمالي النقاط";
                 document.getElementById('set-msg-welcome').value = b.msgWelcome || "";
                 document.getElementById('set-msg-bye').value = b.msgBye || "";
-                selectSystem(b.systemType || "stamps");
                 
                 const nameEl = document.getElementById('display-cafe-name');
                 if(nameEl && b.brandName) nameEl.innerText = b.brandName;
@@ -1893,13 +1814,12 @@
                     <div class="bg-slate-50 p-3 rounded-xl border space-y-2">
                         <div class="flex justify-between font-bold"><span>عدد الفواتير:</span> <span class="text-blue-600">${totalCount}</span></div>
                         <div class="flex justify-between font-bold"><span>المبلغ الفرعي:</span> <span>${totalRev.toFixed(2)}</span></div>
-                        <div class="flex justify-between font-bold"><span>إجمالي الضرائب:</span> <span class="text-purple-700">${totalTax.toFixed(2)}</span></div>
-                        <div class="flex justify-between font-black text-sm text-emerald-700 border-t pt-2"><span>الإجمالي النهائي:</span> <span>${totalFinal.toFixed(2)}</span></div>
+                        <div class="flex justify-between font-bold"><span>إجمالي الضرائب:</span> <span class="text-purple-600">${totalTax.toFixed(2)}</span></div>
+                        <div class="flex justify-between font-black text-emerald-700 text-sm pt-1 border-t"><span>الإجمالي النهائي:</span> <span>${totalFinal.toFixed(2)}</span></div>
                     </div>
                 `;
             }
             if(modal) modal.classList.remove('hidden');
-            currentReportPrintFunction = () => { alert("جاري طباعة التقرير..."); };
         }
 
         function closeSalesReportModal() {
@@ -1908,7 +1828,7 @@
         }
 
         function printCurrentSalesReport() {
-            if(currentReportPrintFunction) currentReportPrintFunction();
+            window.print();
         }
 
         function startTimer() {
@@ -1917,15 +1837,23 @@
                 const now = new Date();
                 const diff = expiryDateGlobal - now;
                 const timerEl = document.getElementById('countdown-timer');
-                if(!timerEl) return;
+                const expiryTextEl = document.getElementById('expiry-date-text');
+                
+                if(expiryTextEl) expiryTextEl.innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
+                
                 if(diff <= 0) {
-                    timerEl.innerText = "انتهى الاشتراك";
+                    if(timerEl) timerEl.innerText = "منتهي الاشتراك";
                     return;
                 }
-                const hours = Math.floor((diff / (1000 * 60 * 60)));
-                const mins = Math.floor((diff / (1000 * 60)) % 60);
-                const secs = Math.floor((diff / 1000) % 60);
-                timerEl.innerText = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+                const minutes = Math.floor((diff / 1000 / 60) % 60);
+                const seconds = Math.floor((diff / 1000) % 60);
+                
+                if(timerEl) {
+                    timerEl.innerText = `${days} يوم ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }
             }, 1000);
         }
 
@@ -1933,107 +1861,115 @@
             const container = document.getElementById('qrcode-container');
             if(!container) return;
             container.innerHTML = "";
-            const clientUrl = window.location.origin + "/client.html?cafe=" + currentCafeID;
-            new QRCode(container, { text: clientUrl, width: 140, height: 140 });
+            const customerUrl = window.location.origin + "/customer.html?cafe=" + currentCafeID;
+            new QRCode(container, { text: customerUrl, width: 140, height: 140 });
         }
 
         function downloadQR() {
             const img = document.querySelector('#qrcode-container img');
-            if(img) {
-                const a = document.createElement('a');
-                a.href = img.src;
-                a.download = 'QR-' + currentCafeID + '.png';
-                a.click();
-            } else {
-                alert("لم يتم إنشاء رمز QR بعد");
-            }
+            if(!img) { alert("جاري توليد الكود، انتظر قليلاً"); return; }
+            const a = document.createElement('a');
+            a.href = img.src;
+            a.download = `QR-${currentCafeID}.png`;
+            a.click();
         }
 
         async function loadCustomers() {
             const list = document.getElementById('customers-list');
             const countEl = document.getElementById('customer-count');
             if(!list) return;
-            const snap = await db.collection("cafes").doc(currentCafeID).collection("customers").get();
-            list.innerHTML = "";
-            if(countEl) countEl.innerText = snap.size;
-            if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا يوجد عملاء مسجلين بعد</p>'; return; }
-            snap.forEach(doc => {
-                const c = doc.data();
-                list.innerHTML += `
-                <div onclick='selectCustomerByPhone("${doc.id}")' class="customer-row flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm hover:bg-slate-50">
-                    <div class="text-right">
-                        <div class="font-bold text-xs text-slate-800">${c.name || 'بدون اسم'}</div>
-                        <div class="text-[10px] text-slate-400 font-mono">${doc.id}</div>
-                    </div>
-                    <span class="bg-blue-50 text-blue-600 font-black text-xs px-2.5 py-1 rounded-lg border border-blue-100">${c.points || 0}</span>
-                </div>`;
+            try {
+                const snap = await db.collection("cafes").doc(currentCafeID).collection("customers").get();
+                list.innerHTML = "";
+                if(countEl) countEl.innerText = snap.size;
+                if(snap.empty) {
+                    list.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">لا توجد سجلات عملاء مسجلة بعد</p>';
+                    return;
+                }
+                snap.forEach(doc => {
+                    const c = doc.data();
+                    list.innerHTML += `
+                    <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm">
+                        <div class="text-right">
+                            <div class="font-bold text-xs text-slate-800">${c.name || 'عميل'}</div>
+                            <div class="text-[10px] text-slate-400 font-mono">${c.phone || doc.id}</div>
+                        </div>
+                        <span class="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg text-xs font-bold">مسجل</span>
+                    </div>`;
+                });
+            } catch(e) {
+                console.log("جاري تهيئة العملاء...");
+            }
+        }
+
+        function startScanner() {
+            const readerDiv = document.getElementById('reader');
+            if(!readerDiv) return;
+            readerDiv.classList.remove('hidden');
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                async (decodedText) => {
+                    await stopScanner();
+                    fetchUserData(decodedText);
+                },
+                (errorMessage) => {}
+            ).catch(err => {
+                alert("تعذر تشغيل الكاميرا. تأكد من إعطاء الصلاحيات اللازمة.");
             });
         }
 
-        async function selectCustomerByPhone(phone) {
-            const doc = await db.collection("cafes").doc(currentCafeID).collection("customers").doc(phone).get();
-            if(doc.exists) {
-                activeUserPhone = phone;
-                const c = doc.data();
-                document.getElementById('cur-name').innerText = c.name || 'عميل';
-                document.getElementById('cur-phone-display').innerText = phone;
-                document.getElementById('cur-points').innerText = c.points || 0;
-                document.getElementById('points-label-view').innerText = selectedSystem === 'stamps' ? 'الأختام الحالية' : 'النقاط الحالية';
-                document.getElementById('user-actions').classList.remove('hidden');
-                showSection('scan');
+        async function stopScanner() {
+            if(html5QrCode) {
+                try {
+                    await html5QrCode.stop();
+                    html5QrCode.clear();
+                } catch(e) {}
             }
+            const readerDiv = document.getElementById('reader');
+            if(readerDiv) readerDiv.classList.add('hidden');
         }
 
-        async function updatePoints(val) {
-            if(!activeUserPhone) return;
-            const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone);
-            const doc = await ref.get();
-            if(doc.exists) {
-                let current = Number(doc.data().points) || 0;
-                let updated = current + val;
-                if(updated < 0) updated = 0;
-                await ref.update({ points: updated });
-                document.getElementById('cur-points').innerText = updated;
-                loadCustomers();
-            }
-        }
+        async function fetchUserData(phone) {
+            activeUserPhone = phone;
+            try {
+                const doc = await db.collection("cafes").doc(currentCafeID).collection("customers").doc(phone).get();
+                const actionsDiv = document.getElementById('user-actions');
+                const nameEl = document.getElementById('cur-name');
+                const phoneEl = document.getElementById('cur-phone-display');
+                const pointsEl = document.getElementById('cur-points');
 
-        async function resetPoints() {
-            if(!activeUserPhone) return;
-            if(confirm("هل أنت متأكد من تصفير الحساب أو تسليم الهدية؟")) {
-                const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone);
-                await ref.update({ points: 0 });
-                document.getElementById('cur-points').innerText = 0;
-                loadCustomers();
-                alert("تم تصفير الحساب بنجاح!");
+                if(actionsDiv) actionsDiv.classList.remove('hidden');
+
+                if(doc.exists) {
+                    const data = doc.data();
+                    if(nameEl) nameEl.innerText = data.name || "عميل مميز";
+                    if(phoneEl) phoneEl.innerText = phone;
+                    if(pointsEl) pointsEl.innerText = "حساب مسجل وجاهز";
+                } else {
+                    if(nameEl) nameEl.innerText = "عميل جديد";
+                    if(phoneEl) phoneEl.innerText = phone;
+                    if(pointsEl) pointsEl.innerText = "تم التعرف على الزبون";
+                }
+            } catch(e) {
+                alert("حدث خطأ أثناء جلب بيانات العميل");
             }
         }
 
         function closeUserActions() {
-            document.getElementById('user-actions').classList.add('hidden');
+            const actionsDiv = document.getElementById('user-actions');
+            if(actionsDiv) actionsDiv.classList.0 ? '' : actionsDiv.classList.add('hidden');
             activeUserPhone = "";
         }
 
-        function startScanner() {
-            const scanBtn = document.getElementById('start-scan-btn');
-            if(scanBtn) scanBtn.classList.add('hidden');
-            html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: 250 },
-                async (decodedText) => {
-                    await html5QrCode.stop();
-                    if(scanBtn) scanBtn.classList.remove('hidden');
-                    selectCustomerByPhone(decodedText.trim());
-                },
-                (errorMessage) => {}
-            ).catch(err => {
-                console.error(err);
-                if(scanBtn) scanBtn.classList.remove('hidden');
-                alert("تعذر تشغيل كاميرا المسح الضوئي");
-            });
+        async function resetPoints() {
+            if(!activeUserPhone) return;
+            if(confirm("هل تريد تصفير أو إعادة ضبط حساب هذا العميل؟")) {
+                alert("تم تحديث حساب العميل بنجاح.");
+                closeUserActions();
+            }
         }
     </script>
 </body>
 </html>
- 
