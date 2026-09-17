@@ -33,7 +33,7 @@
 
     <div id="bg-overlay"></div>
 
-    <!-- شاشة تسجيل الدخول القديمة والأساسية -->
+    <!-- شاشة تسجيل الدخول -->
     <div id="auth-screen" class="w-full max-w-sm card-glass p-8 rounded-[2.5rem] shadow-2xl text-center">
         <img id="client-logo" src="" class="w-24 h-24 mx-auto mb-6 rounded-full object-cover hidden" alt="Logo">
         <h2 id="brand-name-display" class="text-2xl font-black mb-2 text-slate-800 italic">مرحباً بك</h2>
@@ -45,20 +45,20 @@
         </div>
     </div>
 
-    <!-- الشاشة الرئيسية للعميل (الأختام/النقاط + الميزات الجديدة) -->
+    <!-- الشاشة الرئيسية للعميل -->
     <div id="status-screen" class="w-full max-w-sm card-glass p-6 rounded-[2.5rem] shadow-2xl text-center hidden">
         <header class="flex justify-between items-center mb-6">
             <button onclick="logout()" class="text-slate-400 hover:text-red-500 transition-colors"><i class="fas fa-sign-out-alt"></i></button>
             <h3 id="user-display-name" class="font-bold text-slate-700">--</h3>
         </header>
 
-        <!-- نظام الأختام القديم -->
+        <!-- نظام الأختام -->
         <div id="stamps-area" class="hidden">
             <p id="stamps-label" class="text-xs font-bold text-slate-400 mb-4 uppercase tracking-widest">أختامك الحالية</p>
             <div id="stamps-grid" class="flex flex-wrap justify-center gap-3 mb-8"></div>
         </div>
 
-        <!-- نظام النقاط القديم -->
+        <!-- نظام النقاط -->
         <div id="points-area" class="hidden py-10">
             <p id="points-title" class="text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">إجمالي الرصيد</p>
             <div class="text-6xl font-black mb-2" id="points-value">0</div>
@@ -71,12 +71,12 @@
             <p class="text-[10px] text-slate-400 font-bold">أبرز الكود للموظف عند الدفع</p>
         </div>
 
-        <!-- زر المنيو التفاعلي الجديد -->
+        <!-- زر المنيو التفاعلي -->
         <button id="view-menu-btn" onclick="toggleMenu(true)" class="w-full py-3 mb-3 bg-slate-800 text-white rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all text-xs">
             <i class="fas fa-utensils"></i> تصفح المنيو التفاعلي والطلب
         </button>
 
-        <!-- أزرار السلة ونداء النادل الجديدة -->
+        <!-- أزرار السلة ونداء النادل -->
         <div class="grid grid-cols-2 gap-2 mb-3">
             <button onclick="toggleCartModal(true)" class="py-3 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2 text-xs relative active:scale-95 transition-all">
                 <i class="fas fa-shopping-cart"></i> سلة المشتريات
@@ -87,7 +87,7 @@
             </button>
         </div>
 
-        <!-- زر تثبيت التطبيق PWA الجديد -->
+        <!-- زر تثبيت التطبيق PWA -->
         <button onclick="showInstallGuide()" class="flex items-center justify-center gap-2 w-full py-3 bg-white/40 border border-white/60 rounded-2xl text-xs font-bold text-slate-600 mb-4 active:scale-95 transition-all">
             <i class="fas fa-download"></i> تثبيت التطبيق على الجوال
         </button>
@@ -173,7 +173,7 @@
         </div>
     </div>
 
-    <!-- Firebase SDK 8.x Compat Scripts (محدثة لضمان الاستقرار والتوافق التام) -->
+    <!-- Firebase SDK 8.x Compat Scripts -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
@@ -466,7 +466,6 @@
             }
         }
 
-        // دالة عرض الأختام أو النقاط الأصلية (تعمل بدقة حسب إعدادات المطعم)
         function renderStatus(user) {
             const system = cafeSettings.systemType || "stamps";
             if(system === "stamps") {
@@ -491,4 +490,3 @@
     </script>
 </body>
 </html>
- 
