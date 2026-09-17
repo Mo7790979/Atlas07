@@ -694,6 +694,55 @@
             }
         }
 
+        // --- إصلاح وتفعيل وظيفة توليد الباركود لصفحة المتجر ---
+        function generateCafeQR() {
+            const container = document.getElementById('qrcode-container');
+            if(!container) return;
+            container.innerHTML = ""; // تفريغ الحاوية أولاً
+            
+            // رابط صفحة الزبون أو المتجر بناءً على معرف المحل الحالي
+            const customerUrl = window.location.origin + "/customer.html?cafe=" + currentCafeID;
+            
+            // استخدام مكتبة qrcodejs المضمنة لتوليد البาร์كود بنجاح
+            try {
+                new QRCode(container, {
+                    text: customerUrl,
+                    width: 180,
+                    height: 180,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            } catch(e) {
+                console.error("خطأ في توليد كود QR:", e);
+            }
+        }
+
+        function downloadQR() {
+            const container = document.getElementById('qrcode-container');
+            if(!container) return;
+            const img = container.querySelector('img');
+            const canvas = container.querySelector('canvas');
+            
+            let imageUrl = "";
+            if(img && img.src) {
+                imageUrl = img.src;
+            } else if(canvas) {
+                imageUrl = canvas.toDataURL("image/png");
+            }
+
+            if(imageUrl) {
+                const link = document.createElement('a');
+                link.href = imageUrl;
+                link.download = 'cafe-qr-' + currentCafeID + '.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                alert("يرجى الانتظار حتى يتم توليد صورة الباركود بنجاح.");
+            }
+        }
+
         function initCafe() {
             loadCafeBranding();
             loadCustomers();
@@ -703,7 +752,7 @@
             listenToCustomerCarts();
             loadTaxesCheckboxes();
             loadInvoices();
-            generateCafeQR();
+            generateCafeQR(); // استدعاء توليد الباركود فور تهيئة المتجر
             startTimer();
             loadAdminBankInfo();
             generateNewSerial();
@@ -1868,7 +1917,6 @@
             let totalRev = 0;
             let totalTax = 0;
             let totalFinal = 0;
-            let itemsSummaryMap = {};
 
             filtered.forEach(inv => {
                 const sub = Number(inv.subtotal) || Number(inv.amount) || 0;
@@ -1894,10 +1942,15 @@
                         <div class="flex justify-between font-bold"><span>عدد الفواتير:</span> <span class="text-blue-600">${totalCount}</span></div>
                         <div class="flex justify-between font-bold"><span>المبلغ الفرعي:</span> <span>${totalRev.toFixed(2)}</span></div>
                         <div class="flex justify-between font-bold"><span>إجمالي الضرائب:</span> <span class="text-purple-600">${totalTax.toFixed(2)}</span></div>
-                        <div class="flex justify-between font-black text-sm text-emerald-700 border-t pt-1"><span>الإجمالي النهائي:</span> <span>${totalFinal.toFixed(2)}</span></div>
+                        <div class="flex justify-between font-black text-sm text-emerald-700 border-t pt-2"><span>الإجمالي النهائي:</span> <span>${totalFinal.toFixed(2)}</span></div>
                     </div>
                 `;
             }
+
+            currentReportPrintFunction = () => {
+                executePrintWindowSimpleSummary(titleText, { count: totalCount, rev: totalRev, tax: totalTax, final: totalFinal });
+            };
+
             if(modal) modal.classList.remove('hidden');
         }
 
@@ -1906,142 +1959,222 @@
             if(modal) modal.classList.add('hidden');
         }
 
-        function printCurrentSalesReport() {
-            window.print();
+        async function printCurrentSalesReport() {
+            if(typeof currentReportPrintFunction === 'function') {
+                currentReportPrintFunction();
+            }
         }
 
-        async function loadCustomers() {
-            const list = document.getElementById('customers-list');
-            const countEl = document.getElementById('customer-count');
-            if(!list) return;
-            const snap = await db.collection("cafes").doc(currentCafeID).collection("customers").get();
-            list.innerHTML = "";
-            if(countEl) countEl.innerText = snap.size;
-            if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد عملاء مسجلين بعد</p>'; return; }
-            snap.forEach(doc => {
-                const c = doc.data();
-                list.innerHTML += `
-                <div onclick='selectCustomerByPhone("${c.phone}")' class="customer-row flex justify-between items-center p-3 bg-slate-50 rounded-xl border mb-2 shadow-sm">
-                    <div>
-                        <div class="font-bold text-xs text-slate-800">${c.name || 'بدون اسم'}</div>
-                        <div class="text-[10px] text-slate-400 font-mono">${c.phone}</div>
+        async function executePrintWindowSimpleSummary(titleText, summary) {
+            let cafeName = await getCafeNameForReport();
+            const printWindow = window.open('', '_blank');
+            if(!printWindow) return;
+
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="ar" dir="rtl">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>${titleText} - ${cafeName}</title>
+                    <style>
+                        body { font-family: 'Cairo', Tahoma, sans-serif; padding: 20px; color: #111; max-width: 400px; margin: auto; direction: rtl; }
+                        h2 { text-align: center; color: #2563eb; }
+                        .box { background: #f8fafc; border: 1px solid #cbd5e1; padding: 15px; border-radius: 8px; font-size: 13px; font-weight: bold; }
+                        .box div { display: flex; justify-content: space-between; margin-bottom: 8px; }
+                        @media print { button { display: none; } }
+                    </style>
+                </head>
+                <body>
+                    <h2>${cafeName}</h2>
+                    <h3 style="text-align: center;">${titleText}</h3>
+                    <div class="box">
+                        <div><span>عدد الفواتير:</span> <span>${summary.count}</span></div>
+                        <div><span>المبلغ الفرعي:</span> <span>${summary.rev.toFixed(2)}</span></div>
+                        <div><span>إجمالي الضرائب:</span> <span>${summary.tax.toFixed(2)}</span></div>
+                        <div style="color: #059669; border-top: 1px dashed #333; padding-top: 5px;"><span>الإجمالي النهائي:</span> <span>${summary.final.toFixed(2)}</span></div>
                     </div>
-                    <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-lg font-bold">${c.stamps || c.points || 0}</span>
-                </div>`;
+                    <button onclick="window.print()" style="margin-top: 20px; background: #2563eb; color: white; border: none; padding: 10px; border-radius: 6px; width: 100%; font-weight: bold; cursor: pointer;">طباعة التقرير</button>
+                    <script>window.onload = function() { setTimeout(() => { window.print(); }, 300); };<\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
+        // --- ميزات الكاميرا وقارئ QR للعملاء ---
+        function startScanner() {
+            const readerEl = document.getElementById('reader');
+            if(!readerEl) return;
+            
+            if(html5QrCode) {
+                html5QrCode.stop().catch(() => {}).finally(() => { html5QrCode = null; });
+            }
+
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                async (decodedText) => {
+                    try {
+                        html5QrCode.stop().catch(() => {});
+                        html5QrCode = null;
+                    } catch(e) {}
+                    
+                    await handleScannedUser(decodedText);
+                },
+                (errorMessage) => {}
+            ).catch(err => {
+                console.error("خطأ في تشغيل الكاميرا:", err);
+                alert("تعذر تشغيل الكاميرا. تأكد من إعطاء الصلاحيات اللازمة.");
             });
         }
 
-        async function selectCustomerByPhone(phone) {
-            const snap = await db.collection("cafes").doc(currentCafeID).collection("customers").where("phone", "==", phone).get();
-            if(!snap.empty) {
-                const doc = snap.docs[0];
-                const data = doc.data();
-                activeUserPhone = phone;
-                document.getElementById('cur-name').innerText = data.name || 'الزبون';
-                document.getElementById('cur-phone-display').innerText = data.phone;
-                document.getElementById('cur-points').innerText = data.stamps !== undefined ? data.stamps : (data.points || 0);
-                document.getElementById('points-label-view').innerText = selectedSystem === 'stamps' ? 'الأختام الحالية' : 'النقاط الحالية';
-                document.getElementById('user-actions').classList.remove('hidden');
-                showSection('scan');
+        async function handleScannedUser(phone) {
+            activeUserPhone = phone.trim();
+            try {
+                const doc = await db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone).get();
+                if(doc.exists) {
+                    const data = doc.data();
+                    document.getElementById('cur-name').innerText = data.name || 'عميل';
+                    document.getElementById('cur-phone-display').innerText = activeUserPhone;
+                    
+                    const pointsEl = document.getElementById('cur-points');
+                    const labelView = document.getElementById('points-label-view');
+                    
+                    if(selectedSystem === 'stamps') {
+                        pointsEl.innerText = (data.stamps || 0) + " / " + (document.getElementById('set-max-stamps').value || 6);
+                        labelView.innerText = document.getElementById('label-stamps').value || "أختامك الحالية";
+                    } else {
+                        pointsEl.innerText = (data.points || 0);
+                        labelView.innerText = document.getElementById('label-points-unit').value || "نقطة";
+                    }
+
+                    document.getElementById('user-actions').classList.remove('hidden');
+                } else {
+                    if(confirm("العميل غير مسجل. هل تريد تسجيله الآن برقم الهاتف: " + activeUserPhone + "؟")) {
+                        await db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone).set({
+                            name: "عميل جديد",
+                            phone: activeUserPhone,
+                            stamps: 0,
+                            points: 0,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        handleScannedUser(activeUserPhone);
+                    }
+                }
+            } catch(e) {
+                console.error(e);
+                alert("خطأ في جلب بيانات العميل.");
             }
         }
 
-        async function updatePoints(change) {
+        async function updatePoints(val) {
             if(!activeUserPhone) return;
             const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone);
             const doc = await ref.get();
-            if(doc.exists) {
-                const field = selectedSystem === 'stamps' ? 'stamps' : 'points';
-                let current = Number(doc.data()[field]) || 0;
-                current += change;
-                if(current < 0) current = 0;
-                await ref.update({ [field]: current });
-                document.getElementById('cur-points').innerText = current;
-                loadCustomers();
+            if(!doc.exists) return;
+
+            const data = doc.data();
+            if(selectedSystem === 'stamps') {
+                let currentStamps = Number(data.stamps) || 0;
+                let maxStamps = Number(document.getElementById('set-max-stamps').value) || 6;
+                currentStamps += val;
+                if(currentStamps < 0) currentStamps = 0;
+                if(currentStamps > maxStamps) currentStamps = maxStamps;
+                
+                await ref.update({ stamps: currentStamps });
+                document.getElementById('cur-points').innerText = currentStamps + " / " + maxStamps;
+            } else {
+                let currentPoints = Number(data.points) || 0;
+                currentPoints += (val > 0 ? 1 : -1);
+                if(currentPoints < 0) currentPoints = 0;
+                
+                await ref.update({ points: currentPoints });
+                document.getElementById('cur-points').innerText = currentPoints;
             }
+            loadCustomers();
         }
 
         async function resetPoints() {
             if(!activeUserPhone) return;
-            if(confirm("هل أنت متأكد من تصفير الحساب أو تسليم الهدية؟")) {
+            if(confirm("هل أنت متأكد من تصفير رصيد الحساب أو تسليم الهدية؟")) {
                 const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone);
-                const field = selectedSystem === 'stamps' ? 'stamps' : 'points';
-                await ref.update({ [field]: 0 });
-                document.getElementById('cur-points').innerText = 0;
+                if(selectedSystem === 'stamps') {
+                    await ref.update({ stamps: 0 });
+                    document.getElementById('cur-points').innerText = "0 / " + (document.getElementById('set-max-stamps').value || 6);
+                } else {
+                    await ref.update({ points: 0 });
+                    document.getElementById('cur-points').innerText = "0";
+                }
                 loadCustomers();
                 alert("تم التصفير بنجاح!");
             }
         }
 
         function closeUserActions() {
-            document.getElementById('user-actions').classList.add('hidden');
+            const actionsEl = document.getElementById('user-actions');
+            if(actionsEl) actionsEl.classList.add('hidden');
             activeUserPhone = "";
         }
 
-        function startScanner() {
-            const scannerContainer = document.getElementById('reader');
-            scannerContainer.innerHTML = '<div id="qr-reader" style="width:100%"></div>';
-            html5QrCode = new Html5Qrcode("qr-reader");
-            html5QrCode.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: { width: 250, height: 250 } },
-                async (decodedText) => {
-                    await html5QrCode.stop();
-                    scannerContainer.innerHTML = '';
-                    selectCustomerByPhone(decodedText);
-                },
-                (error) => {}
-            ).catch(err => {
-                alert("تعذر تشغيل الكاميرا، تأكد من إعطاء الصلاحيات.");
-            });
-        }
+        async function loadCustomers() {
+            const list = document.getElementById('customers-list');
+            const countBadge = document.getElementById('customer-count');
+            if(!list) return;
 
-        function generateCafeQR() {
-            const container = document.getElementById('qrcode-container');
-            if(!container) return;
-            container.innerHTML = "";
-            const clientUrl = window.location.origin + "/client.html?cafe=" + currentCafeID;
-            new QRCode(container, {
-                text: clientUrl,
-                width: 150,
-                height: 150,
-                colorDark: "#000000",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.H
-            });
-        }
+            try {
+                const snap = await db.collection("cafes").doc(currentCafeID).collection("customers").get();
+                list.innerHTML = "";
+                if(countBadge) countBadge.innerText = snap.size;
 
-        function downloadQR() {
-            const canvas = document.querySelector('#qrcode-container canvas');
-            if(!canvas) return;
-            const link = document.createElement('a');
-            link.download = currentCafeID + '-qr.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
+                if(snap.empty) {
+                    list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد عملاء مسجلون بعد</p>';
+                    return;
+                }
+
+                snap.forEach(doc => {
+                    const c = doc.data();
+                    list.innerHTML += `
+                    <div class="flex justify-between items-center p-2.5 bg-white rounded-xl border mb-2 shadow-sm text-xs">
+                        <div>
+                            <span class="font-bold text-slate-800">${c.name || 'بدون اسم'}</span>
+                            <span class="text-[10px] text-slate-400 font-mono mr-2">${c.phone || doc.id}</span>
+                        </div>
+                        <div class="font-black text-blue-600">
+                            ${selectedSystem === 'stamps' ? (c.stamps || 0) + ' أختام' : (c.points || 0) + ' نقاط'}
+                        </div>
+                    </div>`;
+                });
+            } catch(e) {
+                console.log("خطأ في تحميل العملاء");
+            }
         }
 
         function startTimer() {
-            const timerEl = document.getElementById('countdown-timer');
-            const expiryEl = document.getElementById('expiry-date-text');
             if(!expiryDateGlobal) return;
-            
-            if(expiryEl) expiryEl.innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
-
             setInterval(() => {
                 const now = new Date();
                 const diff = expiryDateGlobal - now;
+                const timerEl = document.getElementById('countdown-timer');
+                const expiryTextEl = document.getElementById('expiry-date-text');
+
+                if(expiryTextEl) expiryTextEl.innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
+
                 if(diff <= 0) {
-                    if(timerEl) timerEl.innerText = "انتهى الاشتراك";
+                    if(timerEl) timerEl.innerText = "منتهي الصلاحية";
                     return;
                 }
+
                 const days = Math.floor(diff / (1000 * 60 * 60 * 24));
                 const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                 const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-                if(timerEl) timerEl.innerText = `${days} يوم ${hours}:${minutes}:${seconds}`;
+
+                if(timerEl) {
+                    timerEl.innerText = `${days} يوم - ${hours}:${minutes}:${seconds}`;
+                }
             }, 1000);
         }
     </script>
 </body>
 </html>
- 
