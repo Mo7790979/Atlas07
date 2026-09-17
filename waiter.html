@@ -20,11 +20,14 @@
         input, select, textarea { width: 100%; padding: 0.65rem 0.85rem; border-radius: 0.65rem; border: 1px solid #cbd5e1; outline: none; background: #f8fafc; transition: 0.3s; font-family: inherit; font-size: 0.85rem; }
         input:focus { border-color: #2563eb; background: #fff; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
         label { font-size: 0.75rem; font-weight: 700; color: #64748b; margin-bottom: 0.35rem; display: block; }
-        .menu-item-card { background: white; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 10px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .menu-item-card:hover { transform: translateY(-2px); border-color: #2563eb; box-shadow: 0 8px 12px -3px rgba(37,99,235,0.1); }
+        
+        /* مطابقة كروت المنيو تماماً لتصميم حساب المحاسب */
+        .pos-menu-card { background: white; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 10px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .pos-menu-card:hover { transform: translateY(-2px); border-color: #2563eb; box-shadow: 0 8px 12px -3px rgba(37,99,235,0.1); }
+        .pos-menu-card:active { transform: scale(0.97); }
     </style>
 </head>
-<body class="max-w-3xl mx-auto pb-24 px-3 sm:px-6">
+<body class="max-w-4xl mx-auto pb-24 px-3 sm:px-6">
 
     <!-- شاشة تسجيل دخول النادل -->
     <div id="waiter-login-screen" class="p-8 text-center mt-20 bg-white rounded-[2.5rem] shadow-2xl border max-w-md mx-auto">
@@ -82,23 +85,12 @@
             </div>
         </div>
 
-        <!-- قسم المنيو والطلب السريع نيابة عن الزبون -->
+        <!-- قسم المنيو والطلب السريع نيابة عن الزبون (مطابق للمحاسب) -->
         <div id="section-menu" class="waiter-section hidden">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
-                <!-- قائمة المنيو -->
-                <div class="waiter-card">
-                    <h3 class="font-black text-blue-600 mb-3 text-xs border-r-4 border-blue-600 pr-2">منيو المتجر التفاعلي</h3>
-                    <div class="mb-3">
-                        <input type="text" id="waiter-menu-search" placeholder="بحث في المنتجات..." oninput="renderWaiterMenu()" class="text-xs">
-                    </div>
-                    <div id="waiter-menu-grid" class="space-y-2 max-h-[450px] overflow-y-auto p-1">
-                        <p class="text-xs text-slate-400 text-center py-6">جاري تحميل المنيو...</p>
-                    </div>
-                </div>
-
                 <!-- سلة الطلب السريع للطاولة -->
-                <div class="waiter-card border-2 border-blue-100 flex flex-col justify-between">
+                <div class="waiter-card border-2 border-blue-100 flex flex-col justify-between order-2 md:order-1">
                     <div>
                         <h3 class="font-black text-blue-900 mb-3 text-sm flex items-center gap-2 border-b pb-2">
                             <i class="fas fa-shopping-cart text-blue-600"></i> إرسال طلب جديد للطاولة
@@ -126,6 +118,22 @@
                     </div>
                 </div>
 
+                <!-- قائمة المنيو التفاعلي مع أقسام البحث والتصفية (مطابقة تماماً للمحاسب) -->
+                <div class="waiter-card order-1 md:order-2 bg-white">
+                    <h3 class="font-black text-blue-600 mb-3 text-xs border-r-4 border-blue-600 pr-2">المنيو التفاعلي السريع</h3>
+                    
+                    <div class="flex flex-col gap-2.5 mb-3">
+                        <input type="text" id="waiter-menu-search" placeholder="بحث سريع في المنيو التفاعلي..." oninput="renderWaiterMenu()" class="text-xs">
+                        <div class="flex gap-1.5 overflow-x-auto no-scrollbar py-1" id="waiter-categories-filter">
+                            <button onclick="filterWaiterByCategory('all')" class="waiter-cat-btn px-3 py-1 rounded-lg bg-blue-600 text-white text-[11px] font-bold whitespace-nowrap cursor-pointer border-none">الكل</button>
+                        </div>
+                    </div>
+
+                    <div id="waiter-menu-grid" class="space-y-2.5 max-h-[420px] overflow-y-auto p-1">
+                        <p class="text-xs text-slate-400 text-center py-8">جاري تحميل منتجات المنيو...</p>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -147,6 +155,7 @@
         let currentWaiterName = "";
         let waiterMenuCache = [];
         let waiterCartItems = [];
+        let currentWaiterCategory = "all";
 
         async function waiterLogin() {
             const cafeId = document.getElementById('cafe-id-input').value.trim();
@@ -246,10 +255,35 @@
                 snap.forEach(doc => {
                     waiterMenuCache.push({ id: doc.id, ...doc.data() });
                 });
+                buildWaiterCategoriesFilter();
                 renderWaiterMenu();
             } catch(e) {
                 console.log("خطأ في جلب المنيو");
             }
+        }
+
+        function buildWaiterCategoriesFilter() {
+            const container = document.getElementById('waiter-categories-filter');
+            if(!container) return;
+            const categories = ['all'];
+            waiterMenuCache.forEach(p => {
+                const cat = p.category || 'عام';
+                if(!categories.includes(cat)) categories.push(cat);
+            });
+            
+            container.innerHTML = '';
+            categories.forEach(cat => {
+                const active = currentWaiterCategory === cat;
+                const label = cat === 'all' ? 'الكل' : cat;
+                container.innerHTML += `
+                <button onclick="filterWaiterByCategory('${cat}')" class="waiter-cat-btn px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer border-none ${active ? 'bg-blue-600 text-white shadow' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">${label}</button>`;
+            });
+        }
+
+        function filterWaiterByCategory(cat) {
+            currentWaiterCategory = cat;
+            buildWaiterCategoriesFilter();
+            renderWaiterMenu();
         }
 
         function renderWaiterMenu() {
@@ -258,26 +292,30 @@
             if(!grid) return;
 
             const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-            const filtered = waiterMenuCache.filter(p => !query || p.name.toLowerCase().includes(query) || (p.category && p.category.toLowerCase().includes(query)));
+            const filtered = waiterMenuCache.filter(p => {
+                const matchCat = currentWaiterCategory === 'all' || (p.category || 'عام') === currentWaiterCategory;
+                const matchSearch = !query || p.name.toLowerCase().includes(query) || (p.category && p.category.toLowerCase().includes(query));
+                return matchCat && matchSearch;
+            });
 
             grid.innerHTML = "";
             if(filtered.length === 0) {
-                grid.innerHTML = '<p class="text-xs text-slate-400 text-center py-6">لا توجد منتجات مطابقة في المنيو</p>';
+                grid.innerHTML = '<p class="text-xs text-slate-400 text-center py-8">لا توجد منتجات مطابقة في المنيو</p>';
                 return;
             }
 
             filtered.forEach(p => {
                 grid.innerHTML += `
-                <div onclick='addWaiterCartItem("${p.name.replace(/"/g, '&quot;')}", ${p.price})' class="menu-item-card">
-                    <img src="${p.image || 'https://via.placeholder.com/100'}" class="w-14 h-14 object-cover rounded-xl bg-slate-100 shrink-0">
+                <div onclick='addWaiterCartItem("${p.name.replace(/"/g, '&quot;')}", ${p.price})' class="pos-menu-card">
+                    <img src="${p.image || 'https://via.placeholder.com/150'}" class="w-16 h-16 object-cover rounded-xl bg-slate-100 shrink-0">
                     <div class="flex-1 text-right">
                         <div class="flex justify-between items-start">
                             <h4 class="font-bold text-xs text-slate-800 line-clamp-1 mb-0.5">${p.name}</h4>
-                            <span class="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md">${p.price}</span>
+                            <span class="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow">${p.price}</span>
                         </div>
-                        <p class="text-[10px] text-slate-500 line-clamp-1 mb-1">${p.category || 'عام'}</p>
-                        <span class="text-[10px] text-blue-600 font-bold hover:underline">
-                            <i class="fas fa-plus ml-0.5"></i> أضف للطلب
+                        <p class="text-[10px] text-slate-500 line-clamp-1 mb-1.5">${p.description || p.category || 'مشروبات ومأكولات'}</p>
+                        <span class="bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white px-2.5 py-1 rounded-lg text-[10px] font-bold inline-flex items-center gap-1 transition-all">
+                            <i class="fas fa-plus"></i> إضافة للطلب
                         </span>
                     </div>
                 </div>`;
@@ -373,3 +411,4 @@
     </script>
 </body>
 </html>
+ 
