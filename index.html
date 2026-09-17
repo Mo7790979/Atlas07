@@ -24,7 +24,6 @@
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .animate-slide-up { animation: slideUp 0.5s ease-out; }
         #menu-modal { transition: 0.3s; }
-        /* إخفاء شريط التمرير للأقسام */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -215,10 +214,16 @@
         }
 
         function listenToCafeSettings() {
+            db.collection("cafes").doc(cafeID).onSnapshot(doc => {
+                if (doc.exists && doc.data().settings) {
+                    cafeSettings = doc.data().settings;
+                    applyBranding(cafeSettings);
+                }
+            });
             db.collection("cafes").doc(cafeID).collection("settings").doc("branding")
               .onSnapshot(doc => {
                 if (doc.exists) {
-                    cafeSettings = doc.data();
+                    cafeSettings = { ...cafeSettings, ...doc.data() };
                     applyBranding(cafeSettings);
                 }
             });
@@ -424,7 +429,9 @@
             if(!name || name.length < 2) return alert("يرجى إدخال اسمك الكريم");
             const userRef = db.collection("cafes").doc(cafeID).collection("customers").doc(name);
             const doc = await userRef.get();
-            if(!doc.exists) { await userRef.set({ name: name, points: 0, createdAt: new Date() }); }
+            if(!doc.exists) { 
+                await userRef.set({ name: name, points: 0, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); 
+            }
             localStorage.setItem(`auth_name_${cafeID}`, name);
             startUserListener(name);
         }
@@ -475,7 +482,7 @@
                 const grid = document.getElementById('stamps-grid');
                 grid.innerHTML = "";
                 for(let i=1; i<=max; i++) {
-                    const isActive = i <= user.points;
+                    const isActive = i <= (user.points || 0);
                     grid.innerHTML += `<div class="stamp-slot ${isActive ? 'stamp-active' : ''}" style="${isActive ? 'background-color:'+cafeSettings.color+'; color:white; border-color:'+cafeSettings.color : ''}"><i class="fas ${isActive ? 'fa-check' : 'fa-certificate opacity-20'}"></i></div>`;
                 }
             } else {
