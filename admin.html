@@ -83,6 +83,7 @@
             <button onclick="showSection('general-log')" id="tab-general-log" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">السجل العام</button>
             <button onclick="showSection('branding')" id="tab-branding" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">التخصيص</button>
             <button onclick="showSection('customers')" id="tab-customers" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">العملاء</button>
+            <button onclick="showSection('qrcode-section')" id="tab-qrcode-section" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 text-purple-600 cursor-pointer"><i class="fas fa-qrcode ml-1"></i> الباركود وقرص الطاولات</button>
             <button onclick="showSection('billing')" id="tab-billing" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 text-emerald-600 cursor-pointer">الاشتراك</button>
         </div>
 
@@ -471,6 +472,23 @@
                 <div id="qrcode-container" class="flex justify-center p-4 bg-white border rounded-2xl mx-auto w-fit mb-3"></div>
                 <p class="text-[10px] text-slate-400 mb-2">كود QR الخاص بمحلك لدخول الزبائن</p>
                 <button onclick="downloadQR()" class="text-[10px] text-blue-600 font-bold underline bg-transparent border-none cursor-pointer">تحميل الصورة للطباعة</button>
+            </div>
+        </div>
+
+        <!-- قسم الباركود وقرص الطاولات المضاف حديثاً -->
+        <div id="section-qrcode-section" class="section-content hidden">
+            <div class="admin-card text-center">
+                <h3 class="font-black text-blue-600 mb-2 border-r-4 border-blue-600 pr-3 text-right">الباركود وقرص الطاولات</h3>
+                <p class="text-xs text-slate-500 mb-6 text-right">استعرض رمز الاستجابة السريعة (QR Code) الخاص بالمنشأة والمخصص لتوجيه العملاء للمنيو التفاعلي بشكل صحيح ومباشر.</p>
+                
+                <div id="qrcode-container-section" class="flex justify-center p-5 bg-white border-2 border-blue-100 rounded-3xl mx-auto w-fit mb-4 shadow-md"></div>
+                <p id="qr-target-url-text" class="text-[11px] text-blue-600 font-mono mb-4 break-all px-2 font-bold"></p>
+                
+                <div class="flex justify-center gap-3">
+                    <button onclick="downloadQRSection()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl font-bold text-xs shadow-lg shadow-blue-200 cursor-pointer border-none flex items-center gap-2">
+                        <i class="fas fa-download"></i> تحميل كود QR للطباعة
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -1653,11 +1671,25 @@
         }
 
         function generateCafeQR() {
+            // تحديث الرابط المطلوب بدقة للمسار الصحيح دون أخطاء 404
+            const clientUrl = `https://mo7790979.github.io/Atlas07/index.html?cafe=${currentCafeID}`;
+            
             const container = document.getElementById('qrcode-container');
-            if(!container) return;
-            container.innerHTML = "";
-            const clientUrl = window.location.origin + window.location.pathname.replace('admin', 'client') + "?cafe=" + currentCafeID;
-            new QRCode(container, { text: clientUrl, width: 150, height: 150 });
+            if(container) {
+                container.innerHTML = "";
+                new QRCode(container, { text: clientUrl, width: 150, height: 150 });
+            }
+
+            const containerSec = document.getElementById('qrcode-container-section');
+            if(containerSec) {
+                containerSec.innerHTML = "";
+                new QRCode(containerSec, { text: clientUrl, width: 180, height: 180 });
+            }
+
+            const urlTextEl = document.getElementById('qr-target-url-text');
+            if(urlTextEl) {
+                urlTextEl.innerText = clientUrl;
+            }
         }
 
         function downloadQR() {
@@ -1666,6 +1698,18 @@
                 const a = document.createElement('a');
                 a.href = img.src;
                 a.download = 'cafe-qr-' + currentCafeID + '.png';
+                a.click();
+            } else {
+                alert("صورة QR غير جاهزة للتحميل بعد");
+            }
+        }
+
+        function downloadQRSection() {
+            const img = document.querySelector('#qrcode-container-section img');
+            if(img) {
+                const a = document.createElement('a');
+                a.href = img.src;
+                a.download = 'cafe-qr-tables-' + currentCafeID + '.png';
                 a.click();
             } else {
                 alert("صورة QR غير جاهزة للتحميل بعد");
