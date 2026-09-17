@@ -203,18 +203,21 @@
                 </div>
             </div>
 
-            <!-- Incoming Orders Alert Bar -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div class="admin-card border-blue-200 bg-blue-50/40 mb-0">
-                    <h3 class="font-black text-blue-800 mb-2 flex items-center justify-between text-xs">
-                        <span><i class="fas fa-utensils ml-1"></i> طلبات الطاولات المعلقة</span>
-                        <span id="cart-count-badge" class="bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded-full">0</span>
+            <!-- قائمة مستقلة تماماً لطلبات سلة مشتريات العملاء الواردة -->
+            <div class="admin-card border-2 border-blue-300 bg-blue-50/60 mb-4 shadow-md">
+                <div class="flex justify-between items-center mb-2 pb-2 border-b border-blue-200">
+                    <h3 class="font-black text-blue-900 text-sm flex items-center gap-2">
+                        <i class="fas fa-shopping-bag text-blue-600"></i> قائمة طلبات سلة مشتريات العملاء الواردة
                     </h3>
-                    <div id="customer-carts-list" class="space-y-2 max-h-40 overflow-y-auto">
-                        <p class="text-xs text-slate-400 text-center py-2">لا توجد طلبات جديدة من الطاولات حالياً</p>
-                    </div>
+                    <span id="cart-count-badge" class="bg-blue-600 text-white text-xs px-2.5 py-0.5 rounded-full font-black">0</span>
                 </div>
+                <div id="customer-carts-list" class="space-y-2.5 max-h-52 overflow-y-auto pr-1">
+                    <p class="text-xs text-slate-400 text-center py-4">لا توجد طلبات جديدة من سلة العملاء حالياً</p>
+                </div>
+            </div>
 
+            <!-- Incoming Orders Alert Bar & Taxes -->
+            <div class="grid grid-cols-1 md:grid-cols-1 gap-4 mb-4">
                 <div class="admin-card border-purple-200 bg-purple-50/30 mb-0">
                     <div class="flex justify-between items-center mb-2">
                         <h3 class="font-black text-purple-900 text-xs"><i class="fas fa-sliders-h ml-1"></i> اختيار الضرائب المتعددة</h3>
@@ -824,7 +827,7 @@
                 if(!list) return;
                 list.innerHTML = "";
                 if(snap.empty) {
-                    list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد طلبات جديدة من الطاولات حالياً</p>';
+                    list.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">لا توجد طلبات جديدة من سلة العملاء حالياً</p>';
                     return;
                 }
                 snap.forEach(doc => {
@@ -833,12 +836,12 @@
                     window._tempCarts[doc.id] = cart;
 
                     list.innerHTML += `
-                    <div onclick='loadCartToInvoiceById("${doc.id}")' class="interactive-item flex justify-between items-center p-2.5 bg-white rounded-xl border border-blue-200 shadow-sm hover:bg-blue-50 text-right">
+                    <div onclick='loadCartToInvoiceById("${doc.id}")' class="interactive-item flex justify-between items-center p-3 bg-white rounded-xl border border-blue-200 shadow-sm hover:bg-blue-50 text-right">
                         <div>
-                            <div class="font-bold text-xs text-blue-900"><i class="fas fa-utensils text-blue-500 ml-1"></i> ${cart.table || 'طاولة عامة'} - <span class="text-emerald-600">${cart.total}</span></div>
+                            <div class="font-bold text-xs text-blue-900"><i class="fas fa-utensils text-blue-500 ml-1"></i> ${cart.table || 'طاولة عامة'} - <span class="text-emerald-600 font-black">${cart.total}</span></div>
                             <div class="text-[10px] text-slate-500 mt-0.5 line-clamp-1">${cart.itemsSummary || 'تفاصيل الطلبات'}</div>
                         </div>
-                        <span class="bg-blue-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap">تحميل</span>
+                        <span class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shadow">تحميل للفاتورة</span>
                     </div>`;
                 });
             });
@@ -1223,7 +1226,6 @@
         }
 
         async function executePrintWindow(invoiceData) {
-            // جلب اسم المنشأة المخصص بدقة تامة ومنع ظهور الرموز أو الفراغات
             let cafeName = "";
             const brandInput = document.getElementById('set-brand-name');
             if(brandInput && brandInput.value.trim() !== "" && brandInput.value.trim() !== "--") {
