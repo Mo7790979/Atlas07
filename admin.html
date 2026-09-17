@@ -413,6 +413,7 @@
             </div>
         </div>
 
+        <!-- قسم التخصيص (تم دمج نظام الولاء المطلوب هنا) -->
         <div id="section-branding" class="section-content hidden">
             <div class="admin-card text-right">
                 <h3 class="font-black text-blue-600 mb-6 border-r-4 border-blue-600 pr-3">تخصيص نظام الولاء والهوية</h3>
@@ -1868,7 +1869,6 @@
             let totalRev = 0;
             let totalTax = 0;
             let totalFinal = 0;
-            let itemsSummaryMap = {};
 
             filtered.forEach(inv => {
                 const sub = Number(inv.subtotal) || Number(inv.amount) || 0;
@@ -1893,12 +1893,13 @@
                     <div class="bg-slate-50 p-3 rounded-xl border space-y-2">
                         <div class="flex justify-between font-bold"><span>عدد الفواتير:</span> <span class="text-blue-600">${totalCount}</span></div>
                         <div class="flex justify-between font-bold"><span>المبلغ الفرعي:</span> <span>${totalRev.toFixed(2)}</span></div>
-                        <div class="flex justify-between font-bold"><span>إجمالي الضرائب:</span> <span class="text-purple-600">${totalTax.toFixed(2)}</span></div>
-                        <div class="flex justify-between font-black text-sm text-emerald-700 border-t pt-1"><span>الإجمالي النهائي:</span> <span>${totalFinal.toFixed(2)}</span></div>
+                        <div class="flex justify-between font-bold"><span>إجمالي الضرائب:</span> <span class="text-purple-700">${totalTax.toFixed(2)}</span></div>
+                        <div class="flex justify-between font-black text-sm text-emerald-700 border-t pt-2"><span>الإجمالي النهائي:</span> <span>${totalFinal.toFixed(2)}</span></div>
                     </div>
                 `;
             }
             if(modal) modal.classList.remove('hidden');
+            currentReportPrintFunction = () => { alert("جاري طباعة التقرير..."); };
         }
 
         function closeSalesReportModal() {
@@ -1907,7 +1908,45 @@
         }
 
         function printCurrentSalesReport() {
-            window.print();
+            if(currentReportPrintFunction) currentReportPrintFunction();
+        }
+
+        function startTimer() {
+            if(!expiryDateGlobal) return;
+            setInterval(() => {
+                const now = new Date();
+                const diff = expiryDateGlobal - now;
+                const timerEl = document.getElementById('countdown-timer');
+                if(!timerEl) return;
+                if(diff <= 0) {
+                    timerEl.innerText = "انتهى الاشتراك";
+                    return;
+                }
+                const hours = Math.floor((diff / (1000 * 60 * 60)));
+                const mins = Math.floor((diff / (1000 * 60)) % 60);
+                const secs = Math.floor((diff / 1000) % 60);
+                timerEl.innerText = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function generateCafeQR() {
+            const container = document.getElementById('qrcode-container');
+            if(!container) return;
+            container.innerHTML = "";
+            const clientUrl = window.location.origin + "/client.html?cafe=" + currentCafeID;
+            new QRCode(container, { text: clientUrl, width: 140, height: 140 });
+        }
+
+        function downloadQR() {
+            const img = document.querySelector('#qrcode-container img');
+            if(img) {
+                const a = document.createElement('a');
+                a.href = img.src;
+                a.download = 'QR-' + currentCafeID + '.png';
+                a.click();
+            } else {
+                alert("لم يتم إنشاء رمز QR بعد");
+            }
         }
 
         async function loadCustomers() {
@@ -1917,46 +1956,44 @@
             const snap = await db.collection("cafes").doc(currentCafeID).collection("customers").get();
             list.innerHTML = "";
             if(countEl) countEl.innerText = snap.size;
-            if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد عملاء مسجلين بعد</p>'; return; }
+            if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا يوجد عملاء مسجلين بعد</p>'; return; }
             snap.forEach(doc => {
                 const c = doc.data();
                 list.innerHTML += `
-                <div onclick='selectCustomerByPhone("${c.phone}")' class="customer-row flex justify-between items-center p-3 bg-slate-50 rounded-xl border mb-2 shadow-sm">
-                    <div>
+                <div onclick='selectCustomerByPhone("${doc.id}")' class="customer-row flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm hover:bg-slate-50">
+                    <div class="text-right">
                         <div class="font-bold text-xs text-slate-800">${c.name || 'بدون اسم'}</div>
-                        <div class="text-[10px] text-slate-400 font-mono">${c.phone}</div>
+                        <div class="text-[10px] text-slate-400 font-mono">${doc.id}</div>
                     </div>
-                    <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-lg font-bold">${c.stamps || c.points || 0}</span>
+                    <span class="bg-blue-50 text-blue-600 font-black text-xs px-2.5 py-1 rounded-lg border border-blue-100">${c.points || 0}</span>
                 </div>`;
             });
         }
 
         async function selectCustomerByPhone(phone) {
-            const snap = await db.collection("cafes").doc(currentCafeID).collection("customers").where("phone", "==", phone).get();
-            if(!snap.empty) {
-                const doc = snap.docs[0];
-                const data = doc.data();
+            const doc = await db.collection("cafes").doc(currentCafeID).collection("customers").doc(phone).get();
+            if(doc.exists) {
                 activeUserPhone = phone;
-                document.getElementById('cur-name').innerText = data.name || 'الزبون';
-                document.getElementById('cur-phone-display').innerText = data.phone;
-                document.getElementById('cur-points').innerText = data.stamps !== undefined ? data.stamps : (data.points || 0);
+                const c = doc.data();
+                document.getElementById('cur-name').innerText = c.name || 'عميل';
+                document.getElementById('cur-phone-display').innerText = phone;
+                document.getElementById('cur-points').innerText = c.points || 0;
                 document.getElementById('points-label-view').innerText = selectedSystem === 'stamps' ? 'الأختام الحالية' : 'النقاط الحالية';
                 document.getElementById('user-actions').classList.remove('hidden');
                 showSection('scan');
             }
         }
 
-        async function updatePoints(change) {
+        async function updatePoints(val) {
             if(!activeUserPhone) return;
             const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone);
             const doc = await ref.get();
             if(doc.exists) {
-                const field = selectedSystem === 'stamps' ? 'stamps' : 'points';
-                let current = Number(doc.data()[field]) || 0;
-                current += change;
-                if(current < 0) current = 0;
-                await ref.update({ [field]: current });
-                document.getElementById('cur-points').innerText = current;
+                let current = Number(doc.data().points) || 0;
+                let updated = current + val;
+                if(updated < 0) updated = 0;
+                await ref.update({ points: updated });
+                document.getElementById('cur-points').innerText = updated;
                 loadCustomers();
             }
         }
@@ -1965,11 +2002,10 @@
             if(!activeUserPhone) return;
             if(confirm("هل أنت متأكد من تصفير الحساب أو تسليم الهدية؟")) {
                 const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone);
-                const field = selectedSystem === 'stamps' ? 'stamps' : 'points';
-                await ref.update({ [field]: 0 });
+                await ref.update({ points: 0 });
                 document.getElementById('cur-points').innerText = 0;
                 loadCustomers();
-                alert("تم التصفير بنجاح!");
+                alert("تم تصفير الحساب بنجاح!");
             }
         }
 
@@ -1979,67 +2015,23 @@
         }
 
         function startScanner() {
-            const scannerContainer = document.getElementById('reader');
-            scannerContainer.innerHTML = '<div id="qr-reader" style="width:100%"></div>';
-            html5QrCode = new Html5Qrcode("qr-reader");
+            const scanBtn = document.getElementById('start-scan-btn');
+            if(scanBtn) scanBtn.classList.add('hidden');
+            html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start(
                 { facingMode: "environment" },
-                { fps: 10, qrbox: { width: 250, height: 250 } },
+                { fps: 10, qrbox: 250 },
                 async (decodedText) => {
                     await html5QrCode.stop();
-                    scannerContainer.innerHTML = '';
-                    selectCustomerByPhone(decodedText);
+                    if(scanBtn) scanBtn.classList.remove('hidden');
+                    selectCustomerByPhone(decodedText.trim());
                 },
-                (error) => {}
+                (errorMessage) => {}
             ).catch(err => {
-                alert("تعذر تشغيل الكاميرا، تأكد من إعطاء الصلاحيات.");
+                console.error(err);
+                if(scanBtn) scanBtn.classList.remove('hidden');
+                alert("تعذر تشغيل كاميرا المسح الضوئي");
             });
-        }
-
-        function generateCafeQR() {
-            const container = document.getElementById('qrcode-container');
-            if(!container) return;
-            container.innerHTML = "";
-            const clientUrl = window.location.origin + "/client.html?cafe=" + currentCafeID;
-            new QRCode(container, {
-                text: clientUrl,
-                width: 150,
-                height: 150,
-                colorDark: "#000000",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.H
-            });
-        }
-
-        function downloadQR() {
-            const canvas = document.querySelector('#qrcode-container canvas');
-            if(!canvas) return;
-            const link = document.createElement('a');
-            link.download = currentCafeID + '-qr.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-        }
-
-        function startTimer() {
-            const timerEl = document.getElementById('countdown-timer');
-            const expiryEl = document.getElementById('expiry-date-text');
-            if(!expiryDateGlobal) return;
-            
-            if(expiryEl) expiryEl.innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
-
-            setInterval(() => {
-                const now = new Date();
-                const diff = expiryDateGlobal - now;
-                if(diff <= 0) {
-                    if(timerEl) timerEl.innerText = "انتهى الاشتراك";
-                    return;
-                }
-                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-                if(timerEl) timerEl.innerText = `${days} يوم ${hours}:${minutes}:${seconds}`;
-            }, 1000);
         }
     </script>
 </body>
