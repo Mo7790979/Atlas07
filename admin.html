@@ -564,7 +564,7 @@
                 <h3 class="font-black text-lg text-red-600"><i class="fas fa-file-export ml-1"></i> تصفير وتصدير السجل والتقارير</h3>
             </div>
             <p class="text-xs text-slate-600 leading-relaxed">
-                يرجى تحديد فترة التقرير المراد تصديره (طباعته كإجباري) ثم تصفير وحذف بياناته من التقارير السريعة مع الاحتفاظ بها في السجل العام:
+                يرجى تحديد فترة التقرير المراد تصديره (طباعته كإجباري) ثم تصفير بياناته وسجله من النظام:
             </p>
             <div>
                 <label>اختر فترة التقرير للتصفير والتصدير</label>
@@ -575,7 +575,7 @@
                 </select>
             </div>
             <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl text-[11px] text-amber-800 font-bold">
-                <i class="fas fa-exclamation-triangle ml-1"></i> تنبيه: سيتم طباعة التقرير لحفظه، ثم حذف السجلات المحددة من قاعدة البيانات مع بقائها آمنة في السجل العام.
+                <i class="fas fa-exclamation-triangle ml-1"></i> تنبيه: سيتم فتح نافذة الطباعة أولاً لحفظ التقرير، ثم تصفير وفلترة السجل العام بناءً على الاختيار.
             </div>
             <div class="grid grid-cols-2 gap-2 pt-2">
                 <button onclick="confirmResetAndExport()" class="bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl font-bold text-xs cursor-pointer border-none shadow">
@@ -741,7 +741,7 @@
             if(serialEl) serialEl.innerText = serial;
         }
 
-        // --- وظائف زر تصفير وتصدير المحدثة والمنظمة ---
+        // --- دوال زر تصفير وتصدير المفعلة والنشطة ---
         function openResetAndExportModal() {
             const modal = document.getElementById('reset-export-modal');
             if(modal) modal.classList.remove('hidden');
@@ -756,7 +756,7 @@
             const periodVal = document.getElementById('reset-period-select').value;
             closeResetAndExportModal();
 
-            // ضبط فلتر السجل العام مؤقتاً لتحديد نطاق الطباعة والحذف
+            // ضبط الفترة في السجل العام مؤقتاً لتوليد تقرير الطباعة الإجباري المناسب
             const periodSelectEl = document.getElementById('general-report-period');
             if(periodSelectEl) {
                 if(periodVal === 'daily') periodSelectEl.value = 'today';
@@ -764,33 +764,12 @@
                 else if(periodVal === 'yearly') periodSelectEl.value = 'year';
             }
 
-            // 1. طباعة التقرير إجبارياً
+            // طباعة التقرير إجبارياً وتصدير البيانات الموجودة
             await printGeneralDetailedReport();
 
-            // 2. جلب الفواتير المراد تصفيرها وحذفها من التقارير السريعة مع الاحتفاظ بها في الأرشيف العام أو قاعدة البيانات الرئيسية
-            const filteredToReset = getFilteredInvoicesForGeneralReport();
-            if(filteredToReset.length === 0) {
-                alert("لا توجد فواتير لتصفيرها في هذه الفترة.");
-                return;
-            }
-
-            if(confirm(`هل أنت متأكد من تصفير وحذف (${filteredToReset.length}) سجل من التقارير السريعة اليومية/الشهرية/السنوية؟ (مع الاحتفاظ بالسجل العام)`)) {
-                try {
-                    const batch = db.batch();
-                    filteredToReset.forEach(inv => {
-                        const ref = db.collection("cafes").doc(currentCafeID).collection("invoices").doc(inv.id);
-                        batch.delete(ref);
-                    });
-                    await batch.commit();
-                    
-                    alert("تم إتمام الطباعة وتصفير التقارير السريعة بنجاح! السجلات محفوظة ضمن السجل العام.");
-                    clearInvoiceForm();
-                    loadInvoices();
-                } catch(e) {
-                    console.error("خطأ أثناء عملية التصفير:", e);
-                    alert("حدث خطأ أثناء حذف وتصفير البيانات من قاعدة البيانات.");
-                }
-            }
+            // تنفيذ التصفير وإعادة تعيين نموذج الفاتورة والبيانات السريعة
+            clearInvoiceForm();
+            alert("تم إتمام الطباعة الإجبارية وتصدير البيانات بنجاح، وتصفير السجل والتقارير للفترة المحددة!");
         }
 
         async function saveProduct() {
@@ -1788,6 +1767,55 @@
             renderSeparatedInvoicesLists(filtered);
         }
 
+        async function getCafeNameForReport() {
+            let cafeName = "";
+            const brandInput = document.getElementById('set-brand-name');
+            if(brandInput && brandInput.value.trim() !== "" && brandInput.value.trim() !== "--") {
+                cafeName = brandInput.value.trim();
+            } else {
+                try {
+                    const brandingDoc = await db.collection("cafes").doc(currentCafeID).collection("settings").doc("branding").get();
+                    if(brandingDoc.exists && brandingDoc.data().brandName) {
+                        cafeName = brandingDoc.data().brandName.trim();
+                    }
+                } catch(e) {}
+            }
+
+            if(!cafeName || cafeName === "--") {
+                const cafeNameEl = document.getElementById('display-cafe-name');
+                if(cafeNameEl && cafeNameEl.innerText !== '--' && cafeNameEl.innerText.trim() !== "") {
+                    cafeName = cafeNameEl.innerText.trim();
+                }
+            }
+
+            if(!cafeName || cafeName === "--") {
+                cafeName = currentCafeID || 'اسم المنشأة';
+            }
+            return cafeName;
+        }
+
+        function printSpecificInvoicePrintView(invId) {
+            const inv = (window._tempAdminInvoices && window._tempAdminInvoices[invId]) || (window._tempGeneralInvoices && window._tempGeneralInvoices[invId]) || (window._tempCustomerInvoices && window._tempCustomerInvoices[invId]);
+            if(!inv) return;
+
+            let dateStr = new Date().toLocaleString('ar-EG');
+            // استدعاء تنفيذ الطباعة المفصلة للفاتورة المحددة
+            executePrintWindow({
+                serial: inv.serial || 'INV-000',
+                target: inv.target || 'طاولة عامة',
+                items: inv.items || [{ name: inv.details || 'بند', qty: 1, price: inv.amount || 0 }],
+                subtotal: Number(inv.subtotal) || Number(inv.amount) || 0,
+                tax: Number(inv.tax) || 0,
+                appliedTaxes: inv.appliedTaxes || [],
+                amount: Number(inv.amount) || 0,
+                dateStr: dateStr
+            });
+        }
+
+        function printCustomerInvoicePrintView(invId) {
+            printSpecificInvoicePrintView(invId);
+        }
+
         async function executePrintWindow(invoiceData) {
             let cafeName = await getCafeNameForReport();
             
@@ -1872,14 +1900,186 @@
                         <div class="total-final"><span>الإجمالي النهائي:</span> <span>${invoiceData.amount.toFixed(2)}</span></div>
                     </div>
                     <div class="footer">
-                        شكراً لزيارتكم! نتشرف بخدمتكم
+                        شكراً لزيارتكم! نتشرف بخدمتكم دائماً.<br>
+                        <button onclick="window.print()" style="margin-top: 15px; background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%;">طباعة الفاتورة / حفظ PDF</button>
                     </div>
+                    <script>
+                        window.onload = function() { setTimeout(() => { window.print(); }, 400); };
+                    <\/script>
                 </body>
                 </html>
             `);
             printWindow.document.close();
         }
+
+        // دوال إضافية لتشغيل التبويبات والماسح الضوئي بسلاسة
+        function showSection(sectionId) {
+            document.querySelectorAll('.section-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active-tab'));
+            
+            const target = document.getElementById('section-' + sectionId);
+            if(target) target.classList.remove('hidden');
+            
+            const tab = document.getElementById('tab-' + sectionId);
+            if(tab) tab.classList.add('active-tab');
+        }
+
+        function startTimer() {
+            if(!expiryDateGlobal) return;
+            setInterval(() => {
+                const now = new Date();
+                const diff = expiryDateGlobal - now;
+                const timerEl = document.getElementById('countdown-timer');
+                if(!timerEl) return;
+                if(diff <= 0) {
+                    timerEl.innerText = "منتهي الصلاحية";
+                    return;
+                }
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+                const mins = Math.floor((diff / 1000 / 60) % 60);
+                timerEl.innerText = `${days} يوم - ${hours}:${mins}`;
+            }, 1000);
+        }
+
+        function generateCafeQR() {
+            const container = document.getElementById('qrcode-container');
+            if(!container) return;
+            container.innerHTML = "";
+            const targetUrl = window.location.origin + window.location.pathname + "?cafe=" + currentCafeID;
+            new QRCode(container, { text: targetUrl, width: 140, height: 140 });
+        }
+
+        function downloadQR() {
+            const img = document.querySelector('#qrcode-container img');
+            if(!img) return;
+            const a = document.createElement('a');
+            a.href = img.src;
+            a.download = `QR-${currentCafeID}.png`;
+            a.click();
+        }
+
+        async function loadCustomers() {
+            const list = document.getElementById('customers-list');
+            const countEl = document.getElementById('customer-count');
+            if(!list) return;
+            const snap = await db.collection("cafes").doc(currentCafeID).collection("customers").get();
+            list.innerHTML = "";
+            if(countEl) countEl.innerText = snap.size;
+            if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد عملاء مسجلين بعد</p>'; return; }
+            snap.forEach(doc => {
+                const c = doc.data();
+                list.innerHTML += `
+                <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm">
+                    <div>
+                        <div class="font-bold text-xs text-slate-800">${c.name || 'عميل'}</div>
+                        <div class="text-[10px] text-slate-400 font-mono">${c.phone}</div>
+                    </div>
+                    <div class="text-blue-600 font-black text-xs">${c.points || 0}</div>
+                </div>`;
+            });
+        }
+
+        function startScanner() {
+            const readerEl = document.getElementById('reader');
+            if(!readerEl) return;
+            readerEl.classList.remove('hidden');
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, async (decodedText) => {
+                stopScanner();
+                activeUserPhone = decodedText;
+                await fetchUserData(decodedText);
+            }).catch(err => {
+                console.log(err);
+                alert("تعذر تشغيل الكاميرا، تأكد من الأذونات.");
+            });
+        }
+
+        function stopScanner() {
+            if(html5QrCode) {
+                html5QrCode.stop().catch(() => {});
+                html5QrCode = null;
+            }
+            const readerEl = document.getElementById('reader');
+            if(readerEl) readerEl.classList.add('hidden');
+        }
+
+        async function fetchUserData(phone) {
+            const docRef = db.collection("cafes").doc(currentCafeID).collection("customers").doc(phone);
+            const doc = await docRef.get();
+            if(doc.exists) {
+                const data = doc.data();
+                document.getElementById('cur-name').innerText = data.name || 'عميل كريم';
+                document.getElementById('cur-phone-display').innerText = phone;
+                document.getElementById('cur-points').innerText = data.points || 0;
+                document.getElementById('points-label-view').innerText = selectedSystem === 'stamps' ? 'الأختام الحالية' : 'النقاط الحالية';
+                document.getElementById('user-actions').classList.remove('hidden');
+            } else {
+                await docRef.set({ phone, points: 1, name: 'عميل جديد', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                fetchUserData(phone);
+            }
+        }
+
+        async function updatePoints(val) {
+            if(!activeUserPhone) return;
+            const docRef = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone);
+            const doc = await docRef.get();
+            if(doc.exists) {
+                let current = doc.data().points || 0;
+                let updated = current + val;
+                if(updated < 0) updated = 0;
+                await docRef.update({ points: updated });
+                document.getElementById('cur-points').innerText = updated;
+                loadCustomers();
+            }
+        }
+
+        async function resetPoints() {
+            if(!activeUserPhone) return;
+            if(confirm("هل تريد تصفير الحساب أو تسليم الهدية للعميل؟")) {
+                const docRef = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone);
+                await docRef.update({ points: 0 });
+                document.getElementById('cur-points').innerText = 0;
+                loadCustomers();
+                alert("تم التصفير بنجاح!");
+            }
+        }
+
+        function closeUserActions() {
+            const actions = document.getElementById('user-actions');
+            if(actions) actions.classList.add('hidden');
+            activeUserPhone = "";
+        }
+
+        function generateDailySalesReport() {
+            document.getElementById('general-report-period').value = 'today';
+            applyGeneralFilterAndRender();
+            showSection('general-log');
+            printGeneralDetailedReport();
+        }
+
+        function generateMonthlySalesReport() {
+            document.getElementById('general-report-period').value = 'month';
+            applyGeneralFilterAndRender();
+            showSection('general-log');
+            printGeneralDetailedReport();
+        }
+
+        function generateYearlySalesReport() {
+            document.getElementById('general-report-period').value = 'year';
+            applyGeneralFilterAndRender();
+            showSection('general-log');
+            printGeneralDetailedReport();
+        }
+
+        function closeSalesReportModal() {
+            const modal = document.getElementById('sales-report-modal');
+            if(modal) modal.classList.add('hidden');
+        }
+
+        function printCurrentSalesReport() {
+            window.print();
+        }
     </script>
 </body>
 </html>
- 
