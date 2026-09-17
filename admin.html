@@ -199,8 +199,6 @@
                     <button onclick="generateDailySalesReport()" class="top-action-bar-btn" style="background:#d97706;"><i class="fas fa-chart-line"></i> <span>التقرير اليومي</span></button>
                     <button onclick="generateMonthlySalesReport()" class="top-action-bar-btn" style="background:#059669;"><i class="fas fa-calendar-alt"></i> <span>التقرير الشهري</span></button>
                     <button onclick="generateYearlySalesReport()" class="top-action-bar-btn" style="background:#2563eb;"><i class="fas fa-calendar-check"></i> <span>التقرير السنوي</span></button>
-                    <!-- زر تصفير وتصدير المُضاف والمحدث حديثاً -->
-                    <button onclick="openResetAndExportModal()" class="top-action-bar-btn" style="background:#ef4444;"><i class="fas fa-file-export"></i> <span>تصفير وتصدير</span></button>
                 </div>
                 <div class="text-xs font-bold text-emerald-400 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700">
                     <i class="fas fa-cash-register ml-1 text-blue-400"></i> نظام نقاط البيع (المنيو التفاعلي السريع)
@@ -556,38 +554,6 @@
         </div>
     </div>
 
-    <!-- نافذة منبثقة لتصفير وتصدير السجل العام والتقارير -->
-    <div id="reset-export-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 text-right">
-            <div class="flex justify-between items-center border-b pb-3">
-                <button onclick="closeResetAndExportModal()" class="text-slate-400 hover:text-red-500 font-bold text-xl cursor-pointer bg-transparent border-none">&times;</button>
-                <h3 class="font-black text-lg text-red-600"><i class="fas fa-file-export ml-1"></i> تصفير وتصدير السجل والتقارير</h3>
-            </div>
-            <p class="text-xs text-slate-600 leading-relaxed">
-                يرجى تحديد فترة التقرير المراد تصديره (طباعته كإجباري) ثم تصفير بياناته وسجله من النظام:
-            </p>
-            <div>
-                <label>اختر فترة التقرير للتصفير والتصدير</label>
-                <select id="reset-period-select" class="text-xs py-2 font-bold">
-                    <option value="daily">تقرير يومي (اليوم الحالي)</option>
-                    <option value="monthly">تقرير شهري (الشهر الحالي)</option>
-                    <option value="yearly">تقرير سنوي (السنة الحالية)</option>
-                </select>
-            </div>
-            <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl text-[11px] text-amber-800 font-bold">
-                <i class="fas fa-exclamation-triangle ml-1"></i> تنبيه: سيتم فتح نافذة الطباعة أولاً لحفظ التقرير، ثم تصفير وفلترة السجل العام بناءً على الاختيار.
-            </div>
-            <div class="grid grid-cols-2 gap-2 pt-2">
-                <button onclick="confirmResetAndExport()" class="bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl font-bold text-xs cursor-pointer border-none shadow">
-                    طباعة إجبارية وتصفير
-                </button>
-                <button onclick="closeResetAndExportModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 py-3 rounded-xl font-bold text-xs cursor-pointer border-none">
-                    إلغاء
-                </button>
-            </div>
-        </div>
-    </div>
-
     <!-- نافذة تقرير المبيعات المفصلة المنبثقة -->
     <div id="sales-report-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto text-right">
@@ -739,37 +705,6 @@
             const serial = 'INV-' + Math.floor(100000 + Math.random() * 900000);
             const serialEl = document.getElementById('invoice-serial');
             if(serialEl) serialEl.innerText = serial;
-        }
-
-        // --- وظائف زر تصفير وتصدير الجديد ---
-        function openResetAndExportModal() {
-            const modal = document.getElementById('reset-export-modal');
-            if(modal) modal.classList.remove('hidden');
-        }
-
-        function closeResetAndExportModal() {
-            const modal = document.getElementById('reset-export-modal');
-            if(modal) modal.classList.add('hidden');
-        }
-
-        async function confirmResetAndExport() {
-            const periodVal = document.getElementById('reset-period-select').value;
-            closeResetAndExportModal();
-
-            // ضبط الفترة في السجل العام مؤقتاً لتوليد تقرير الطباعة الإجباري المناسب
-            const periodSelectEl = document.getElementById('general-report-period');
-            if(periodSelectEl) {
-                if(periodVal === 'daily') periodSelectEl.value = 'today';
-                else if(periodVal === 'monthly') periodSelectEl.value = 'month';
-                else if(periodVal === 'yearly') periodSelectEl.value = 'year';
-            }
-
-            // طباعة التقرير إجبارياً
-            await printGeneralDetailedReport();
-
-            // تنفيذ التصفير وإعادة تعيين نموذج الفاتورة والبيانات السريعة
-            clearInvoiceForm();
-            alert("تم إتمام الطباعة الإجبارية بنجاح وتصفير مؤشرات التقارير السريعة للفترة المحددة!");
         }
 
         async function saveProduct() {
@@ -1767,6 +1702,48 @@
             renderSeparatedInvoicesLists(filtered);
         }
 
+        async function getCafeNameForReport() {
+            try {
+                const doc = await db.collection("cafes").doc(currentCafeID).collection("settings").doc("branding").get();
+                if(doc.exists && doc.data().brandName) return doc.data().brandName;
+            } catch(e) {}
+            return currentCafeID || "لوحة التحكم";
+        }
+
+        async function printSpecificInvoicePrintView(invId) {
+            const inv = allInvoicesCache.find(i => i.id === invId);
+            if(!inv) return;
+
+            let dateStr = '';
+            if(inv.date && typeof inv.date.toDate === 'function') {
+                dateStr = new Date(inv.date.toDate()).toLocaleString('ar-EG');
+            }
+
+            const subtotal = Number(inv.subtotal) || Number(inv.amount) || 0;
+            const tax = Number(inv.tax) || 0;
+            const amount = Number(inv.amount) || (subtotal + tax);
+            
+            let items = inv.items;
+            if(!items || !Array.isArray(items) || items.length === 0) {
+                items = [{ name: inv.details || 'بند عام', qty: 1, price: subtotal }];
+            }
+
+            await executePrintWindow({
+                serial: inv.serial || 'INV-000',
+                target: inv.target || 'طاولة عامة',
+                items: items,
+                subtotal: subtotal,
+                tax: tax,
+                appliedTaxes: inv.appliedTaxes || [],
+                amount: amount,
+                dateStr: dateStr
+            });
+        }
+
+        async function printCustomerInvoicePrintView(invId) {
+            await printSpecificInvoicePrintView(invId);
+        }
+
         async function executePrintWindow(invoiceData) {
             let cafeName = await getCafeNameForReport();
             
@@ -1864,126 +1841,32 @@
             printWindow.document.close();
         }
 
-        async function printSpecificInvoicePrintView(invId) {
-            const inv = (window._tempAdminInvoices && window._tempAdminInvoices[invId]) || (window._tempGeneralInvoices && window._tempGeneralInvoices[invId]);
-            if(!inv) return;
+        async function generateDailySalesReport() { await generateSalesReportGeneric('daily', 'التقرير اليومي للمبيعات'); }
+        async function generateMonthlySalesReport() { await generateSalesReportGeneric('monthly', 'التقرير الشهري للمبيعات'); }
+        async function generateYearlySalesReport() { await generateSalesReportGeneric('yearly', 'التقرير السنوي للمبيعات'); }
 
-            let dateStr = '';
-            if(inv.date && typeof inv.date.toDate === 'function') {
-                dateStr = new Date(inv.date.toDate()).toLocaleString('ar-EG');
-            }
-
-            let items = inv.items || [];
-            if(items.length === 0) {
-                items = [{ name: inv.details || 'بند الفاتورة', qty: 1, price: inv.subtotal || inv.amount || 0 }];
-            }
-
-            const subtotal = Number(inv.subtotal) || Number(inv.amount) || 0;
-            const tax = Number(inv.tax) || 0;
-            const amount = Number(inv.amount) || (subtotal + tax);
-
-            await executePrintWindow({
-                serial: inv.serial || 'INV-000',
-                target: inv.target || 'طاولة عامة',
-                dateStr,
-                items,
-                subtotal,
-                tax,
-                appliedTaxes: inv.appliedTaxes || [],
-                amount
-            });
-        }
-
-        async function printCustomerInvoicePrintView(invId) {
-            const inv = window._tempCustomerInvoices && window._tempCustomerInvoices[invId];
-            if(!inv) return;
-
-            let dateStr = '';
-            if(inv.date && typeof inv.date.toDate === 'function') {
-                dateStr = new Date(inv.date.toDate()).toLocaleString('ar-EG');
-            }
-
-            let items = inv.items || [];
-            if(items.length === 0) {
-                items = [{ name: inv.details || 'طلب زبون', qty: 1, price: inv.subtotal || inv.amount || 0 }];
-            }
-
-            const subtotal = Number(inv.subtotal) || Number(inv.amount) || 0;
-            const tax = Number(inv.tax) || 0;
-            const amount = Number(inv.amount) || (subtotal + tax);
-
-            await executePrintWindow({
-                serial: inv.serial || 'INV-000',
-                target: inv.target || 'طاولة الزبون',
-                dateStr,
-                items,
-                subtotal,
-                tax,
-                appliedTaxes: inv.appliedTaxes || [],
-                amount
-            });
-        }
-
-        async function getCafeNameForReport() {
-            try {
-                const doc = await db.collection("cafes").doc(currentCafeID).collection("settings").doc("branding").get();
-                if(doc.exists && doc.data().brandName) {
-                    return doc.data().brandName;
+        async function generateSalesReportGeneric(periodType, titleText) {
+            const now = new Date();
+            let filtered = allInvoicesCache.filter(inv => {
+                if(!inv.date || typeof inv.date.toDate !== 'function') return false;
+                const d = inv.date.toDate();
+                if(periodType === 'daily') {
+                    return d.toDateString() === now.toDateString();
+                } else if(periodType === 'monthly') {
+                    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                } else if(periodType === 'yearly') {
+                    return d.getFullYear() === now.getFullYear();
                 }
-            } catch(e) {}
-            return currentCafeID || "المنشأة";
-        }
-
-        // --- دوال التقارير اليومية والشهرية والسنوية المنبثقة ---
-        async function generateDailySalesReport() {
-            const now = new Date();
-            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            
-            const matched = allInvoicesCache.filter(inv => {
-                if(!inv.date || typeof inv.date.toDate !== 'function') return false;
-                return inv.date.toDate() >= startOfDay;
+                return false;
             });
 
-            openSalesReportModal("التقرير اليومي للمبيعات (اليوم)", matched);
-        }
-
-        async function generateMonthlySalesReport() {
-            const now = new Date();
-            const matched = allInvoicesCache.filter(inv => {
-                if(!inv.date || typeof inv.date.toDate !== 'function') return false;
-                const d = inv.date.toDate();
-                return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-            });
-
-            openSalesReportModal("التقرير الشهري للمبيعات (الشهر الحالي)", matched);
-        }
-
-        async function generateYearlySalesReport() {
-            const now = new Date();
-            const matched = allInvoicesCache.filter(inv => {
-                if(!inv.date || typeof inv.date.toDate !== 'function') return false;
-                const d = inv.date.toDate();
-                return d.getFullYear() === now.getFullYear();
-            });
-
-            openSalesReportModal("التقرير السنوي للمبيعات (السنة الحالية)", matched);
-        }
-
-        async function openSalesReportModal(title, invoices) {
-            const modal = document.getElementById('sales-report-modal');
-            const titleEl = document.getElementById('sales-report-title');
-            const contentEl = document.getElementById('sales-report-content');
-            if(!modal || !contentEl) return;
-
-            if(titleEl) titleEl.innerHTML = `<i class="fas fa-file-invoice-dollar text-amber-600 ml-1"></i> ${title}`;
-
-            let totalCount = invoices.length;
-            let totalRevenue = 0;
+            let totalCount = filtered.length;
+            let totalRev = 0;
             let totalTax = 0;
             let totalFinal = 0;
+            let itemsSummaryMap = {};
 
-            let itemsListHtml = '';
-            invoices.forEach((inv, index) => {
+            filtered.forEach(inv => {
                 const sub = Number(inv.subtotal) || Number(inv.amount) || 0;
                 let tax = Number(inv.tax) || 0;
                 if(inv.appliedTaxes && inv.appliedTaxes.length > 0) {
@@ -1991,130 +1874,77 @@
                 }
                 const amt = Number(inv.amount) || (sub + tax);
 
-                totalRevenue += sub;
+                totalRev += sub;
                 totalTax += tax;
                 totalFinal += amt;
 
-                let dateStr = '';
-                if(inv.date && typeof inv.date.toDate === 'function') {
-                    dateStr = new Date(inv.date.toDate()).toLocaleTimeString('ar-EG');
+                if(inv.items && Array.isArray(inv.items)) {
+                    inv.items.forEach(i => {
+                        const iName = i.name || 'بند';
+                        const iQty = Number(i.qty) || 1;
+                        const iTotal = iQty * (Number(i.price) || 0);
+                        if(!itemsSummaryMap[iName]) itemsSummaryMap[iName] = { qty: 0, total: 0 };
+                        itemsSummaryMap[iName].qty += iQty;
+                        itemsSummaryMap[iName].total += iTotal;
+                    });
                 }
-
-                itemsListHtml += `
-                <div class="p-2.5 bg-slate-50 rounded-xl border mb-2 text-right">
-                    <div class="flex justify-between items-center font-bold text-xs text-slate-800 mb-1">
-                        <span>${index + 1}. ${inv.target || 'طاولة'} (${inv.serial || 'INV-000'})</span>
-                        <span class="text-emerald-700 font-black">${amt.toFixed(2)}</span>
-                    </div>
-                    <div class="text-[10px] text-slate-500 mb-1">${inv.details || 'بنود الفاتورة'}</div>
-                    <div class="flex justify-between text-[10px] text-slate-400 border-t pt-1">
-                        <span>المبلغ الفرعي: ${sub.toFixed(2)} | الضريبة: ${tax.toFixed(2)}</span>
-                        <span>${dateStr}</span>
-                    </div>
-                </div>`;
             });
 
-            if(invoices.length === 0) {
-                itemsListHtml = '<p class="text-xs text-slate-400 text-center py-6">لا توجد مبيعات مسجلة في هذه الفترة</p>';
+            let itemsListHTML = '';
+            for(let [name, data] of Object.entries(itemsSummaryMap)) {
+                itemsListHTML += `
+                <div class="flex justify-between items-center p-2 bg-slate-50 rounded-lg border text-xs">
+                    <span class="font-bold text-slate-800">${name}</span>
+                    <div class="text-left font-mono">
+                        <span class="text-blue-600 ml-2">الكمية: ${data.qty}</span>
+                        <span class="text-emerald-600 font-bold">المجموع: ${data.total.toFixed(2)}</span>
+                    </div>
+                </div>`;
             }
 
-            contentEl.innerHTML = `
-                <div class="grid grid-cols-3 gap-2 bg-blue-50 p-3 rounded-xl border border-blue-200 text-center">
-                    <div>
-                        <span class="text-[10px] text-slate-500 block font-bold">عدد الفواتير</span>
-                        <strong class="text-blue-900 text-sm">${totalCount}</strong>
-                    </div>
-                    <div>
-                        <span class="text-[10px] text-slate-500 block font-bold">المجموع الفرعي</span>
-                        <strong class="text-slate-800 text-sm">${totalRevenue.toFixed(2)}</strong>
-                    </div>
-                    <div>
-                        <span class="text-[10px] text-slate-500 block font-bold">الإجمالي النهائي</span>
-                        <strong class="text-emerald-700 text-sm">${totalFinal.toFixed(2)}</strong>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <label class="font-bold text-xs text-slate-700 mb-2 block">تفاصيل فواتير الفترة:</label>
-                    <div class="max-h-60 overflow-y-auto space-y-1 pr-1">
-                        ${itemsListHtml}
-                    </div>
-                </div>
-            `;
+            if(!itemsListHTML) {
+                itemsListHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد تفاصيل أصناف مسجلة</p>';
+            }
 
-            // حفظ دالة الطباعة الخاصة بهذا التقرير
-            currentReportPrintFunction = async () => {
+            currentReportPrintFunction = async function() {
                 const cafeName = await getCafeNameForReport();
                 const printWindow = window.open('', '_blank');
-                if(!printWindow) { alert("يرجى السماح بفتح النوافذ المنبثقة لطباعة التقرير."); return; }
-
-                let reportRows = '';
-                invoices.forEach((inv, i) => {
-                    const sub = Number(inv.subtotal) || Number(inv.amount) || 0;
-                    let tax = Number(inv.tax) || 0;
-                    if(inv.appliedTaxes && inv.appliedTaxes.length > 0) {
-                        tax = inv.appliedTaxes.reduce((acc, t) => acc + (Number(t.value) || 0), 0);
-                    }
-                    const amt = Number(inv.amount) || (sub + tax);
-                    reportRows += `
-                        <tr>
-                            <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center;">${i + 1}</td>
-                            <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center; font-family: monospace;">${inv.serial || 'INV-000'}</td>
-                            <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: right;">${inv.target || '-'}</td>
-                            <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: right;">${inv.details || '-'}</td>
-                            <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center;">${sub.toFixed(2)}</td>
-                            <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center;">${tax.toFixed(2)}</td>
-                            <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center; font-weight: bold; color: #047857;">${amt.toFixed(2)}</td>
-                        </tr>
-                    `;
-                });
+                if(!printWindow) return;
 
                 printWindow.document.write(`
                     <!DOCTYPE html>
                     <html lang="ar" dir="rtl">
                     <head>
                         <meta charset="UTF-8">
-                        <title>${title} - ${cafeName}</title>
+                        <title>${titleText} - ${cafeName}</title>
                         <style>
-                            body { font-family: 'Cairo', Tahoma, sans-serif; padding: 20px; color: #1e293b; max-width: 800px; margin: auto; direction: rtl; }
-                            .header { text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 10px; margin-bottom: 15px; }
-                            .header h2 { margin: 0 0 5px 0; font-size: 20px; color: #2563eb; }
-                            .summary { display: flex; justify-content: space-around; background: #f1f5f9; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 12px; font-weight: bold; }
-                            table { width: 100%; border-collapse: collapse; font-size: 11px; }
-                            th { background: #2563eb; color: white; padding: 6px; border: 1px solid #1d4ed8; }
-                            td { border: 1px solid #cbd5e1; }
+                            body { font-family: 'Cairo', Tahoma, sans-serif; padding: 20px; color: #1e293b; max-width: 600px; margin: auto; direction: rtl; }
+                            h2 { text-align: center; color: #2563eb; margin-bottom: 5px; }
+                            .meta { text-align: center; font-size: 12px; color: #666; margin-bottom: 20px; font-weight: bold; }
+                            .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+                            .card { background: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; text-align: center; }
+                            .card span { display: block; font-size: 11px; color: #64748b; font-weight: bold; margin-bottom: 4px; }
+                            .card strong { font-size: 16px; font-weight: 900; color: #1e293b; }
+                            h4 { border-bottom: 2px solid #2563eb; padding-bottom: 5px; font-size: 14px; margin-top: 20px; color: #1e293b; }
+                            .item-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; font-size: 12px; }
                             @media print { body { padding: 0; } button { display: none; } }
                         </style>
                     </head>
                     <body>
-                        <div class="header">
-                            <h2>${cafeName}</h2>
-                            <p style="margin: 0; font-weight: bold;">${title}</p>
+                        <h2>${cafeName}</h2>
+                        <div class="meta">${titleText} - تاريخ الإصدار: ${new Date().toLocaleString('ar-EG')}</div>
+                        
+                        <div class="grid">
+                            <div class="card"><span>عدد الفواتير</span><strong>${totalCount}</strong></div>
+                            <div class="card"><span>إجمالي الإيرادات (الفرعي)</span><strong>${totalRev.toFixed(2)}</strong></div>
+                            <div class="card"><span>إجمالي الضرائب</span><strong style="color: #7c3aed;">${totalTax.toFixed(2)}</strong></div>
+                            <div class="card"><span>الإجمالي النهائي</span><strong style="color: #059669;">${totalFinal.toFixed(2)}</strong></div>
                         </div>
-                        <div class="summary">
-                            <div>عدد الفواتير: ${totalCount}</div>
-                            <div>إجمالي الإيرادات: ${totalRevenue.toFixed(2)}</div>
-                            <div>إجمالي الضرائب: ${totalTax.toFixed(2)}</div>
-                            <div style="color: #047857;">الإجمالي الكلي: ${totalFinal.toFixed(2)}</div>
-                        </div>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>رقم الفاتورة</th>
-                                    <th>العميل / الطاولة</th>
-                                    <th>تفاصيل البنود</th>
-                                    <th>المبلغ الفرعي</th>
-                                    <th>الضريبة</th>
-                                    <th>الإجمالي النهائي</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${reportRows}
-                            </tbody>
-                        </table>
-                        <div style="text-align: center; margin-top: 20px;">
-                            <button onclick="window.print()" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">طباعة التقرير</button>
-                        </div>
+
+                        <h4>ملخص الأصناف المباعة</h4>
+                        <div>${itemsListHTML}</div>
+
+                        <button onclick="window.print()" style="margin-top: 25px; background: #2563eb; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%;">طباعة التقرير</button>
                         <script>window.onload = function() { setTimeout(() => window.print(), 300); };<\/script>
                     </body>
                     </html>
@@ -2122,7 +1952,36 @@
                 printWindow.document.close();
             };
 
-            modal.classList.remove('hidden');
+            const modalTitle = document.getElementById('sales-report-title');
+            const modalContent = document.getElementById('sales-report-content');
+            const modal = document.getElementById('sales-report-modal');
+
+            if(modalTitle) modalTitle.innerHTML = `<i class="fas fa-file-invoice-dollar text-amber-600 ml-1"></i> ${titleText}`;
+            if(modalContent) {
+                modalContent.innerHTML = `
+                    <div class="grid grid-cols-2 gap-3 text-center mb-4">
+                        <div class="bg-slate-50 p-3 rounded-xl border shadow-sm">
+                            <span class="text-[10px] text-slate-400 font-bold block">عدد الفواتير</span>
+                            <strong class="text-base font-black text-blue-900">${totalCount}</strong>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border shadow-sm">
+                            <span class="text-[10px] text-slate-400 font-bold block">الإيراد الفرعي</span>
+                            <strong class="text-base font-black text-slate-800">${totalRev.toFixed(2)}</strong>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border shadow-sm">
+                            <span class="text-[10px] text-slate-400 font-bold block">إجمالي الضرائب</span>
+                            <strong class="text-base font-black text-purple-700">${totalTax.toFixed(2)}</strong>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border shadow-sm">
+                            <span class="text-[10px] text-slate-400 font-bold block">الإجمالي النهائي</span>
+                            <strong class="text-base font-black text-emerald-700">${totalFinal.toFixed(2)}</strong>
+                        </div>
+                    </div>
+                    <h4 class="font-bold text-slate-700 text-xs mb-2 border-r-4 border-blue-600 pr-2">ملخص الأصناف المباعة خلال الفترات</h4>
+                    <div class="space-y-1.5 max-h-48 overflow-y-auto">${itemsListHTML}</div>
+                `;
+            }
+            if(modal) modal.classList.remove('hidden');
         }
 
         function closeSalesReportModal() {
@@ -2136,57 +1995,117 @@
             }
         }
 
-        // --- باقي دوال النظام الأساسية ---
+        function showSection(sec) {
+            document.querySelectorAll('.section-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active-tab'));
+            
+            const targetSec = document.getElementById('section-' + sec);
+            const targetTab = document.getElementById('tab-' + sec);
+            
+            if(targetSec) targetSec.classList.remove('hidden');
+            if(targetTab) targetTab.classList.add('active-tab');
+
+            if(sec === 'scan' && html5QrCode && html5QrCode.isScanning) {
+                // Keep scanner if active
+            }
+        }
+
         async function loadCustomers() {
             const list = document.getElementById('customers-list');
-            const countEl = document.getElementById('customer-count');
+            const count = document.getElementById('customer-count');
             if(!list) return;
             const snap = await db.collection("cafes").doc(currentCafeID).collection("customers").get();
             list.innerHTML = "";
-            if(countEl) countEl.innerText = snap.size;
-            if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد عملاء مسجلين بعد</p>'; return; }
+            if(count) count.innerText = snap.size;
+            if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا يوجد عملاء مسجلين بعد</p>'; return; }
             snap.forEach(doc => {
                 const c = doc.data();
                 list.innerHTML += `
-                <div onclick='openCustomerEditModal("${doc.id}", "${c.name || ''}", ${c.points || 0})' class="customer-row flex justify-between items-center p-3 bg-slate-50 rounded-xl border mb-2 text-xs">
-                    <div>
-                        <span class="font-bold text-slate-800 block">${c.name || 'بدون اسم'}</span>
-                        <span class="text-[10px] text-slate-400 font-mono">${doc.id}</span>
+                <div onclick="selectCustomerDirect('${c.phone}', '${c.name}', ${c.points || 0})" class="customer-row flex justify-between items-center p-3 bg-slate-50 rounded-xl border mb-2 shadow-sm">
+                    <div class="text-right">
+                        <div class="font-bold text-xs text-slate-800">${c.name || 'بدون اسم'}</div>
+                        <div class="text-[10px] text-slate-400 font-mono">${c.phone}</div>
                     </div>
-                    <span class="bg-blue-600 text-white px-2.5 py-1 rounded-lg font-bold">${c.points || 0}</span>
+                    <span class="bg-blue-100 text-blue-800 text-xs font-black px-2.5 py-1 rounded-lg">${c.points || 0}</span>
                 </div>`;
             });
         }
 
-        function openCustomerEditModal(phone, name, points) {
+        function selectCustomerDirect(phone, name, points) {
             activeUserPhone = phone;
-            document.getElementById('cur-name').innerText = name || 'عميل';
+            document.getElementById('cur-name').innerText = name;
             document.getElementById('cur-phone-display').innerText = phone;
             document.getElementById('cur-points').innerText = points;
-            document.getElementById('points-label-view').innerText = selectedSystem === 'stamps' ? 'الأختام الحالية' : 'النقاط الحالية';
+            document.getElementById('points-label-view').innerText = selectedSystem === 'stamps' ? 'الأختام الحالية' : 'إجمالي النقاط';
             document.getElementById('user-actions').classList.remove('hidden');
+            showSection('scan');
+        }
+
+        function startScanner() {
+            const readerEl = document.getElementById('reader');
+            if(!readerEl) return;
+            readerEl.innerHTML = "";
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: 250 },
+                async (decodedText) => {
+                    await handleQRCodeScanned(decodedText);
+                    await stopScanner();
+                },
+                (errorMessage) => {}
+            ).catch(err => {
+                console.error(err);
+                alert("تعذر تشغيل كاميرا المسح الضوئي. تأكد من منح الصلاحيات.");
+            });
+        }
+
+        async function stopScanner() {
+            if(html5QrCode && html5QrCode.isScanning) {
+                try {
+                    await html5QrCode.stop();
+                    html5QrCode.clear();
+                } catch(e) {}
+            }
+        }
+
+        async function handleQRCodeScanned(phone) {
+            activeUserPhone = phone.trim();
+            const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone);
+            const doc = await ref.get();
+            let name = "زبون جديد";
+            let points = 0;
+            if(doc.exists) {
+                name = doc.data().name || "زبون دائم";
+                points = doc.data().points || 0;
+            } else {
+                await ref.set({ phone: activeUserPhone, name: "زبون جديد", points: 0, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+            }
+            selectCustomerDirect(activeUserPhone, name, points);
         }
 
         async function updatePoints(val) {
             if(!activeUserPhone) return;
             const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone);
-            await db.runTransaction(async (transaction) => {
-                const doc = await transaction.get(ref);
-                if (!doc.exists) throw "العميل غير موجود!";
-                let newPoints = (doc.data().points || 0) + val;
-                if(newPoints < 0) newPoints = 0;
-                transaction.update(ref, { points: newPoints });
-                document.getElementById('cur-points').innerText = newPoints;
-            });
+            const doc = await ref.get();
+            let current = doc.exists ? (doc.data().points || 0) : 0;
+            let updated = current + val;
+            if(updated < 0) updated = 0;
+            
+            await ref.update({ points: updated });
+            document.getElementById('cur-points').innerText = updated;
             loadCustomers();
         }
 
         async function resetPoints() {
-            if(!activeUserPhone || !confirm("هل أنت متأكد من تصفير رصيد العميل / تسليم الهدية؟")) return;
-            await db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone).update({ points: 0 });
-            document.getElementById('cur-points').innerText = 0;
-            alert("تم تصفير الحساب بنجاح!");
-            loadCustomers();
+            if(!activeUserPhone) return;
+            if(confirm("هل أنت متأكد من تصفير الحساب أو تسليم الهدية؟")) {
+                const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone);
+                await ref.update({ points: 0 });
+                document.getElementById('cur-points').innerText = 0;
+                loadCustomers();
+                alert("تم تصفير رصيد العميل بنجاح!");
+            }
         }
 
         function closeUserActions() {
@@ -2198,97 +2117,50 @@
             const container = document.getElementById('qrcode-container');
             if(!container) return;
             container.innerHTML = "";
-            const customerURL = window.location.origin + "/customer.html?cafe=" + currentCafeID;
-            new QRCode(container, { text: customerURL, width: 140, height: 140 });
+            const customerUrl = window.location.origin + "/customer.html?cafe=" + currentCafeID;
+            new QRCode(container, {
+                text: customerUrl,
+                width: 150,
+                height: 150,
+                colorDark: "#1e293b",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
         }
 
         function downloadQR() {
             const img = document.querySelector('#qrcode-container img');
-            if(img) {
-                const link = document.createElement('a');
-                link.download = `QR-${currentCafeID}.png`;
-                link.href = img.src;
-                link.click();
-            }
-        }
-
-        function startScanner() {
-            const readerDiv = document.getElementById('reader');
-            if(readerDiv) readerDiv.classList.remove('hidden');
-            if(html5QrCode) {
-                try { html5QrCode.stop().catch(() => {}); } catch(e) {}
-            }
-            html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: { width: 200, height: 200 } },
-                async (decodedText) => {
-                    try { html5QrCode.stop().catch(() => {}); } catch(e) {}
-                    if(readerDiv) readerDiv.classList.add('hidden');
-                    
-                    let phone = decodedText;
-                    if(decodedText.includes('phone=')) {
-                        try {
-                            const urlObj = new URL(decodedText);
-                            phone = urlObj.searchParams.get('phone') || decodedText;
-                        } catch(err) {}
-                    }
-                    
-                    const doc = await db.collection("cafes").doc(currentCafeID).collection("customers").doc(phone).get();
-                    if(doc.exists) {
-                        openCustomerEditModal(phone, doc.data().name, doc.data().points || 0);
-                    } else {
-                        await db.collection("cafes").doc(currentCafeID).collection("customers").doc(phone).set({
-                            name: "عميل جديد", points: 0, createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        openCustomerEditModal(phone, "عميل جديد", 0);
-                    }
-                },
-                (errorMessage) => {}
-            ).catch(err => {
-                alert("تعذر تشغيل الكاميرا. يجدر التأكد من صلاحيات المتصفح أو إدخال الكود يدوياً.");
-            });
+            if(!img) { alert("الكود غير جاهز للتحميل بعد"); return; }
+            const a = document.createElement('a');
+            a.href = img.src;
+            a.download = `QR-Cafe-${currentCafeID}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
 
         function startTimer() {
-            if(!expiryDateGlobal) return;
+            const timerEl = document.getElementById('countdown-timer');
+            const expiryEl = document.getElementById('expiry-date-text');
+            if(expiryDateGlobal && expiryEl) {
+                expiryEl.innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
+            }
+
             setInterval(() => {
+                if(!expiryDateGlobal) return;
                 const now = new Date();
                 const diff = expiryDateGlobal - now;
-                const timerEl = document.getElementById('countdown-timer');
-                const expiryTextEl = document.getElementById('expiry-date-text');
-                
-                if(expiryTextEl) expiryTextEl.innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
-
                 if(diff <= 0) {
-                    if(timerEl) timerEl.innerText = "منتهي الصلاحية";
+                    if(timerEl) timerEl.innerText = "منتهي الاشتراك";
                     return;
                 }
                 const days = Math.floor(diff / (1000 * 60 * 60 * 24));
                 const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
                 const minutes = Math.floor((diff / 1000 / 60) % 60);
                 const seconds = Math.floor((diff / 1000) % 60);
-                
-                if(timerEl) timerEl.innerText = `${days}ي ${hours}س ${minutes}د ${seconds}ث`;
+                if(timerEl) timerEl.innerText = `${days} يوم ${hours}:${minutes}:${seconds}`;
             }, 1000);
-        }
-
-        function showSection(secID) {
-            document.querySelectorAll('.section-content').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active-tab'));
-            
-            const targetSec = document.getElementById('section-' + secID);
-            const targetTab = document.getElementById('tab-' + secID);
-            
-            if(targetSec) targetSec.classList.remove('hidden');
-            if(targetTab) targetTab.classList.add('id' in targetTab ? '' : 'active-tab');
-            if(targetTab) targetTab.classList.add('active-tab');
-
-            if(secID === 'general-log') {
-                applyGeneralFilterAndRender();
-            }
         }
     </script>
 </body>
 </html>
- 
