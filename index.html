@@ -173,8 +173,9 @@
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-firestore-compat.js"></script>
+    <!-- Firebase SDK 8.x Compat Scripts (محدثة لضمان الاستقرار والتوافق التام) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <script>
         const firebaseConfig = { 
@@ -185,7 +186,10 @@
             messagingSenderId: "720074658896", 
             appId: "1:720074658896:web:09d084916b9dbc28556d55" 
         };
-        firebase.initializeApp(firebaseConfig);
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         const db = firebase.firestore();
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -487,3 +491,4 @@
     </script>
 </body>
 </html>
+ 
