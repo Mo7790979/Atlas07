@@ -196,8 +196,9 @@
                 <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
                     <button onclick="openTaxManager()" class="top-action-bar-btn" style="background:#8b5cf6;"><i class="fas fa-percent"></i> <span>إدارة الضرائب</span></button>
                     <button onclick="generateDailySalesReport()" class="top-action-bar-btn" style="background:#d97706;"><i class="fas fa-chart-line"></i> <span>التقرير اليومي</span></button>
-                    <!-- زر التقرير الشهري المُضاف حديثاً -->
                     <button onclick="generateMonthlySalesReport()" class="top-action-bar-btn" style="background:#059669;"><i class="fas fa-calendar-alt"></i> <span>التقرير الشهري</span></button>
+                    <!-- زر التقرير السنوي المُضاف حديثاً -->
+                    <button onclick="generateYearlySalesReport()" class="top-action-bar-btn" style="background:#2563eb;"><i class="fas fa-calendar-check"></i> <span>التقرير السنوي</span></button>
                     <button onclick="clearInvoiceForm()" class="top-action-bar-btn" style="background:#ef4444;"><i class="fas fa-redo"></i> <span>جديد</span></button>
                 </div>
                 <div class="text-xs font-bold text-emerald-400 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700">
@@ -478,12 +479,12 @@
         </div>
     </div>
 
-    <!-- نافذة تقرير مبيعات اليوم المفصل المنبثقة -->
+    <!-- نافذة تقرير المبيعات المفصلة المنبثقة -->
     <div id="sales-report-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto text-right">
             <div class="flex justify-between items-center border-b pb-3">
                 <button onclick="closeSalesReportModal()" class="text-slate-400 hover:text-red-500 font-bold text-xl cursor-pointer bg-transparent border-none">&times;</button>
-                <h3 id="sales-report-title" class="font-black text-lg text-slate-800"><i class="fas fa-file-invoice-dollar text-amber-600 ml-1"></i> تقرير مبيعات اليوم المفصل</h3>
+                <h3 id="sales-report-title" class="font-black text-lg text-slate-800"><i class="fas fa-file-invoice-dollar text-amber-600 ml-1"></i> التقرير المفصل</h3>
             </div>
             <div id="sales-report-content" class="space-y-4 text-xs"></div>
             
@@ -519,7 +520,7 @@
         let invoiceInteractiveItems = [];
         let currentPOSCategory = "all";
         let cachedTaxesList = []; 
-        let currentReportPrintFunction = null; // لتخزين دالة الطباعة الخاصة بالتقرير الحالي (يومي أو شهري)
+        let currentReportPrintFunction = null; // لتخزين دالة الطباعة الخاصة بالتقرير الحالي (يومي، شهري، أو سنوي)
 
         async function login() {
             const user = document.getElementById('admin-user-input').value.trim();
@@ -1556,7 +1557,7 @@
             if(modal) modal.classList.remove('hidden');
         }
 
-        // دالة التقرير الشهري المُضافة حديثاً
+        // دالة التقرير الشهري
         async function generateMonthlySalesReport() {
             const now = new Date();
             const currentMonth = now.getMonth();
@@ -1620,6 +1621,70 @@
             </div>`;
 
             currentReportPrintFunction = printMonthlySalesReportWindow;
+            const modal = document.getElementById('sales-report-modal');
+            if(modal) modal.classList.remove('hidden');
+        }
+
+        // دالة التقرير السنوي المُضافة حديثاً
+        async function generateYearlySalesReport() {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+
+            let yearlyInvoices = allInvoicesCache.filter(inv => {
+                if(!inv.date || typeof inv.date.toDate !== 'function') return false;
+                const d = inv.date.toDate();
+                return d.getFullYear() === currentYear;
+            });
+
+            let totalSales = 0;
+            let totalTaxes = 0;
+            let totalSub = 0;
+            let productSalesSummary = {};
+
+            yearlyInvoices.forEach(inv => {
+                totalSub += Number(inv.subtotal) || Number(inv.amount) || 0;
+                totalTaxes += Number(inv.tax) || 0;
+                totalSales += Number(inv.amount) || 0;
+
+                let items = inv.items || [{ name: inv.details || 'مبيعات عامة', qty: 1, price: inv.amount || 0 }];
+                items.forEach(i => {
+                    if(!productSalesSummary[i.name]) {
+                        productSalesSummary[i.name] = { qty: 0, total: 0 };
+                    }
+                    productSalesSummary[i.name].qty += Number(i.qty) || 1;
+                    productSalesSummary[i.name].total += (Number(i.qty) || 1) * (Number(i.price) || 0);
+                });
+            });
+
+            let productsRowsHtml = '';
+            for(let prodName in productSalesSummary) {
+                productsRowsHtml += `
+                <div class="flex justify-between border-b py-1.5">
+                    <span class="font-bold text-blue-700">${productSalesSummary[prodName].total.toFixed(2)}</span>
+                    <span>${prodName} (الكمية: ${productSalesSummary[prodName].qty})</span>
+                </div>`;
+            }
+
+            const titleEl = document.getElementById('sales-report-title');
+            if(titleEl) titleEl.innerHTML = `<i class="fas fa-calendar-check text-blue-600 ml-1"></i> تقرير المبيعات السنوي الشامل (${currentYear})`;
+
+            const content = document.getElementById('sales-report-content');
+            if(!content) return;
+            content.innerHTML = `
+            <div class="bg-blue-50 p-4 rounded-xl border border-blue-200 space-y-2">
+                <div class="flex justify-between font-bold"> <span class="text-blue-700">${yearlyInvoices.length}</span> <span>إجمالي عدد الفواتير هذا العام:</span></div>
+                <div class="flex justify-between font-bold"> <span>${totalSub.toFixed(2)}</span> <span>المبلغ الفرعي للمبيعات السنوية:</span></div>
+                <div class="flex justify-between font-bold"> <span class="text-purple-700">${totalTaxes.toFixed(2)}</span> <span>إجمالي الضرائب والخدمات المطبقة:</span></div>
+                <div class="flex justify-between font-black text-sm border-t pt-2 text-blue-700"> <span class="text-blue-700">${totalSales.toFixed(2)}</span> <span>إجمالي المبيعات النهائية هذا العام:</span></div>
+            </div>
+            <div>
+                <h4 class="font-bold text-slate-700 mb-2 mt-4">تفصيل المنتجات المباعة خلال العام:</h4>
+                <div class="bg-slate-50 p-3 rounded-xl border max-h-48 overflow-y-auto space-y-1">
+                    ${productsRowsHtml || '<p class="text-slate-400 text-center">لا توجد مبيعات مسجلة هذا العام حتى الآن</p>'}
+                </div>
+            </div>`;
+
+            currentReportPrintFunction = printYearlySalesReportWindow;
             const modal = document.getElementById('sales-report-modal');
             if(modal) modal.classList.remove('hidden');
         }
@@ -1788,6 +1853,70 @@
             printWindow.document.close();
         }
 
+        async function printYearlySalesReportWindow() {
+            const cafeName = await getCafeNameForReport();
+            const reportContentHtml = document.getElementById('sales-report-content').innerHTML;
+            const currentDateTimeStr = new Date().toLocaleString('ar-EG');
+
+            const printWindow = window.open('', '_blank');
+            if(!printWindow) {
+                alert("يرجى السماح بفتح النوافذ المنبثقة (Pop-ups) لطباعة التقرير.");
+                return;
+            }
+
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="ar" dir="rtl">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>تقرير المبيعات السنوي - ${currentDateTimeStr}</title>
+                    <style>
+                        body { font-family: 'Cairo', Tahoma, sans-serif; padding: 25px; color: #1e293b; max-width: 600px; margin: auto; direction: rtl; background: #fff; }
+                        .header { text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 12px; margin-bottom: 20px; }
+                        .header h2 { margin: 0 0 5px 0; font-size: 24px; color: #2563eb; }
+                        .date-box { font-size: 13px; font-weight: bold; margin-bottom: 15px; text-align: center; color: #64748b; }
+                        .bg-blue-50 { background: #eff6ff !important; border: 1px solid #bfdbfe; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
+                        .bg-slate-50 { background: #f8fafc !important; border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; }
+                        .flex { display: flex; }
+                        .justify-between { justify-content: space-between; }
+                        .font-bold { font-weight: bold; }
+                        .font-black { font-weight: 900; }
+                        .text-blue-700 { color: #1d4ed8; }
+                        .text-purple-700 { color: #6b21a8; }
+                        .text-slate-700 { color: #334155; }
+                        .border-t { border-top: 1px solid #cbd5e1; margin-top: 8px; padding-top: 8px; }
+                        .border-b { border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 8px; }
+                        .space-y-2 > * + * { margin-top: 8px; }
+                        h4 { font-size: 15px; margin: 0 0 10px 0; color: #1e293b; }
+                        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #666; border-top: 1px dashed #cbd5e1; padding-top: 15px; }
+                        @media print {
+                            body { padding: 0; }
+                            button { display: none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h2>${cafeName}</h2>
+                        <p style="font-size: 14px; margin: 0; font-weight: bold; color: #475569;">تقرير المبيعات السنوي الشامل</p>
+                    </div>
+                    <div class="date-box">
+                        تاريخ ووقت الإصدار: ${currentDateTimeStr}
+                    </div>
+                    ${reportContentHtml}
+                    <div class="footer">
+                        تم استخراج هذا التقرير السنوي من نظام لوحة التحكم الاحترافية.<br>
+                        <button onclick="window.print()" style="margin-top: 20px; background: #2563eb; color: white; border: none; padding: 12px 25px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; font-size: 14px;">طباعة التقرير / حفظ PDF</button>
+                    </div>
+                    <script>
+                        window.onload = function() { setTimeout(() => { window.print(); }, 400); };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
         function closeSalesReportModal() {
             const modal = document.getElementById('sales-report-modal');
             if(modal) modal.classList.add('hidden');
@@ -1899,34 +2028,48 @@
                 const timerEl = document.getElementById('countdown-timer');
                 if(!timerEl || !expiryDateGlobal) return;
                 const now = new Date().getTime();
-                const diff = expiryDateGlobal - now;
-                if (diff < 0) { timerEl.innerText = "منتهي"; return; }
-                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const secs = Math.floor((diff % (1000 * 60)) / 1000);
-                timerEl.innerText = `${days}d ${hours}:${mins}:${secs}`;
+                const distance = expiryDateGlobal - now;
+                if(distance < 0) {
+                    timerEl.innerText = "انتهى الاشتراك";
+                    timerEl.className = "text-lg font-mono font-bold text-red-500 leading-none mt-1";
+                    return;
+                }
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                timerEl.innerText = `${days}ي ${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
             }, 1000);
+            
+            const expiryText = document.getElementById('expiry-date-text');
+            if(expiryText && expiryDateGlobal) {
+                expiryText.innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
+            }
         }
 
-        function showSection(id) {
-            document.querySelectorAll('.section-content').forEach(s => s.classList.add('hidden'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-tab'));
+        function showSection(sectionId) {
+            document.querySelectorAll('.section-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active-tab'));
             
-            const targetSection = document.getElementById('section-'+id);
-            const targetTab = document.getElementById('tab-'+id);
-
-            if(targetSection) targetSection.classList.remove('hidden');
+            const targetSec = document.getElementById('section-' + sectionId);
+            const targetTab = document.getElementById('tab-' + sectionId);
+            if(targetSec) targetSec.classList.remove('hidden');
             if(targetTab) targetTab.classList.add('active-tab');
             
-            if(html5QrCode && id !== 'scan') html5QrCode.stop().catch(()=>{});
+            if(html5QrCode && sectionId !== 'scan') {
+                html5QrCode.stop().catch(()=>{});
+                const scanBtn = document.getElementById('start-scan-btn');
+                if(scanBtn) scanBtn.classList.remove('hidden');
+            }
         }
 
         function downloadQR() {
-            const img = document.querySelector("#qrcode-container img");
-            if(!img) return;
-            const a = document.createElement("a");
-            a.href = img.src; a.download = `QR-Cafe-${currentCafeID}.png`; a.click();
+            const qrImg = document.querySelector("#qrcode-container img");
+            if(!qrImg) { alert("جاري إنشاء الكود، انتظر قليلاً"); return; }
+            const link = document.createElement('a');
+            link.download = `QR-${currentCafeID}.png`;
+            link.href = qrImg.src;
+            link.click();
         }
     </script>
 </body>
