@@ -1086,6 +1086,7 @@
             renderInvoiceItemsBuilder();
             generateNewSerial();
             window.activeCartIdToResolve = null;
+            window.activeZeroInvoiceId = null; // تفريغ معرف الفاتورة الصفرية النشطة
         }
 
         async function issueInvoice() {
@@ -1118,6 +1119,7 @@
             const detailsSummary = invoiceInteractiveItems.map(i => `${i.qty}x ${i.name} (${i.price})`).join(' - ');
 
             try {
+                // 1. حفظ الفاتورة الجديدة بالرقم التسلسلي الرسمي
                 await db.collection("cafes").doc(currentCafeID).collection("invoices").add({
                     serial,
                     target,
@@ -1130,12 +1132,18 @@
                     date: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
+                // 2. إذا تم تحميل هذه الفاتورة من قائمة الفواتير الصفرية، قم بحذفها تلقائياً من قاعدة البيانات
+                if(window.activeZeroInvoiceId) {
+                    await db.collection("cafes").doc(currentCafeID).collection("invoices").doc(window.activeZeroInvoiceId).delete();
+                    window.activeZeroInvoiceId = null;
+                }
+
                 if(window.activeCartIdToResolve) {
                     await db.collection("cafes").doc(currentCafeID).collection("customer_carts").doc(window.activeCartIdToResolve).update({ status: 'billed' });
                     window.activeCartIdToResolve = null;
                 }
 
-                alert("تم حفظ وإصدار الفاتورة بنجاح وتحديث النظام!");
+                alert("تم حفظ وإصدار الفاتورة بنجاح، وحذفها من الفواتير الصفرية!");
                 clearInvoiceForm();
                 loadInvoices();
             } catch(e) {
@@ -1258,13 +1266,21 @@
         }
 
         function loadInvoiceToPOS(invId) {
-            const inv = (window._tempAdminInvoices && window._tempAdminInvoices[invId]) || (window._tempCustomerInvoices && window._tempCustomerInvoices[invId]);
+            const isCustomerInvoice = window._tempCustomerInvoices && window._tempCustomerInvoices[invId];
+            const inv = (window._tempAdminInvoices && window._tempAdminInvoices[invId]) || isCustomerInvoice;
             if(!inv) return;
+
+            // إذا تم الضغط على فاتورة من قائمة الفواتير الصفرية، نحفظ معرفها لكي يتم حذفها عند الإصدار
+            if(isCustomerInvoice) {
+                window.activeZeroInvoiceId = invId;
+            } else {
+                window.activeZeroInvoiceId = null;
+            }
 
             const serialEl = document.getElementById('invoice-serial');
             const targetEl = document.getElementById('invoice-target');
 
-            if(serialEl) serialEl.innerText = inv.serial && inv.serial !== 'INV-000' ? inv.serial : ('INV-' + Math.floor(100000 + Math.random() * 900000));
+            if(serialEl) serialEl.innerText = inv.serial && inv.serial !== 'INV-000' && !inv.serial.includes('000') ? inv.serial : ('INV-' + Math.floor(100000 + Math.random() * 900000));
             if(targetEl) targetEl.value = inv.target || '';
 
             if(inv.items && Array.isArray(inv.items) && inv.items.length > 0) {
