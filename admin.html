@@ -519,17 +519,23 @@
             try {
                 const doc = await db.collection("admin_settings").doc("global_config").get();
                 if(doc.exists) {
-                    document.getElementById('admin-bank-img').src = doc.data().bankImageUrl || "";
+                    const imgEl = document.getElementById('admin-bank-img');
+                    if(imgEl) imgEl.src = doc.data().bankImageUrl || "";
                 }
             } catch(e) { console.log("خطأ في جلب بيانات الإدارة"); }
         }
 
         function selectSystem(sys) {
             selectedSystem = sys;
-            document.getElementById('btn-sys-stamps').classList.toggle('active', sys === 'stamps');
-            document.getElementById('btn-sys-points').classList.toggle('active', sys === 'points');
-            document.getElementById('area-stamps').classList.toggle('hidden', sys !== 'stamps');
-            document.getElementById('area-points').classList.toggle('hidden', sys !== 'points');
+            const btnStamps = document.getElementById('btn-sys-stamps');
+            const btnPoints = document.getElementById('btn-sys-points');
+            const areaStamps = document.getElementById('area-stamps');
+            const areaPoints = document.getElementById('area-points');
+
+            if(btnStamps) btnStamps.classList.toggle('active', sys === 'stamps');
+            if(btnPoints) btnPoints.classList.toggle('active', sys === 'points');
+            if(areaStamps) areaStamps.classList.toggle('hidden', sys !== 'stamps');
+            if(areaPoints) areaPoints.classList.toggle('hidden', sys !== 'points');
         }
 
         async function saveBranding() {
@@ -588,14 +594,17 @@
             renderInvoiceItemsBuilder();
 
             db.collection("cafes").doc(currentCafeID).get().then(doc => {
-                document.getElementById('expiry-date-text').innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
-                document.getElementById('display-cafe-name').innerText = doc.data().cafeName;
+                const expiryEl = document.getElementById('expiry-date-text');
+                const nameEl = document.getElementById('display-cafe-name');
+                if(expiryEl) expiryEl.innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
+                if(nameEl) nameEl.innerText = doc.data().cafeName;
             });
         }
 
         function generateNewSerial() {
             const serial = 'INV-' + Math.floor(100000 + Math.random() * 900000);
-            document.getElementById('invoice-serial').innerText = serial;
+            const serialEl = document.getElementById('invoice-serial');
+            if(serialEl) serialEl.innerText = serial;
         }
 
         async function saveProduct() {
@@ -620,6 +629,7 @@
 
         async function loadProducts() {
             const list = document.getElementById('products-list');
+            if(!list) return;
             const snap = await db.collection("cafes").doc(currentCafeID).collection("products").orderBy("createdAt", "desc").get();
             list.innerHTML = "";
             globalProductsCache = [];
@@ -746,6 +756,7 @@
 
         async function loadWaiters() {
             const list = document.getElementById('waiters-list');
+            if(!list) return;
             const snap = await db.collection("cafes").doc(currentCafeID).collection("waiters").get();
             list.innerHTML = "";
             if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد حسابات نُدل مضافة</p>'; return; }
@@ -774,6 +785,7 @@
               .where("status", "==", "pending")
               .onSnapshot(snap => {
                 const list = document.getElementById('waiter-calls-list');
+                if(!list) return;
                 list.innerHTML = "";
                 if(snap.empty) {
                     list.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">لا توجد نداءات جديدة حالياً</p>';
@@ -804,6 +816,7 @@
                 const list = document.getElementById('customer-carts-list');
                 const badge = document.getElementById('cart-count-badge');
                 if(badge) badge.innerText = snap.size;
+                if(!list) return;
                 list.innerHTML = "";
                 if(snap.empty) {
                     list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد طلبات جديدة من الطاولات حالياً</p>';
@@ -830,7 +843,9 @@
             const cart = window._tempCarts && window._tempCarts[cartId];
             if(!cart) return;
             
-            document.getElementById('invoice-target').value = cart.table || 'طاولة الزبون';
+            const targetEl = document.getElementById('invoice-target');
+            if(targetEl) targetEl.value = cart.table || 'طاولة الزبون';
+
             if(cart.items && Array.isArray(cart.items) && cart.items.length > 0) {
                 invoiceInteractiveItems = cart.items.map(i => ({ name: i.name, qty: Number(i.qty) || 1, price: Number(i.price) || 0 }));
             } else {
@@ -842,23 +857,29 @@
         }
 
         async function openTaxManager() {
-            document.getElementById('tax-manager-modal').classList.remove('hidden');
+            const modal = document.getElementById('tax-manager-modal');
+            if(modal) modal.classList.remove('hidden');
             loadTaxesModalList();
         }
         function closeTaxManager() {
-            document.getElementById('tax-manager-modal').classList.add('hidden');
+            const modal = document.getElementById('tax-manager-modal');
+            if(modal) modal.classList.add('hidden');
         }
 
         async function saveNewTaxConfig() {
-            const name = document.getElementById('new-tax-name').value.trim();
-            const rate = Number(document.getElementById('new-tax-rate').value);
+            const nameEl = document.getElementById('new-tax-name');
+            const rateEl = document.getElementById('new-tax-rate');
+            if(!nameEl || !rateEl) return;
+
+            const name = nameEl.value.trim();
+            const rate = Number(rateEl.value);
             if(!name || isNaN(rate)) { alert("يرجى إدخال اسم الضريبة والنسبة المئوية بشكل صحيح"); return; }
             
             await db.collection("cafes").doc(currentCafeID).collection("taxes").add({
                 name, rate, createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-            document.getElementById('new-tax-name').value = "";
-            document.getElementById('new-tax-rate').value = "";
+            nameEl.value = "";
+            rateEl.value = "";
             loadTaxesCheckboxes();
             loadTaxesModalList();
             alert("تم إضافة الضريبة بنجاح!");
@@ -1037,7 +1058,8 @@
         }
 
         function clearInvoiceForm() {
-            document.getElementById('invoice-target').value = "";
+            const targetEl = document.getElementById('invoice-target');
+            if(targetEl) targetEl.value = "";
             invoiceInteractiveItems = [];
             document.querySelectorAll('.pos-tax-checkbox').forEach(cb => cb.checked = false);
             renderInvoiceItemsBuilder();
@@ -1045,18 +1067,25 @@
             window.activeCartIdToResolve = null;
         }
 
-        // --- الدالة المُصححة والمحدثة لحفظ وإصدار الفاتورة وتفادي أي أخطاء ---
         async function issueInvoice() {
-            const target = document.getElementById('invoice-target').value.trim();
-            const subtotal = Number(document.getElementById('invoice-subtotal').innerText) || 0;
-            const tax = Number(document.getElementById('invoice-total-tax-val').innerText) || 0;
+            const targetEl = document.getElementById('invoice-target');
+            const subtotalEl = document.getElementById('invoice-subtotal');
+            const taxEl = document.getElementById('invoice-total-tax-val');
+            const amountEl = document.getElementById('invoice-amount');
+            const serialEl = document.getElementById('invoice-serial');
+
+            if(!targetEl || !subtotalEl || !amountEl || !serialEl) return;
+
+            const target = targetEl.value.trim();
+            const subtotal = Number(subtotalEl.innerText) || 0;
+            const tax = Number(taxEl ? taxEl.innerText : 0) || 0;
             const appliedTaxes = window.activeAppliedTaxes || [];
-            const amount = Number(document.getElementById('invoice-amount').innerText) || 0;
-            const serial = document.getElementById('invoice-serial').innerText;
+            const amount = Number(amountEl.innerText) || 0;
+            const serial = serialEl.innerText;
 
             if(!target) {
                 alert("يرجى إدخال رقم الطاولة أو اسم العميل أولاً");
-                document.getElementById('invoice-target').focus();
+                targetEl.focus();
                 return;
             }
 
@@ -1068,7 +1097,6 @@
             const detailsSummary = invoiceInteractiveItems.map(i => `${i.qty}x ${i.name} (${i.price})`).join(' - ');
 
             try {
-                // حفظ الفاتورة في نفس مسار قاعدة البيانات الخاص بملفات المنشأة
                 await db.collection("cafes").doc(currentCafeID).collection("invoices").add({
                     serial,
                     target,
@@ -1152,8 +1180,12 @@
             const inv = window._tempInvoices && window._tempInvoices[invId];
             if(!inv) return;
 
-            document.getElementById('invoice-serial').innerText = inv.serial || 'INV-' + Math.floor(100000 + Math.random() * 900000);
-            document.getElementById('invoice-target').value = inv.target || '';
+            const serialEl = document.getElementById('invoice-serial');
+            const targetEl = document.getElementById('invoice-target');
+
+            if(serialEl) serialEl.innerText = inv.serial || 'INV-' + Math.floor(100000 + Math.random() * 900000);
+            if(targetEl) targetEl.value = inv.target || '';
+
             if(inv.items && Array.isArray(inv.items) && inv.items.length > 0) {
                 invoiceInteractiveItems = JSON.parse(JSON.stringify(inv.items));
             } else {
@@ -1171,7 +1203,9 @@
         }
 
         function filterInvoices() {
-            const query = document.getElementById('invoice-search-input').value.toLowerCase().trim();
+            const input = document.getElementById('invoice-search-input');
+            if(!input) return;
+            const query = input.value.toLowerCase().trim();
             if(!query) {
                 renderInvoicesList(allInvoicesCache);
                 return;
@@ -1184,7 +1218,8 @@
         }
 
         function executePrintWindow(invoiceData) {
-            const cafeName = document.getElementById('display-cafe-name').innerText || 'المنشأة';
+            const cafeNameEl = document.getElementById('display-cafe-name');
+            const cafeName = cafeNameEl ? cafeNameEl.innerText : 'المنشأة';
             let itemsHTML = '';
             
             invoiceData.items.forEach(i => {
@@ -1208,6 +1243,11 @@
             }
 
             const printWindow = window.open('', '_blank');
+            if(!printWindow) {
+                alert("يرجى السماح بفتح النوافذ المنبثقة (Pop-ups) لطباعة الفاتورة.");
+                return;
+            }
+
             printWindow.document.write(`
                 <!DOCTYPE html>
                 <html lang="ar" dir="rtl">
@@ -1275,12 +1315,20 @@
         }
 
         function printCurrentPOSInvoicePrintView() {
-            const target = document.getElementById('invoice-target').value.trim();
-            const serial = document.getElementById('invoice-serial').innerText;
-            const subtotal = Number(document.getElementById('invoice-subtotal').innerText) || 0;
-            const tax = Number(document.getElementById('invoice-total-tax-val').innerText) || 0;
+            const targetEl = document.getElementById('invoice-target');
+            const serialEl = document.getElementById('invoice-serial');
+            const subtotalEl = document.getElementById('invoice-subtotal');
+            const taxEl = document.getElementById('invoice-total-tax-val');
+            const amountEl = document.getElementById('invoice-amount');
+
+            if(!targetEl || !serialEl || !subtotalEl || !amountEl) return;
+
+            const target = targetEl.value.trim();
+            const serial = serialEl.innerText;
+            const subtotal = Number(subtotalEl.innerText) || 0;
+            const tax = Number(taxEl.innerText) || 0;
             const appliedTaxes = window.activeAppliedTaxes || [];
-            const amount = Number(document.getElementById('invoice-amount').innerText) || 0;
+            const amount = Number(amountEl.innerText) || 0;
 
             if(!target || invoiceInteractiveItems.length === 0) {
                 alert("يرجى إدخال اسم الطاولة وبنود الفاتورة أولاً");
@@ -1359,6 +1407,7 @@
             }
 
             const content = document.getElementById('sales-report-content');
+            if(!content) return;
             content.innerHTML = `
             <div class="bg-blue-50 p-4 rounded-xl border border-blue-200 space-y-2">
                 <div class="flex justify-between font-bold"> <span class="text-blue-700">${todayInvoices.length}</span> <span>إجمالي عدد الفواتير اليوم:</span></div>
@@ -1373,24 +1422,28 @@
                 </div>
             </div>`;
 
-            document.getElementById('sales-report-modal').classList.remove('hidden');
+            const modal = document.getElementById('sales-report-modal');
+            if(modal) modal.classList.remove('hidden');
         }
 
         function closeSalesReportModal() {
-            document.getElementById('sales-report-modal').classList.add('hidden');
+            const modal = document.getElementById('sales-report-modal');
+            if(modal) modal.classList.add('hidden');
         }
 
         function startScanner() {
+            const scanBtn = document.getElementById('start-scan-btn');
             html5QrCode = new Html5Qrcode("reader");
-            document.getElementById('start-scan-btn').classList.add('hidden');
+            if(scanBtn) scanBtn.classList.add('hidden');
+            
             html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
                 activeUserPhone = txt;
                 fetchUserData(txt);
-                html5QrCode.stop();
-                document.getElementById('start-scan-btn').classList.remove('hidden');
+                html5QrCode.stop().catch(()=>{});
+                if(scanBtn) scanBtn.classList.remove('hidden');
             }).catch(() => {
                 alert("تأكد من إذن الكاميرا");
-                document.getElementById('start-scan-btn').classList.remove('hidden');
+                if(scanBtn) scanBtn.classList.remove('hidden');
             });
         }
 
@@ -1404,18 +1457,27 @@
             const doc = await db.collection("cafes").doc(currentCafeID).collection("customers").doc(phone).get();
             if(doc.exists) {
                 const data = doc.data();
-                document.getElementById('user-actions').classList.remove('hidden');
-                document.getElementById('cur-name').innerText = data.name;
-                document.getElementById('cur-phone-display').innerText = phone;
-                const label = selectedSystem === 'stamps' ? 'ختم' : (document.getElementById('label-points-unit').value || 'نقطة');
-                document.getElementById('cur-points').innerText = data.points || 0;
-                document.getElementById('points-label-view').innerText = label;
+                const userActions = document.getElementById('user-actions');
+                const curName = document.getElementById('cur-name');
+                const curPhoneDisplay = document.getElementById('cur-phone-display');
+                const curPoints = document.getElementById('cur-points');
+                const pointsLabelView = document.getElementById('points-label-view');
+                const unitInput = document.getElementById('label-points-unit');
+
+                if(userActions) userActions.classList.remove('hidden');
+                if(curName) curName.innerText = data.name;
+                if(curPhoneDisplay) curPhoneDisplay.innerText = phone;
+                
+                const label = selectedSystem === 'stamps' ? 'ختم' : (unitInput ? unitInput.value || 'نقطة' : 'نقطة');
+                if(curPoints) curPoints.innerText = data.points || 0;
+                if(pointsLabelView) pointsLabelView.innerText = label;
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else { alert("زبون غير مسجل في محلك"); }
         }
 
         function closeUserActions() {
-            document.getElementById('user-actions').classList.add('hidden');
+            const actions = document.getElementById('user-actions');
+            if(actions) actions.classList.add('hidden');
             activeUserPhone = "";
         }
 
@@ -1441,9 +1503,12 @@
 
         async function loadCustomers() {
             const list = document.getElementById('customers-list');
+            const countBadge = document.getElementById('customer-count');
+            if(!list) return;
+
             const snap = await db.collection("cafes").doc(currentCafeID).collection("customers").orderBy("name").get();
             list.innerHTML = "";
-            document.getElementById('customer-count').innerText = snap.size;
+            if(countBadge) countBadge.innerText = snap.size;
             snap.forEach(doc => {
                 const u = doc.data();
                 list.innerHTML += `
@@ -1461,6 +1526,7 @@
 
         function generateCafeQR() {
             const qrC = document.getElementById("qrcode-container");
+            if(!qrC) return;
             qrC.innerHTML = "";
             const customerUrl = window.location.href.replace('admin.html', 'index.html') + `?id=${currentCafeID}`;
             new QRCode(qrC, { text: customerUrl, width: 140, height: 140 });
@@ -1468,22 +1534,29 @@
 
         function startTimer() {
             setInterval(() => {
+                const timerEl = document.getElementById('countdown-timer');
+                if(!timerEl || !expiryDateGlobal) return;
                 const now = new Date().getTime();
                 const diff = expiryDateGlobal - now;
-                if (diff < 0) { document.getElementById('countdown-timer').innerText = "منتهي"; return; }
+                if (diff < 0) { timerEl.innerText = "منتهي"; return; }
                 const days = Math.floor(diff / (1000 * 60 * 60 * 24));
                 const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                 const secs = Math.floor((diff % (1000 * 60)) / 1000);
-                document.getElementById('countdown-timer').innerText = `${days}d ${hours}:${mins}:${secs}`;
+                timerEl.innerText = `${days}d ${hours}:${mins}:${secs}`;
             }, 1000);
         }
 
         function showSection(id) {
             document.querySelectorAll('.section-content').forEach(s => s.classList.add('hidden'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-tab'));
-            document.getElementById('section-'+id).classList.remove('hidden');
-            document.getElementById('tab-'+id).classList.add('active-tab');
+            
+            const targetSection = document.getElementById('section-'+id);
+            const targetTab = document.getElementById('tab-'+id);
+
+            if(targetSection) targetSection.classList.remove('hidden');
+            if(targetTab) targetTab.classList.add('active-tab');
+            
             if(html5QrCode && id !== 'scan') html5QrCode.stop().catch(()=>{});
         }
 
