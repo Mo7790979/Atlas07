@@ -75,13 +75,12 @@
             </div>
         </div>
 
-        <!-- Main Navigation Tabs (تم نقل السجل العام ليصبح بجانب التقرير الشهري في قسم المحاسبة / أو كزر تبويب رئيسي بجانب المحاسبة) -->
+        <!-- Main Navigation Tabs (تم وضع السجل العام هنا بجانب التقرير الشهري/المحاسبة حسب الطلب) -->
         <div class="flex gap-2 mb-6 overflow-x-auto no-scrollbar py-1">
             <button onclick="showSection('scan')" id="tab-scan" class="tab-btn active-tab bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">المسح / التحكم</button>
             <button onclick="showSection('products')" id="tab-products" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">المنيو</button>
             <button onclick="showSection('waiters')" id="tab-waiters" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">النُدل والنداء</button>
             <button onclick="showSection('pos')" id="tab-pos" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">المحاسبة</button>
-            <!-- تم نقل السجل العام ليصبح هنا مباشرة -->
             <button onclick="showSection('general-log')" id="tab-general-log" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">السجل العام</button>
             <button onclick="showSection('branding')" id="tab-branding" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">التخصيص</button>
             <button onclick="showSection('customers')" id="tab-customers" class="tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">العملاء</button>
@@ -193,13 +192,12 @@
         <!-- النظام المحاسبي الاحترافي بالمنيو التفاعلي المطابق للعميل -->
         <div id="section-pos" class="section-content hidden">
             
-            <!-- Top Interactive Action Bar -->
+            <!-- Top Interactive Action Bar (تم حذف زر التقرير السنوي هنا بناءً على طلبك) -->
             <div class="bg-slate-900 text-white p-3 rounded-2xl mb-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
                 <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
                     <button onclick="openTaxManager()" class="top-action-bar-btn" style="background:#8b5cf6;"><i class="fas fa-percent"></i> <span>إدارة الضرائب</span></button>
                     <button onclick="generateDailySalesReport()" class="top-action-bar-btn" style="background:#d97706;"><i class="fas fa-chart-line"></i> <span>التقرير اليومي</span></button>
                     <button onclick="generateMonthlySalesReport()" class="top-action-bar-btn" style="background:#059669;"><i class="fas fa-calendar-alt"></i> <span>التقرير الشهري</span></button>
-                    <button onclick="generateYearlySalesReport()" class="top-action-bar-btn" style="background:#2563eb;"><i class="fas fa-calendar-check"></i> <span>التقرير السنوي</span></button>
                 </div>
                 <div class="text-xs font-bold text-emerald-400 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700">
                     <i class="fas fa-cash-register ml-1 text-blue-400"></i> نظام نقاط البيع (المنيو التفاعلي السريع)
@@ -337,7 +335,7 @@
             </div>
         </div>
 
-        <!-- قسم السجل العام (الشامل) - تم وضعه ليظهر عند الضغط على زر السجل العام بجانب التقرير الشهري -->
+        <!-- قسم السجل العام (الشامل) - تم وضعه بجانب التقرير الشهري في القائمة الرئيسية -->
         <div id="section-general-log" class="section-content hidden">
             <div class="admin-card bg-white shadow-xl">
                 <div class="flex flex-col md:flex-row justify-between items-center gap-3 mb-4 pb-3 border-b">
@@ -1840,7 +1838,6 @@
 
         async function generateDailySalesReport() { await generateSalesReportGeneric('daily', 'التقرير اليومي للمبيعات'); }
         async function generateMonthlySalesReport() { await generateSalesReportGeneric('monthly', 'التقرير الشهري للمبيعات'); }
-        async function generateYearlySalesReport() { await generateSalesReportGeneric('yearly', 'التقرير السنوي للمبيعات'); }
 
         async function generateSalesReportGeneric(periodType, titleText) {
             const now = new Date();
@@ -1851,8 +1848,6 @@
                     return d.toDateString() === now.toDateString();
                 } else if(periodType === 'monthly') {
                     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-                } else if(periodType === 'yearly') {
-                    return d.getFullYear() === now.getFullYear();
                 }
                 return false;
             });
@@ -1887,96 +1882,73 @@
                 }
             });
 
-            let itemsRowsHTML = '';
+            let itemsListHtml = '';
             for(let key in itemsSummaryMap) {
-                itemsRowsHTML += `
-                    <tr>
-                        <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: right;">${key}</td>
-                        <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: center;">${itemsSummaryMap[key].qty}</td>
-                        <td style="padding: 6px; border-bottom: 1px solid #ddd; text-align: left;">${itemsSummaryMap[key].total.toFixed(2)}</td>
-                    </tr>
-                `;
+                itemsListHtml += `<div class="flex justify-between py-1 border-b text-xs"><span>${key} (${itemsSummaryMap[key].qty})</span><strong>${itemsSummaryMap[key].total.toFixed(2)}</strong></div>`;
             }
 
             const modal = document.getElementById('sales-report-modal');
             const titleEl = document.getElementById('sales-report-title');
             const contentEl = document.getElementById('sales-report-content');
 
-            if(titleEl) titleEl.innerHTML = `<i class="fas fa-file-invoice-dollar text-amber-600 ml-1"></i> ${titleText}`;
+            if(titleEl) titleEl.innerText = titleText;
             if(contentEl) {
                 contentEl.innerHTML = `
-                    <div class="bg-slate-50 p-3 rounded-xl border space-y-2 mb-3">
-                        <div class="flex justify-between font-bold"><span>إجمالي الفواتير:</span> <span class="text-blue-600">${totalCount}</span></div>
-                        <div class="flex justify-between font-bold"><span>الإيراد الفرعي:</span> <span>${totalRev.toFixed(2)}</span></div>
-                        <div class="flex justify-between font-bold"><span>إجمالي الضرائب:</span> <span class="text-purple-600">${totalTax.toFixed(2)}</span></div>
-                        <div class="flex justify-between font-black text-sm text-emerald-700 border-t pt-1"><span>الإجمالي النهائي:</span> <span>${totalFinal.toFixed(2)}</span></div>
+                    <div class="bg-slate-50 p-3 rounded-xl border space-y-2 mb-3 font-bold text-slate-700">
+                        <div class="flex justify-between"><span>عدد الفواتير:</span> <span class="text-blue-600">${totalCount}</span></div>
+                        <div class="flex justify-between"><span>إجمالي الإيرادات الفرعية:</span> <span>${totalRev.toFixed(2)}</span></div>
+                        <div class="flex justify-between"><span>إجمالي الضرائب:</span> <span class="text-purple-600">${totalTax.toFixed(2)}</span></div>
+                        <div class="flex justify-between text-emerald-700 font-black text-sm pt-1 border-t"><span>الإجمالي النهائي:</span> <span>${totalFinal.toFixed(2)}</span></div>
                     </div>
-                    <p class="font-bold text-slate-700 mb-1">ملخص أصناف المبيعات:</p>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-                        <thead>
-                            <tr style="background: #f1f5f9;">
-                                <th style="padding: 6px; border: 1px solid #cbd5e1; text-align: right;">الصنف</th>
-                                <th style="padding: 6px; border: 1px solid #cbd5e1; text-align: center;">الكمية المباعة</th>
-                                <th style="padding: 6px; border: 1px solid #cbd5e1; text-align: left;">إجمالي الإيراد</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${itemsRowsHTML || '<tr><td colspan="3" style="text-align: center; padding: 10px; color: #888;">لا توجد أصناف مسجلة في هذه الفترات</td></tr>'}
-                        </tbody>
-                    </table>
+                    <div>
+                        <h4 class="font-bold text-xs text-slate-700 mb-2">ملخص الأصناف المباعة خلال الفترة:</h4>
+                        <div class="max-h-40 overflow-y-auto space-y-1 bg-white p-2 rounded-xl border">${itemsListHtml || '<p class="text-xs text-slate-400 text-center py-2">لا توجد بنود مسجلة</p>'}</div>
+                    </div>
                 `;
             }
+            if(modal) modal.classList.remove('hidden');
 
-            currentReportPrintFunction = async () => {
-                const cafeName = await getCafeNameForReport();
-                const printWin = window.open('', '_blank');
-                if(!printWin) return;
-                printWin.document.write(`
+            currentReportPrintFunction = async function() {
+                let cafeName = await getCafeNameForReport();
+                const printWindow = window.open('', '_blank');
+                if(!printWindow) return;
+                printWindow.document.write(`
                     <!DOCTYPE html>
                     <html lang="ar" dir="rtl">
                     <head>
                         <meta charset="UTF-8">
                         <title>${titleText} - ${cafeName}</title>
                         <style>
-                            body { font-family: 'Cairo', Tahoma, sans-serif; padding: 20px; direction: rtl; color: #111; max-width: 600px; margin: auto; }
+                            body { font-family: 'Cairo', Tahoma, sans-serif; padding: 20px; color: #111; max-width: 500px; margin: auto; direction: rtl; }
                             h2 { text-align: center; color: #2563eb; margin-bottom: 5px; }
-                            .box { background: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 12px; }
-                            .box div { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; }
-                            table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
-                            th, td { border: 1px solid #cbd5e1; padding: 6px; }
-                            th { background: #f1f5f9; }
+                            p { text-align: center; font-size: 12px; color: #666; margin-top: 0; }
+                            .box { background: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; }
+                            .box div { display: flex; justify-content: space-between; margin-bottom: 6px; }
+                            @media print { button { display: none; } }
                         </style>
                     </head>
                     <body>
                         <h2>${cafeName}</h2>
-                        <h3 style="text-align: center; font-size: 14px; color: #475569;">${titleText}</h3>
+                        <p>${titleText} - ${new Date().toLocaleDateString('ar-EG')}</p>
                         <div class="box">
-                            <div><span>عدد الفواتير:</span> <span>${totalCount}</span></div>
-                            <div><span>الإيراد الفرعي:</span> <span>${totalRev.toFixed(2)}</span></div>
-                            <div><span>إجمالي الضرائب:</span> <span>${totalTax.toFixed(2)}</span></div>
-                            <div style="font-size: 14px; color: #047857; border-top: 1px dashed #cbd5e1; padding-top: 5px;"><span>الإجمالي النهائي:</span> <span>${totalFinal.toFixed(2)}</span></div>
+                            <div><span>عدد الفواتير:</span> <strong>${totalCount}</strong></div>
+                            <div><span>الإيرادات الفرعية:</span> <strong>${totalRev.toFixed(2)}</strong></div>
+                            <div><span>إجمالي الضرائب:</span> <strong>${totalTax.toFixed(2)}</strong></div>
+                            <div style="border-top: 1px dashed #cbd5e1; padding-top: 6px; font-weight: bold; color: #059669;"><span>الإجمالي النهائي:</span> <strong>${totalFinal.toFixed(2)}</strong></div>
                         </div>
-                        <h4>تفاصيل الأصناف:</h4>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th style="text-align: right;">الصنف</th>
-                                    <th style="text-align: center;">الكمية</th>
-                                    <th style="text-align: left;">الإجمالي</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${itemsRowsHTML}
-                            </tbody>
-                        </table>
+                        <h4 style="font-size: 13px; border-bottom: 1px solid #333; padding-bottom: 4px;">تفاصيل الأصناف المباعة:</h4>
+                        <div>${itemsListHtml || 'لا توجد أصناف'}</div>
+                        <button onclick="window.print()" style="margin-top: 20px; background: #2563eb; color: white; border: none; padding: 10px; width: 100%; font-weight: bold; border-radius: 6px; cursor: pointer;">طباعة التقرير</button>
                         <script>window.onload = function() { setTimeout(() => window.print(), 300); };<\/script>
                     </body>
                     </html>
                 `);
-                printWin.document.close();
+                printWindow.document.close();
             };
+        }
 
-            if(modal) modal.classList.remove('hidden');
+        function printCurrentSalesReport() {
+            if(typeof currentReportPrintFunction === 'function') currentReportPrintFunction();
         }
 
         function closeSalesReportModal() {
@@ -1984,32 +1956,90 @@
             if(modal) modal.classList.add('hidden');
         }
 
-        function printCurrentSalesReport() {
-            if(typeof currentReportPrintFunction === 'function') {
-                currentReportPrintFunction();
-            }
-        }
-
-        function showSection(sectionId) {
+        function showSection(secId) {
             document.querySelectorAll('.section-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active-tab'));
             
-            const targetSec = document.getElementById('section-' + sectionId);
-            const targetTab = document.getElementById('tab-' + sectionId);
+            const targetSec = document.getElementById('section-' + secId);
+            const targetTab = document.getElementById('tab-' + secId);
             
             if(targetSec) targetSec.classList.remove('hidden');
             if(targetTab) targetTab.classList.add('active-tab');
 
-            if(sectionId === 'scan' && html5QrCode && html5QrCode.isScanning) {
+            if(secId === 'scan' && html5QrCode && html5QrCode.isScanning) {
                 // Keep scanner if active
             }
         }
 
+        async function loadCustomers() {
+            const list = document.getElementById('customers-list');
+            const count = document.getElementById('customer-count');
+            if(!list) return;
+            const snap = await db.collection("cafes").doc(currentCafeID).collection("customers").get();
+            list.innerHTML = "";
+            if(count) count.innerText = snap.size;
+            if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد عملاء مسجلين بعد</p>'; return; }
+            snap.forEach(doc => {
+                const c = doc.data();
+                list.innerHTML += `
+                <div onclick='selectCustomerByPhone("${doc.id}")' class="customer-row flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm text-right">
+                    <div>
+                        <div class="font-bold text-xs text-slate-800">${c.name || 'عميل'}</div>
+                        <div class="text-[10px] text-slate-400 font-mono">${doc.id}</div>
+                    </div>
+                    <span class="bg-blue-50 text-blue-600 px-3 py-1 rounded-lg text-xs font-bold">${c.points || 0}</span>
+                </div>`;
+            });
+        }
+
+        async function selectCustomerByPhone(phone) {
+            activeUserPhone = phone;
+            const doc = await db.collection("cafes").doc(currentCafeID).collection("customers").doc(phone).get();
+            if(doc.exists) {
+                const data = doc.data();
+                document.getElementById('cur-name').innerText = data.name || 'عميل';
+                document.getElementById('cur-phone-display').innerText = phone;
+                document.getElementById('cur-points').innerText = data.points || 0;
+                document.getElementById('points-label-view').innerText = selectedSystem === 'stamps' ? 'الأختام الحالية' : 'النقاط الحالية';
+                document.getElementById('user-actions').classList.remove('hidden');
+                showSection('scan');
+            }
+        }
+
+        function closeUserActions() {
+            const actions = document.getElementById('user-actions');
+            if(actions) actions.classList.add('hidden');
+            activeUserPhone = "";
+        }
+
+        async function updatePoints(delta) {
+            if(!activeUserPhone) return;
+            const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone);
+            await db.runTransaction(async (transaction) => {
+                const snapshot = await transaction.get(ref);
+                if (!snapshot.exists) return;
+                const newPoints = Math.max(0, (snapshot.data().points || 0) + delta);
+                transaction.update(ref, { points: newPoints });
+                document.getElementById('cur-points').innerText = newPoints;
+            });
+            loadCustomers();
+        }
+
+        async function resetPoints() {
+            if(!activeUserPhone || !confirm("هل أنت متأكد من تصفير الحساب أو تسليم الهدية؟")) return;
+            const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone);
+            await ref.update({ points: 0 });
+            document.getElementById('cur-points').innerText = 0;
+            alert("تم تصفير الحساب بنجاح!");
+            loadCustomers();
+        }
+
         function startScanner() {
-            const readerEl = document.getElementById('reader');
-            if(!readerEl) return;
-            readerEl.innerHTML = '';
-            html5QrCode = new Html5Qrcode("reader");
+            const readerDiv = document.getElementById('reader');
+            if(!readerDiv) return;
+            readerDiv.innerHTML = '<div id="qr-reader" style="width:100%"></div>';
+            
+            html5QrCode = new Html5Qrcode("qr-reader");
             html5QrCode.start(
                 { facingMode: "environment" },
                 { fps: 10, qrbox: { width: 250, height: 250 } },
@@ -2017,101 +2047,12 @@
                     try {
                         await html5QrCode.stop();
                     } catch(e) {}
-                    fetchCustomerData(decodedText);
+                    readerDiv.innerHTML = '';
+                    selectCustomerByPhone(decodedText.trim());
                 },
                 (errorMessage) => {}
             ).catch(err => {
-                alert("تعذر تشغيل الكاميرا، تأكد من إعطاء الصلاحيات اللازمة.");
-            });
-        }
-
-        async function fetchCustomerData(phone) {
-            activeUserPhone = phone;
-            const doc = await db.collection("cafes").doc(currentCafeID).collection("customers").doc(phone).get();
-            
-            document.getElementById('user-actions').classList.remove('hidden');
-            document.getElementById('cur-phone-display').innerText = phone;
-            
-            if(doc.exists) {
-                const data = doc.data();
-                document.getElementById('cur-name').innerText = data.name || 'عميل';
-                const pts = selectedSystem === 'stamps' ? (data.stamps || 0) : (data.points || 0);
-                document.getElementById('cur-points').innerText = pts;
-                document.getElementById('points-label-view').innerText = selectedSystem === 'stamps' ? 'الأختام الحالية' : 'النقاط الحالية';
-            } else {
-                document.getElementById('cur-name').innerText = 'عميل جديد';
-                document.getElementById('cur-points').innerText = '0';
-                document.getElementById('points-label-view').innerText = selectedSystem === 'stamps' ? 'الأختام الحالية' : 'النقاط الحالية';
-            }
-        }
-
-        async function updatePoints(val) {
-            if(!activeUserPhone) return;
-            const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone);
-            const doc = await ref.get();
-            
-            let currentVal = 0;
-            let field = selectedSystem === 'stamps' ? 'stamps' : 'points';
-            
-            if(doc.exists) {
-                currentVal = Number(doc.data()[field]) || 0;
-            }
-            
-            let newVal = currentVal + val;
-            if(newVal < 0) newVal = 0;
-
-            const updateData = { [field]: newVal, phone: activeUserPhone, lastUpdated: firebase.firestore.FieldValue.serverTimestamp() };
-            if(!doc.exists || !doc.data().name) {
-                updateData.name = 'عميل ' + activeUserPhone.slice(-4);
-            }
-
-            await ref.set(updateData, { merge: true });
-            fetchCustomerData(activeUserPhone);
-            loadCustomers();
-        }
-
-        async function resetPoints() {
-            if(!activeUserPhone || !confirm("هل تريد تصفير الحساب أو تسليم الهدية؟")) return;
-            const field = selectedSystem === 'stamps' ? 'stamps' : 'points';
-            await db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeUserPhone).set({ [field]: 0 }, { merge: true });
-            fetchCustomerData(activeUserPhone);
-            loadCustomers();
-            alert("تم تصفير الحساب بنجاح!");
-        }
-
-        function closeUserActions() {
-            document.getElementById('user-actions').classList.add('hidden');
-            activeUserPhone = "";
-        }
-
-        async function loadCustomers() {
-            const list = document.getElementById('customers-list');
-            const countEl = document.getElementById('customer-count');
-            if(!list) return;
-
-            const snap = await db.collection("cafes").doc(currentCafeID).collection("customers").get();
-            list.innerHTML = "";
-            if(countEl) countEl.innerText = snap.size;
-
-            if(snap.empty) {
-                list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا يوجد عملاء مسجلون بعد</p>';
-                return;
-            }
-
-            snap.forEach(doc => {
-                const c = doc.data();
-                const pts = selectedSystem === 'stamps' ? (c.stamps || 0) : (c.points || 0);
-                list.innerHTML += `
-                <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm">
-                    <div>
-                        <div class="font-bold text-xs text-slate-800">${c.name || 'بدون اسم'}</div>
-                        <div class="text-[10px] text-slate-400 font-mono">${doc.id}</div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg text-xs font-black">${pts}</span>
-                        <button onclick='fetchCustomerData("${doc.id}"); showSection("scan");' class="bg-slate-800 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer border-none">إدارة</button>
-                    </div>
-                </div>`;
+                alert("تعسّر تشغيل الكاميرا، تأكد من إعطاء الصلاحيات اللازمة.");
             });
         }
 
@@ -2119,11 +2060,11 @@
             const container = document.getElementById('qrcode-container');
             if(!container) return;
             container.innerHTML = "";
-            const clientURL = window.location.origin + "/client.html?cafe=" + currentCafeID;
+            const clientURL = window.location.origin + "/client.html?cafe=" + encodeURIComponent(currentCafeID);
             new QRCode(container, {
                 text: clientURL,
-                width: 150,
-                height: 150,
+                width: 160,
+                height: 160,
                 colorDark: "#000000",
                 colorLight: "#ffffff",
                 correctLevel: QRCode.CorrectLevel.H
@@ -2133,31 +2074,35 @@
         function downloadQR() {
             const img = document.querySelector('#qrcode-container img');
             if(!img) { alert("الكود غير جاهز للتحميل بعد"); return; }
-            const a = document.createElement('a');
-            a.href = img.src;
-            a.download = currentCafeID + '-qr.png';
-            a.click();
+            const link = document.createElement('a');
+            link.download = 'qrcode-' + currentCafeID + '.png';
+            link.href = img.src;
+            link.click();
         }
 
         function startTimer() {
-            const timerEl = document.getElementById('countdown-timer');
-            const expiryEl = document.getElementById('expiry-date-text');
             if(!expiryDateGlobal) return;
-
-            if(expiryEl) expiryEl.innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
-
             setInterval(() => {
                 const now = new Date();
                 const diff = expiryDateGlobal - now;
-                if(diff <= 0) {
-                    if(timerEl) timerEl.innerText = "انتهى الاشتراك";
+                const timerEl = document.getElementById('countdown-timer');
+                const expiryTextEl = document.getElementById('expiry-date-text');
+                
+                if(expiryTextEl) expiryTextEl.innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
+                if(!timerEl) return;
+
+                if (diff <= 0) {
+                    timerEl.innerText = "منتهي الصلاحية";
+                    timerEl.className = "text-lg font-mono font-bold text-red-500 leading-none mt-1";
                     return;
                 }
+
                 const days = Math.floor(diff / (1000 * 60 * 60 * 24));
                 const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const secs = Math.floor((diff % (1000 * 60)) / 1000);
-                if(timerEl) timerEl.innerText = `${days} يوم | ${hours}:${mins}:${secs}`;
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                timerEl.innerText = `${days} يوم ${hours}:${minutes}:${seconds}`;
             }, 1000);
         }
     </script>
