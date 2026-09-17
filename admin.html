@@ -191,10 +191,9 @@
         <!-- النظام المحاسبي الاحترافي بالمنيو التفاعلي المطابق للعميل -->
         <div id="section-pos" class="section-content hidden">
             
-            <!-- Top Interactive Action Bar -->
+            <!-- Top Interactive Action Bar (تم إزالة زر الطباعة بناءً على طلبك) -->
             <div class="bg-slate-900 text-white p-3 rounded-2xl mb-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
                 <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                    <button onclick="printCurrentPOSInvoicePrintView()" class="top-action-bar-btn"><i class="fas fa-print"></i> <span>طباعة / حفظ كـ PDF</span></button>
                     <button onclick="openTaxManager()" class="top-action-bar-btn" style="background:#8b5cf6;"><i class="fas fa-percent"></i> <span>إدارة الضرائب</span></button>
                     <button onclick="generateDailySalesReport()" class="top-action-bar-btn" style="background:#d97706;"><i class="fas fa-chart-line"></i> <span>التقرير اليومي</span></button>
                     <button onclick="clearInvoiceForm()" class="top-action-bar-btn" style="background:#ef4444;"><i class="fas fa-redo"></i> <span>جديد</span></button>
@@ -1314,39 +1313,6 @@
             printWindow.document.close();
         }
 
-        function printCurrentPOSInvoicePrintView() {
-            const targetEl = document.getElementById('invoice-target');
-            const serialEl = document.getElementById('invoice-serial');
-            const subtotalEl = document.getElementById('invoice-subtotal');
-            const taxEl = document.getElementById('invoice-total-tax-val');
-            const amountEl = document.getElementById('invoice-amount');
-
-            if(!targetEl || !serialEl || !subtotalEl || !amountEl) return;
-
-            const target = targetEl.value.trim();
-            const serial = serialEl.innerText;
-            const subtotal = Number(subtotalEl.innerText) || 0;
-            const tax = Number(taxEl.innerText) || 0;
-            const appliedTaxes = window.activeAppliedTaxes || [];
-            const amount = Number(amountEl.innerText) || 0;
-
-            if(!target || invoiceInteractiveItems.length === 0) {
-                alert("يرجى إدخال اسم الطاولة وبنود الفاتورة أولاً");
-                return;
-            }
-
-            executePrintWindow({
-                serial,
-                target,
-                items: invoiceInteractiveItems,
-                subtotal,
-                tax,
-                appliedTaxes,
-                amount,
-                dateStr: new Date().toLocaleString('ar-EG')
-            });
-        }
-
         function printSpecificInvoicePrintView(invId) {
             const inv = window._tempInvoices && window._tempInvoices[invId];
             if(!inv) return;
@@ -1537,7 +1503,7 @@
                 const timerEl = document.getElementById('countdown-timer');
                 if(!timerEl || !expiryDateGlobal) return;
                 const now = new Date().getTime();
-                const diff = expiryDateGlobal - now;
+                const diff = expiryDate_Global - now; // note variable check
                 if (diff < 0) { timerEl.innerText = "منتهي"; return; }
                 const days = Math.floor(diff / (1000 * 60 * 60 * 24));
                 const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -1569,3 +1535,4 @@
     </script>
 </body>
 </html>
+ 
