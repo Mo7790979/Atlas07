@@ -309,10 +309,23 @@
 
             </div>
 
-            <!-- سجل الفواتير والمبيعات المصدرة -->
+            <!-- قائمة الفواتير الواردة من صفحة العميل ذات الأرقام الصفرية (INV-000) -->
+            <div class="admin-card mt-4 border-2 border-emerald-300 bg-emerald-50/40 shadow-md">
+                <div class="flex justify-between items-center mb-3 pb-2 border-b border-emerald-200">
+                    <h3 class="font-black text-emerald-900 text-xs flex items-center gap-2">
+                        <i class="fas fa-receipt text-emerald-600"></i> قائمة الفواتير الصادرة الواردة من العملاء (أرقام صفرية / INV-000)
+                    </h3>
+                    <span id="customer-invoices-count" class="bg-emerald-600 text-white text-xs px-2.5 py-0.5 rounded-full font-black">0</span>
+                </div>
+                <div id="customer-invoices-list" class="space-y-2 max-h-72 overflow-y-auto">
+                    <p class="text-xs text-slate-400 text-center py-4">لا توجد فواتير قادمة من صفحة العملاء حالياً</p>
+                </div>
+            </div>
+
+            <!-- سجل الفواتير والمبيعات المصدرة الإدارية -->
             <div class="admin-card mt-4">
                 <div class="flex flex-col md:flex-row justify-between items-center gap-3 mb-4">
-                    <h3 class="font-bold text-slate-700 text-xs">سجل الفواتير الصادرة (اضغط لطباعتها أو مراجعتها)</h3>
+                    <h3 class="font-bold text-slate-700 text-xs">سجل الفواتير الإدارية الصادرة (اضغط لطباعتها أو مراجعتها)</h3>
                     <div class="w-full md:w-1/2">
                         <input type="text" id="invoice-search-input" placeholder="بحث برقم الفاتورة التسلسلي أو رقم الطاولة..." oninput="filterInvoices()" class="text-xs py-2">
                     </div>
@@ -1138,60 +1151,120 @@
                 snap.forEach(doc => {
                     allInvoicesCache.push({ id: doc.id, ...doc.data() });
                 });
-                renderInvoicesList(allInvoicesCache);
+                renderSeparatedInvoicesLists(allInvoicesCache);
             } catch(e) {
                 console.log("جاري تهيئة سجل الفواتير...");
             }
         }
 
-        function renderInvoicesList(invoices) {
-            const list = document.getElementById('invoices-list');
-            if(!list) return;
-            list.innerHTML = "";
-            if(invoices.length === 0) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد فواتير مسجلة مطابقة</p>'; return; }
+        // دالة لفلترة وتوزيع الفواتير: القادمة من صفحة العميل (أرقام صفرية أو INV-000) في قائمة منفصلة والإدارية في القائمة الأخرى
+        function renderSeparatedInvoicesLists(invoices) {
+            const adminInvoicesList = document.getElementById('invoices-list');
+            const customerInvoicesList = document.getElementById('customer-invoices-list');
+            const customerInvoicesCount = document.getElementById('customer-invoices-count');
             
-            window._tempInvoices = window._tempInvoices || {};
+            if(!adminInvoicesList || !customerInvoicesList) return;
+
+            adminInvoicesList.innerHTML = "";
+            customerInvoicesList.innerHTML = "";
+
+            let customerInvoices = [];
+            let adminInvoices = [];
 
             invoices.forEach(inv => {
-                window._tempInvoices[inv.id] = inv;
-                
-                let taxDesc = '';
-                if(inv.appliedTaxes && inv.appliedTaxes.length > 0) {
-                    taxDesc = ` | ` + inv.appliedTaxes.map(t => `${t.name} (${t.rate}%): ${t.value.toFixed(2)}`).join(', ');
-                } else if(inv.tax > 0) {
-                    taxDesc = ` | الضريبة: ${inv.tax}`;
+                const serial = (inv.serial || '').trim().toUpperCase();
+                // التحقق إذا كانت الفاتورة برقم صفري قادمة من صفحة العميل
+                if (serial === 'INV-000' || serial === '0' || serial === '000' || serial === '' || serial.includes('000')) {
+                    customerInvoices.push(inv);
+                } else {
+                    adminInvoices.push(inv);
                 }
-
-                let timeStr = '';
-                if(inv.date && typeof inv.date.toDate === 'function') {
-                    timeStr = new Date(inv.date.toDate()).toLocaleTimeString('ar-EG');
-                }
-
-                list.innerHTML += `
-                <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm hover:bg-slate-50 text-right">
-                    <div class="flex items-center gap-2">
-                        <button onclick='printSpecificInvoicePrintView("${inv.id}")' class="bg-blue-600 text-white px-2.5 py-1.5 rounded-lg text-xs shadow cursor-pointer border-none"><i class="fas fa-print"></i></button>
-                        <span class="text-[10px] text-slate-400">${timeStr}</span>
-                    </div>
-                    <div onclick='loadInvoiceToPOS("${inv.id}")' class="customer-row text-right flex-1">
-                        <div class="font-bold text-xs text-slate-800">
-                            <span class="text-emerald-600 font-bold ml-2">(${inv.amount})</span> - ${inv.target} 
-                            <span class="text-blue-600 font-mono mr-2">${inv.serial || 'INV-000'}</span>
-                        </div>
-                        <div class="text-[10px] text-slate-500">${inv.details || 'بدون تفاصيل'}${taxDesc}</div>
-                    </div>
-                </div>`;
             });
+
+            if(customerInvoicesCount) customerInvoicesCount.innerText = customerInvoices.length;
+
+            window._tempCustomerInvoices = window._tempCustomerInvoices || {};
+            window._tempAdminInvoices = window._tempAdminInvoices || {};
+
+            // عرض فواتير العملاء في القائمة المنفصلة
+            if(customerInvoices.length === 0) {
+                customerInvoicesList.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">لا توجد فواتير قادمة من صفحة العملاء حالياً</p>';
+            } else {
+                customerInvoices.forEach(inv => {
+                    window._tempCustomerInvoices[inv.id] = inv;
+                    let taxDesc = '';
+                    if(inv.appliedTaxes && inv.appliedTaxes.length > 0) {
+                        taxDesc = ` | ` + inv.appliedTaxes.map(t => `${t.name} (${t.rate}%): ${t.value.toFixed(2)}`).join(', ');
+                    } else if(inv.tax > 0) {
+                        taxDesc = ` | الضريبة: ${inv.tax}`;
+                    }
+
+                    let timeStr = '';
+                    if(inv.date && typeof inv.date.toDate === 'function') {
+                        timeStr = new Date(inv.date.toDate()).toLocaleTimeString('ar-EG');
+                    }
+
+                    customerInvoicesList.innerHTML += `
+                    <div class="flex justify-between items-center p-3 bg-white rounded-xl border border-emerald-200 mb-2 shadow-sm hover:bg-emerald-50/50 text-right">
+                        <div class="flex items-center gap-2">
+                            <button onclick='printCustomerInvoicePrintView("${inv.id}")' class="bg-emerald-600 text-white px-2.5 py-1.5 rounded-lg text-xs shadow cursor-pointer border-none"><i class="fas fa-print"></i></button>
+                            <span class="text-[10px] text-slate-400">${timeStr}</span>
+                        </div>
+                        <div onclick='loadInvoiceToPOS("${inv.id}")' class="customer-row text-right flex-1">
+                            <div class="font-bold text-xs text-slate-800">
+                                <span class="text-emerald-700 font-bold ml-2">(${inv.amount})</span> - ${inv.target} 
+                                <span class="text-emerald-600 font-mono mr-2">${inv.serial || 'INV-000'}</span>
+                            </div>
+                            <div class="text-[10px] text-slate-500">${inv.details || 'بدون تفاصيل'}${taxDesc}</div>
+                        </div>
+                    </div>`;
+                });
+            }
+
+            // عرض الفواتير الإدارية في السجل العادي
+            if(adminInvoices.length === 0) {
+                adminInvoicesList.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد فواتير إدارية مسجلة</p>';
+            } else {
+                adminInvoices.forEach(inv => {
+                    window._tempAdminInvoices[inv.id] = inv;
+                    let taxDesc = '';
+                    if(inv.appliedTaxes && inv.appliedTaxes.length > 0) {
+                        taxDesc = ` | ` + inv.appliedTaxes.map(t => `${t.name} (${t.rate}%): ${t.value.toFixed(2)}`).join(', ');
+                    } else if(inv.tax > 0) {
+                        taxDesc = ` | الضريبة: ${inv.tax}`;
+                    }
+
+                    let timeStr = '';
+                    if(inv.date && typeof inv.date.toDate === 'function') {
+                        timeStr = new Date(inv.date.toDate()).toLocaleTimeString('ar-EG');
+                    }
+
+                    adminInvoicesList.innerHTML += `
+                    <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm hover:bg-slate-50 text-right">
+                        <div class="flex items-center gap-2">
+                            <button onclick='printSpecificInvoicePrintView("${inv.id}")' class="bg-blue-600 text-white px-2.5 py-1.5 rounded-lg text-xs shadow cursor-pointer border-none"><i class="fas fa-print"></i></button>
+                            <span class="text-[10px] text-slate-400">${timeStr}</span>
+                        </div>
+                        <div onclick='loadInvoiceToPOS("${inv.id}")' class="customer-row text-right flex-1">
+                            <div class="font-bold text-xs text-slate-800">
+                                <span class="text-emerald-600 font-bold ml-2">(${inv.amount})</span> - ${inv.target} 
+                                <span class="text-blue-600 font-mono mr-2">${inv.serial || 'INV-000'}</span>
+                            </div>
+                            <div class="text-[10px] text-slate-500">${inv.details || 'بدون تفاصيل'}${taxDesc}</div>
+                        </div>
+                    </div>`;
+                });
+            }
         }
 
         function loadInvoiceToPOS(invId) {
-            const inv = window._tempInvoices && window._tempInvoices[invId];
+            const inv = (window._tempAdminInvoices && window._tempAdminInvoices[invId]) || (window._tempCustomerInvoices && window._tempCustomerInvoices[invId]);
             if(!inv) return;
 
             const serialEl = document.getElementById('invoice-serial');
             const targetEl = document.getElementById('invoice-target');
 
-            if(serialEl) serialEl.innerText = inv.serial || 'INV-' + Math.floor(100000 + Math.random() * 900000);
+            if(serialEl) serialEl.innerText = inv.serial && inv.serial !== 'INV-000' ? inv.serial : ('INV-' + Math.floor(100000 + Math.random() * 900000));
             if(targetEl) targetEl.value = inv.target || '';
 
             if(inv.items && Array.isArray(inv.items) && inv.items.length > 0) {
@@ -1215,14 +1288,14 @@
             if(!input) return;
             const query = input.value.toLowerCase().trim();
             if(!query) {
-                renderInvoicesList(allInvoicesCache);
+                renderSeparatedInvoicesLists(allInvoicesCache);
                 return;
             }
             const filtered = allInvoicesCache.filter(inv => 
                 (inv.serial && inv.serial.toLowerCase().includes(query)) || 
                 (inv.target && inv.target.toLowerCase().includes(query))
             );
-            renderInvoicesList(filtered);
+            renderSeparatedInvoicesLists(filtered);
         }
 
         async function executePrintWindow(invoiceData) {
@@ -1344,7 +1417,30 @@
         }
 
         function printSpecificInvoicePrintView(invId) {
-            const inv = window._tempInvoices && window._tempInvoices[invId];
+            const inv = window._tempAdminInvoices && window._tempAdminInvoices[invId];
+            if(!inv) return;
+
+            let dateStr = new Date().toLocaleString('ar-EG');
+            if(inv.date && typeof inv.date.toDate === 'function') {
+                dateStr = new Date(inv.date.toDate()).toLocaleString('ar-EG');
+            }
+
+            const items = inv.items || [{ name: inv.details || 'تفاصيل الفاتورة', qty: 1, price: inv.subtotal || inv.amount || 0 }];
+            
+            executePrintWindow({
+                serial: inv.serial || 'INV-000',
+                target: inv.target || 'عام',
+                items,
+                subtotal: Number(inv.subtotal) || Number(inv.amount) || 0,
+                tax: Number(inv.tax) || 0,
+                appliedTaxes: inv.appliedTaxes || [],
+                amount: Number(inv.amount) || 0,
+                dateStr
+            });
+        }
+
+        function printCustomerInvoicePrintView(invId) {
+            const inv = window._tempCustomerInvoices && window._tempCustomerInvoices[invId];
             if(!inv) return;
 
             let dateStr = new Date().toLocaleString('ar-EG');
