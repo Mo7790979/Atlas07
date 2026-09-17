@@ -583,6 +583,10 @@
                 document.getElementById('set-msg-welcome').value = b.msgWelcome || "";
                 document.getElementById('set-msg-bye').value = b.msgBye || "";
                 selectSystem(b.systemType || "stamps");
+                
+                // تحديث اسم المنشأة المباشر في الترويسة العليا إذا وجد في إعدادات التخصيص
+                const nameEl = document.getElementById('display-cafe-name');
+                if(nameEl && b.brandName) nameEl.innerText = b.brandName;
             }
         }
 
@@ -602,13 +606,6 @@
             
             invoiceInteractiveItems = [];
             renderInvoiceItemsBuilder();
-
-            db.collection("cafes").doc(currentCafeID).get().then(doc => {
-                const expiryEl = document.getElementById('expiry-date-text');
-                const nameEl = document.getElementById('display-cafe-name');
-                if(expiryEl) expiryEl.innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
-                if(nameEl && doc.exists) nameEl.innerText = doc.data().cafeName || currentCafeID;
-            });
         }
 
         function generateNewSerial() {
@@ -1227,10 +1224,26 @@
             renderInvoicesList(filtered);
         }
 
-        function executePrintWindow(invoiceData) {
-            // جلب اسم المتجر مباشرة من الحقل المعروض في واجهة الإدارة لضمان ارتباطه باسم المتجر الفعلي
-            const cafeNameEl = document.getElementById('display-cafe-name');
-            const cafeName = (cafeNameEl && cafeNameEl.innerText !== '--') ? cafeNameEl.innerText : (invoiceData.cafeName || 'اسم المتجر');
+        async function executePrintWindow(invoiceData) {
+            // جلب اسم المنشأة مباشرة من حقل الإدخال في قسم التخصيص أو من الواجهة العلوية لضمان ظهور اسم المنشأة المخصص
+            let cafeName = "";
+            const brandInput = document.getElementById('set-brand-name');
+            if(brandInput && brandInput.value.trim() !== "") {
+                cafeName = brandInput.value.trim();
+            } else {
+                const cafeNameEl = document.getElementById('display-cafe-name');
+                if(cafeNameEl && cafeNameEl.innerText !== '--' && cafeNameEl.innerText.trim() !== "") {
+                    cafeName = cafeNameEl.innerText.trim();
+                } else {
+                    try {
+                        const doc = await db.collection("cafes").doc(currentCafeID).collection("settings").doc("branding").get();
+                        if(doc.exists && doc.data().brandName) {
+                            cafeName = doc.data().brandName;
+                        }
+                    } catch(e) {}
+                }
+            }
+            if(!cafeName) cafeName = currentCafeID || 'اسم المنشأة';
             
             let itemsHTML = '';
             
@@ -1405,9 +1418,19 @@
             if(modal) modal.classList.remove('hidden');
         }
 
-        function printDailySalesReport() {
-            const cafeNameEl = document.getElementById('display-cafe-name');
-            const cafeName = (cafeNameEl && cafeNameEl.innerText !== '--') ? cafeNameEl.innerText : 'المنشأة';
+        async function printDailySalesReport() {
+            let cafeName = "";
+            const brandInput = document.getElementById('set-brand-name');
+            if(brandInput && brandInput.value.trim() !== "") {
+                cafeName = brandInput.value.trim();
+            } else {
+                const cafeNameEl = document.getElementById('display-cafe-name');
+                if(cafeNameEl && cafeNameEl.innerText !== '--' && cafeNameEl.innerText.trim() !== "") {
+                    cafeName = cafeNameEl.innerText.trim();
+                }
+            }
+            if(!cafeName) cafeName = 'المنشأة';
+
             const reportContentHtml = document.getElementById('sales-report-content').innerHTML;
             const currentDateTimeStr = new Date().toLocaleString('ar-EG');
 
