@@ -7,7 +7,7 @@
     <!-- استدعاء خط Cairo وتصميم الأيقونات -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- مكتبة توليد الباركود QRCode.js -->
+    <!-- مكتبة توليد الباركود QRCode.js لإصلاح خطأ الـ 404 وقسم الباركود -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
@@ -252,6 +252,7 @@
             background: #fdfdfd;
         }
 
+        /* تنسيق الأضواء والشارات */
         .badge {
             padding: 6px 12px;
             border-radius: 20px;
@@ -262,6 +263,90 @@
         .badge-success { background: #d1fae5; color: #065f46; }
         .badge-warning { background: #fef3c7; color: #92400e; }
         .badge-danger { background: #fee2e2; color: #991b1b; }
+
+        /* تخصيص قسم نقاط البيع والطلب */
+        .pos-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .menu-items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            max-height: 600px;
+            overflow-y: auto;
+            padding: 5px;
+        }
+
+        .menu-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .menu-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow);
+        }
+
+        .menu-card h4 {
+            margin: 10px 0 5px;
+            font-size: 1rem;
+        }
+
+        .menu-card p {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .cart-box {
+            background: white;
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            height: fit-content;
+        }
+
+        .cart-items {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .cart-summary div {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .cart-summary .total {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--primary);
+            border-top: 2px dashed var(--border);
+            padding-top: 10px;
+            margin-top: 10px;
+        }
 
         /* تنسيق قسم الباركود */
         .qr-section {
@@ -359,7 +444,7 @@
             <li><a href="#" onclick="switchTab('pos', event)"><i class="fas fa-cash-register"></i> نقطة البيع (POS)</a></li>
             <li><a href="#" onclick="switchTab('qrcode', event)"><i class="fas fa-qrcode"></i> الباركود وقرص الطاولات</a></li>
             <li><a href="#" onclick="switchTab('reports', event)"><i class="fas fa-chart-bar"></i> التقارير والطباعة</a></li>
-            <li><a href="#" onclick="switchTab('settings', event)"><i class="fas fa-cog"></i> إعدادات النظام</a></li>
+            <li><a href="#" onclick="switchTab('settings', event)"><i class="fas fa-cog"></i> إعدادات الضرائب</a></li>
         </ul>
     </aside>
 
@@ -373,7 +458,7 @@
             </div>
         </header>
 
-        <!-- 1. الرئيسية -->
+        <!-- 1. لوحة الرئيسية (Dashboard) -->
         <div id="dashboard" class="tab-content active">
             <div class="stats-grid">
                 <div class="stat-card">
@@ -394,7 +479,7 @@
                     <div class="stat-icon"><i class="fas fa-bell"></i></div>
                     <div class="stat-info">
                         <h3>نداءات معلقة</h3>
-                        <p id="pending-calls-count">2</p>
+                        <p id="pending-calls-count">3</p>
                     </div>
                 </div>
                 <div class="stat-card">
@@ -404,6 +489,47 @@
                         <p>18 صنف</p>
                     </div>
                 </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>أحدث العمليات والطلبات</h3>
+                    <button class="btn" onclick="window.print()"><i class="fas fa-print"></i> طباعة التقرير</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>رقم الطلب</th>
+                            <th>العميل / الطاولة</th>
+                            <th>المبلغ الإجمالي</th>
+                            <th>الحالة</th>
+                            <th>الوقت</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>#1042</td>
+                            <td>طاولة رقم 4</td>
+                            <td>120 ر.س</td>
+                            <td><span class="badge badge-success">مكتمل</span></td>
+                            <td>قبل 10 دقائق</td>
+                        </tr>
+                        <tr>
+                            <td>#1041</td>
+                            <td>طاولة رقم 2</td>
+                            <td>85 ر.س</td>
+                            <td><span class="badge badge-warning">قيد التحضير</span></td>
+                            <td>قبل 25 دقيقة</td>
+                        </tr>
+                        <tr>
+                            <td>#1040</td>
+                            <td>سفري (خارجي)</td>
+                            <td>210 ر.س</td>
+                            <td><span class="badge badge-success">مكتمل</span></td>
+                            <td>قبل ساعة</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -431,6 +557,17 @@
                             <td>برجر دجاج مقرمش</td>
                             <td>الوجبات السريعة</td>
                             <td>35 ر.س</td>
+                            <td><span class="badge badge-success">متوفر</span></td>
+                            <td>
+                                <button class="btn btn-success" style="padding: 5px 10px; font-size: 0.8rem;"><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-danger" style="padding: 5px 10px; font-size: 0.8rem;"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><i class="fas fa-pizza-slice fa-2x text-muted"></i></td>
+                            <td>بيتزا مارجريتا</td>
+                            <td>المعجنات والبيتزا</td>
+                            <td>45 ر.س</td>
                             <td><span class="badge badge-success">متوفر</span></td>
                             <td>
                                 <button class="btn btn-success" style="padding: 5px 10px; font-size: 0.8rem;"><i class="fas fa-edit"></i></button>
@@ -467,27 +604,80 @@
                             <td><span class="badge badge-warning">بانتظار الاستجابة</span></td>
                             <td><button class="btn" style="padding: 5px 10px; font-size: 0.8rem;" onclick="resolveCall(this)">تمت الخدمة</button></td>
                         </tr>
+                        <tr>
+                            <td>طاولة رقم 12</td>
+                            <td>طلب فاتورة الحساب</td>
+                            <td>منذ 5 دقائق</td>
+                            <td><span class="badge badge-warning">بانتظار الاستجابة</span></td>
+                            <td><button class="btn" style="padding: 5px 10px; font-size: 0.8rem;" onclick="resolveCall(this)">تمت الخدمة</button></td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- 4. نقطة البيع (POS) -->
+        <!-- 4. نقطة البيع (POS) وسلة المشتريات -->
         <div id="pos" class="tab-content">
-            <div class="card">
-                <h3>نقطة البيع السريعة (POS)</h3>
-                <p style="color: var(--gray); margin-top: 10px;">إدارة الفواتير السريعة وإصدار الطلبات.</p>
+            <div class="pos-container">
+                <!-- قائمة الأصناف للطلب السريع -->
+                <div class="card" style="margin-bottom: 0;">
+                    <div class="card-header">
+                        <h3>اختر المنتجات لإضافتها للفاتورة</h3>
+                    </div>
+                    <div class="menu-items-grid">
+                        <div class="menu-card" onclick="addToCart('برجر دجاج مقرمش', 35)">
+                            <i class="fas fa-hamburger fa-2x" style="color:var(--primary)"></i>
+                            <h4>برجر دجاج</h4>
+                            <p>35 ر.س</p>
+                        </div>
+                        <div class="menu-card" onclick="addToCart('بيتزا مارجريتا', 45)">
+                            <i class="fas fa-pizza-slice fa-2x" style="color:var(--primary)"></i>
+                            <h4>بيتزا مارجريتا</h4>
+                            <p>45 ر.س</p>
+                        </div>
+                        <div class="menu-card" onclick="addToCart('عصير برتقال طازج', 15)">
+                            <i class="fas fa-glass-water fa-2x" style="color:var(--primary)"></i>
+                            <h4>عصير برتقال</h4>
+                            <p>15 ر.س</p>
+                        </div>
+                        <div class="menu-card" onclick="addToCart('بطاطس مقلية', 12)">
+                            <i class="fas fa-french-fries fa-2x" style="color:var(--primary)"></i>
+                            <h4>بطاطس مقلية</h4>
+                            <p>12 ر.س</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- سلة المشتريات والحساب التلقائي والضرائب -->
+                <div class="cart-box">
+                    <h3>سلة الطلب الحالية</h3>
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label>رقم الطاولة / العميل:</label>
+                        <input type="text" id="pos-table-num" placeholder="مثال: طاولة 3">
+                    </div>
+                    <div class="cart-items" id="cart-items-container">
+                        <p style="text-align: center; color: var(--gray); margin-top: 20px;">السلة فارغة حالياً</p>
+                    </div>
+                    <div class="cart-summary">
+                        <div><span>المجموع الفرعي:</span> <span id="subtotal-val">0.00 ر.س</span></div>
+                        <div><span>ضريبة القيمة المضافة (<span id="tax-rate-display">15</span>%):</span> <span id="tax-val">0.00 ر.س</span></div>
+                        <div class="total"><span>الإجمالي النهائي:</span> <span id="grand-total-val">0.00 ر.س</span></div>
+                    </div>
+                    <button class="btn btn-success" style="width: 100%; justify-content: center; margin-top: 15px;" onclick="checkoutOrder()">
+                        <i class="fas fa-check-circle"></i> إتمام ودفع الطلب
+                    </button>
+                </div>
             </div>
         </div>
 
-        <!-- 5. قسم الباركود والـ QR Code (المحلول والجديد لربط index.html عبر GitHub) -->
+        <!-- 5. قسم الباركود لعلاج خطأ 404 (من ضمن مميزاتك الأصلية مع تصحيح الرابط) -->
         <div id="qrcode" class="tab-content">
             <div class="card" style="max-width: 600px; margin: 0 auto;">
                 <div class="card-header">
                     <h3>باركود قائمة العملاء (QR Code)</h3>
                 </div>
                 <p style="color: var(--gray); margin-bottom: 20px; font-size: 0.9rem;">
-                    هذا الباركود مرتبط مباشرة بملف <code>index.html</code> على مستودعك في GitHub (<strong>Atlas07</strong>). قم بطباعته ووضعه على الطاولات ليسهل على العملاء مسحه وفتح المنيو والطلب فوراً.
+                    هذا الباركود مرتبط مباشرة بملف <code>index.html</code> على مستودعك في GitHub (<strong>Atlas07</strong>). قم بطباعته ووضعه على الطاولات.
                 </p>
                 <div class="qr-section">
                     <div class="qr-box" id="admin-qr-container"></div>
@@ -508,11 +698,14 @@
                     <h3>تقرير المبيعات والعمليات الشامل</h3>
                     <button class="btn" onclick="window.print()"><i class="fas fa-print"></i> طباعة السجل الرسمي</button>
                 </div>
+                <p style="margin-bottom: 20px; color: var(--gray);">يعرض هذا القسم ملخص حركة الإيرادات اليومية وتفاصيل المبيعات المسجلة وجاهزيتها للتصدير أو الطباعة المباشرة.</p>
                 <table>
                     <thead>
                         <tr>
                             <th>التاريخ / الوقت</th>
                             <th>عدد الطلبات</th>
+                            <th>المجموع الفرعي</th>
+                            <th>الضرائب المحصلة</th>
                             <th>إجمالي الإيرادات</th>
                         </tr>
                     </thead>
@@ -520,6 +713,8 @@
                         <tr>
                             <td>2026/09/17</td>
                             <td>24 طلب</td>
+                            <td>1,086.95 ر.س</td>
+                            <td>163.05 ر.س</td>
                             <td><strong>1,250.00 ر.س</strong></td>
                         </tr>
                     </tbody>
@@ -527,13 +722,26 @@
             </div>
         </div>
 
-        <!-- 7. إعدادات النظام -->
+        <!-- 7. إعدادات الضرائب والرسوم -->
         <div id="settings" class="tab-content">
             <div class="card" style="max-width: 600px;">
-                <h3>إعدادات النظام والضرائب</h3>
-                <div class="form-group" style="margin-top: 15px;">
+                <div class="card-header">
+                    <h3>إعدادات النظام والضرائب</h3>
+                </div>
+                <div class="form-group">
+                    <label>نسبة ضريبة القيمة المضافة (%)</label>
+                    <input type="number" id="tax-rate-input" value="15" oninput="updateTaxRate()">
+                </div>
+                <div class="form-group">
                     <label>اسم المنشأة / المطعم</label>
                     <input type="text" value="مطعم ومقاهي النظام الذكي">
+                </div>
+                <div class="form-group">
+                    <label>عملة النظام الرسمية</label>
+                    <select>
+                        <option value="SAR">ريال سعودي (ر.س)</option>
+                        <option value="USD">دولار أمريكي ($)</option>
+                    </select>
                 </div>
                 <button class="btn" onclick="alert('تم حفظ الإعدادات بنجاح!')">حفظ التغييرات</button>
             </div>
@@ -553,6 +761,15 @@
                 <input type="text" id="new-item-name" placeholder="أدخل اسم الوجبة أو المشروب">
             </div>
             <div class="form-group">
+                <label>القسم</label>
+                <select id="new-item-cat">
+                    <option>الوجبات السريعة</option>
+                    <option>المعجنات والبيتزا</option>
+                    <option>المشروبات والعصائر</option>
+                    <option>المقبلات</option>
+                </select>
+            </div>
+            <div class="form-group">
                 <label>السعر (ر.س)</label>
                 <input type="number" id="new-item-price" placeholder="0.00">
             </div>
@@ -563,7 +780,7 @@
         </div>
     </div>
 
-    <!-- السكربتات البرمجية وتوليد الباركود تلقائياً -->
+    <!-- السكربتات البرمجية التفاعلية -->
     <script>
         // توليد باركود واجهة العميل تلقائياً عند تحميل الصفحة بناءً على اسم مستودعك Atlas07
         window.addEventListener('DOMContentLoaded', () => {
@@ -572,17 +789,16 @@
 
         function generateClientQRCode() {
             const container = document.getElementById('admin-qr-container');
-            container.innerHTML = ""; // تفريغ القديم إن وجد
+            if(!container) return;
+            container.innerHTML = ""; 
             
-            // الرابط الصحيح المتوافق مع GitHub Pages ومستودع Atlas07 وملف index.html
             const githubUsername = "mo7790979";
             const repositoryName = "Atlas07";
             const targetUrl = `https://${githubUsername}.github.io/${repositoryName}/index.html`;
 
-            // وضع الرابط في حقل العرض
-            document.getElementById('qr-target-url').value = targetUrl;
+            const urlInput = document.getElementById('qr-target-url');
+            if(urlInput) urlInput.value = targetUrl;
 
-            // بناء الـ QR Code باستخدام مكتبة qrcode.js
             new QRCode(container, {
                 text: targetUrl,
                 width: 160,
@@ -592,6 +808,10 @@
                 correctLevel: QRCode.CorrectLevel.H
             });
         }
+
+        // المتغيرات العامة لنظام الطلبات ونقطة البيع
+        let cart = [];
+        let taxRate = 0.15;
 
         // تبديل التبويبات بسلاسة
         function switchTab(tabId, event) {
@@ -609,6 +829,7 @@
                 event.currentTarget.parentElement.classList.add('active');
             }
 
+            // تحديث عنوان الصفحة العلوي
             const titles = {
                 'dashboard': 'لوحة التحكم الرئيسية',
                 'menu': 'إدارة المنيو والأصناف',
@@ -621,6 +842,7 @@
             document.getElementById('page-title').innerText = titles[tabId] || 'لوحة التحكم';
         }
 
+        // إدارة النوافذ المنبثقة (Modals)
         function openModal(modalId) {
             document.getElementById(modalId).style.display = 'flex';
         }
@@ -628,6 +850,7 @@
             document.getElementById(modalId).style.display = 'none';
         }
 
+        // إدارة نداءات النُدل
         function resolveCall(btn) {
             const row = btn.closest('tr');
             row.style.background = '#d1fae5';
@@ -649,15 +872,109 @@
             document.getElementById('pending-calls-count').innerText = finalCount;
         }
 
-        function addNewMenuItem() {
-            const name = document.getElementById('new-item-name').value;
-            const price = document.getElementById('new-item-price').value;
-            if(!name || !price) {
-                alert('يرجى إدخال اسم الصنف والسعر.');
+        // منطق نقطة البيع (POS) وسلة المشتريات
+        function addToCart(name, price) {
+            const existingItem = cart.find(item => item.name === name);
+            if (existingItem) {
+                existingItem.qty += 1;
+            } else {
+                cart.push({ name, price, qty: 1 });
+            }
+            renderCart();
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items-container');
+            if (cart.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--gray); margin-top: 20px;">السلة فارغة حالياً</p>';
+                document.getElementById('subtotal-val').innerText = '0.00 ر.س';
+                document.getElementById('tax-val').innerText = '0.00 ر.س';
+                document.getElementById('grand-total-val').innerText = '0.00 ر.س';
                 return;
             }
+
+            container.innerHTML = '';
+            let subtotal = 0;
+
+            cart.forEach((item, index) => {
+                let itemTotal = item.price * item.qty;
+                subtotal += itemTotal;
+                container.innerHTML += `
+                    <div class="cart-item">
+                        <div>
+                            <strong>${item.name}</strong><br>
+                            <small>${item.price} ر.س × ${item.qty}</small>
+                        </div>
+                        <div>
+                            <span style="font-weight:700; margin-left: 10px;">${itemTotal} ر.س</span>
+                            <i class="fas fa-trash text-danger" style="cursor:pointer;" onclick="removeFromCart(${index})"></i>
+                        </div>
+                    </div>
+                `;
+            });
+
+            let tax = subtotal * taxRate;
+            let grandTotal = subtotal + tax;
+
+            document.getElementById('subtotal-val').innerText = subtotal.toFixed(2) + ' ر.س';
+            document.getElementById('tax-val').innerText = tax.toFixed(2) + ' ر.س';
+            document.getElementById('grand-total-val').innerText = grandTotal.toFixed(2) + ' ر.س';
+        }
+
+        function updateTaxRate() {
+            const val = document.getElementById('tax-rate-input').value;
+            taxRate = parseFloat(val) / 100 || 0;
+            document.getElementById('tax-rate-display').innerText = val;
+            renderCart();
+        }
+
+        function checkoutOrder() {
+            if (cart.length === 0) {
+                alert('السلة فارغة، يرجى إضافة منتجات أولاً!');
+                return;
+            }
+            const tableNum = document.getElementById('pos-table-num').value || 'طاولة عامة';
+            alert(`تم إتمام الطلب بنجاح لصالح (${tableNum}) وطباعة الفاتورة الآلية!`);
+            cart = [];
+            document.getElementById('pos-table-num').value = '';
+            renderCart();
+        }
+
+        // إضافة صنف جديد للمنيو تفاعلياً
+        function addNewMenuItem() {
+            const name = document.getElementById('new-item-name').value;
+            const category = document.getElementById('new-item-cat').value;
+            const price = document.getElementById('new-item-price').value;
+
+            if(!name || !price) {
+                alert('يرجى إدخال اسم الصنف والسعر بشكل صحيح.');
+                return;
+            }
+
+            const tbody = document.getElementById('menu-table-body');
+            tbody.innerHTML += `
+                <tr>
+                    <td><i class="fas fa-utensils fa-2x text-muted"></i></td>
+                    <td>${name}</td>
+                    <td>${category}</td>
+                    <td>${price} ر.س</td>
+                    <td><span class="badge badge-success">متوفر</span></td>
+                    <td>
+                        <button class="btn btn-success" style="padding: 5px 10px; font-size: 0.8rem;"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-danger" style="padding: 5px 10px; font-size: 0.8rem;"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+
             closeModal('addMenuModal');
-            alert('تمت إضافة الصنف بنجاح!');
+            document.getElementById('new-item-name').value = '';
+            document.getElementById('new-item-price').value = '';
+            alert('تمت إضافة الصنف إلى القائمة بنجاح!');
         }
     </script>
 </body>
