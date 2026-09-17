@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة النادل الاحترافية</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- استيراد مكتبات Firebase بالنسخ المتوافقة -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+        body { font-family: 'Cairo', sans-serif; background: #f8fafc; color: #1e293b; }
+        .waiter-card { background: white; border-radius: 1.25rem; padding: 1.25rem; border: 1px solid #e2e8f0; margin-bottom: 1rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03); }
+        .hidden { display: none !important; }
+        .active-tab { background: #2563eb !important; color: white !important; transform: translateY(-2px); box-shadow: 0 8px 12px -3px rgba(37, 99, 235, 0.3); }
+        input, select, textarea { width: 100%; padding: 0.65rem 0.85rem; border-radius: 0.65rem; border: 1px solid #cbd5e1; outline: none; background: #f8fafc; transition: 0.3s; font-family: inherit; font-size: 0.85rem; }
+        input:focus { border-color: #2563eb; background: #fff; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        label { font-size: 0.75rem; font-weight: 700; color: #64748b; margin-bottom: 0.35rem; display: block; }
+        .menu-item-card { background: white; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 10px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .menu-item-card:hover { transform: translateY(-2px); border-color: #2563eb; box-shadow: 0 8px 12px -3px rgba(37,99,235,0.1); }
+    </style>
+</head>
+<body class="max-w-3xl mx-auto pb-24 px-3 sm:px-6">
+
+    <!-- شاشة تسجيل دخول النادل -->
+    <div id="waiter-login-screen" class="p-8 text-center mt-20 bg-white rounded-[2.5rem] shadow-2xl border max-w-md mx-auto">
+        <div class="w-20 h-20 bg-amber-600 text-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-amber-200">
+            <i class="fas fa-concierge-bell text-3xl"></i>
+        </div>
+        <h2 class="text-2xl font-black mb-6 text-slate-800">تسجيل دخول النادل</h2>
+        <div class="space-y-4 text-right">
+            <div>
+                <label>معرف المتجر (Cafe ID)</label>
+                <input type="text" id="cafe-id-input" placeholder="مثال: store1">
+            </div>
+            <div>
+                <label>اسم المستخدم (معرف النادل)</label>
+                <input type="text" id="waiter-user-input" placeholder="مثال: waiter1">
+            </div>
+            <div>
+                <label>كلمة المرور</label>
+                <input type="password" id="waiter-pass-input" placeholder="كلمة المرور">
+            </div>
+            <button onclick="waiterLogin()" class="w-full bg-amber-600 hover:bg-amber-700 text-white py-4 rounded-2xl font-bold transition-all shadow-lg mt-2 cursor-pointer border-none">دخول لوحة النادل</button>
+        </div>
+    </div>
+
+    <!-- لوحة تحكم النادل الرئيسية -->
+    <div id="main-waiter-panel" class="hidden mt-4 animate-in fade-in duration-500">
+        
+        <div class="bg-slate-900 text-white p-4 rounded-2xl mb-5 flex justify-between items-center shadow-xl">
+            <div>
+                <p class="text-[10px] text-amber-400 font-bold uppercase tracking-widest">بوابة خدمة الطاولات</p>
+                <h1 id="waiter-welcome-name" class="font-black text-lg text-white leading-none mt-1">النادل: --</h1>
+            </div>
+            <div class="text-left">
+                <span id="display-cafe-badge" class="bg-slate-800 text-blue-400 px-3 py-1 rounded-xl text-xs font-mono font-bold border border-slate-700">--</span>
+                <button onclick="location.reload()" class="text-[10px] text-red-400 mt-2 block underline cursor-pointer bg-transparent border-none">خروج</button>
+            </div>
+        </div>
+
+        <!-- التنقل بين الأقسام -->
+        <div class="flex gap-2 mb-6 overflow-x-auto no-scrollbar py-1">
+            <button onclick="showWaiterSection('calls')" id="tab-calls" class="waiter-tab-btn active-tab bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">نداءات الطاولات <span id="calls-badge" class="bg-red-500 text-white px-1.5 py-0.5 rounded-full text-[10px] mr-1">0</span></button>
+            <button onclick="showWaiterSection('menu')" id="tab-menu" class="waiter-tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">المنيو والطلب السريع</button>
+        </div>
+
+        <!-- قسم نداءات النادل -->
+        <div id="section-calls" class="waiter-section">
+            <div class="waiter-card border-amber-200 bg-amber-50/30">
+                <h3 class="font-black text-amber-800 mb-3 text-sm flex items-center justify-between">
+                    <span><i class="fas fa-bell ml-1"></i> تنبيهات الطاولات النشطة</span>
+                    <span class="text-xs text-slate-500 font-normal">اضغط عند الاستجابة</span>
+                </h3>
+                <div id="waiter-live-calls-list" class="space-y-2.5 max-h-[500px] overflow-y-auto">
+                    <p class="text-xs text-slate-400 text-center py-8">لا توجد نداءات جديدة من الطاولات حالياً</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- قسم المنيو والطلب السريع نيابة عن الزبون -->
+        <div id="section-menu" class="waiter-section hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                <!-- قائمة المنيو -->
+                <div class="waiter-card">
+                    <h3 class="font-black text-blue-600 mb-3 text-xs border-r-4 border-blue-600 pr-2">منيو المتجر التفاعلي</h3>
+                    <div class="mb-3">
+                        <input type="text" id="waiter-menu-search" placeholder="بحث في المنتجات..." oninput="renderWaiterMenu()" class="text-xs">
+                    </div>
+                    <div id="waiter-menu-grid" class="space-y-2 max-h-[450px] overflow-y-auto p-1">
+                        <p class="text-xs text-slate-400 text-center py-6">جاري تحميل المنيو...</p>
+                    </div>
+                </div>
+
+                <!-- سلة الطلب السريع للطاولة -->
+                <div class="waiter-card border-2 border-blue-100 flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-black text-blue-900 mb-3 text-sm flex items-center gap-2 border-b pb-2">
+                            <i class="fas fa-shopping-cart text-blue-600"></i> إرسال طلب جديد للطاولة
+                        </h3>
+                        <div class="mb-3">
+                            <label>رقم الطاولة / اسم الزبون</label>
+                            <input type="text" id="order-table-target" placeholder="مثال: طاولة 5" class="font-bold text-slate-800">
+                        </div>
+                        <div class="mb-2">
+                            <label class="text-xs font-bold text-slate-700">الأصناف المضافة للطلب</label>
+                            <div id="waiter-cart-items" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+                                <p class="text-xs text-slate-400 text-center py-4">السلة فارغة. اضغط على منتج من المنيو لإضافته.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border-t pt-3 mt-2 bg-slate-50 p-3 rounded-xl">
+                        <div class="flex justify-between font-black text-sm text-emerald-700 mb-3">
+                            <span>إجمالي الطلب:</span>
+                            <span id="waiter-cart-total">0.00</span>
+                        </div>
+                        <button onclick="submitWaiterCartOrder()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold text-xs shadow-lg shadow-emerald-200 cursor-pointer border-none flex items-center justify-center gap-2">
+                            <i class="fas fa-paper-plane"></i> إرسال الطلب إلى لوحة المحاسبة
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const firebaseConfig = { 
+            apiKey: "AIzaSyCCBwr2b_9In1_gpqxkT3qKJ9ua-D80ZuE", 
+            authDomain: "mywarehouseapp-e0132.firebaseapp.com", 
+            projectId: "mywarehouseapp-e0132", 
+            storageBucket: "mywarehouseapp-e0132.firebasestorage.app", 
+            messagingSenderId: "720074658896", 
+            appId: "1:720074658896:web:09d084916b9dbc28556d55" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let currentCafeID = "";
+        let currentWaiterName = "";
+        let waiterMenuCache = [];
+        let waiterCartItems = [];
+
+        async function waiterLogin() {
+            const cafeId = document.getElementById('cafe-id-input').value.trim();
+            const username = document.getElementById('waiter-user-input').value.trim();
+            const password = document.getElementById('waiter-pass-input').value;
+
+            if(!cafeId || !username || !password) {
+                alert("يرجى إدخال معرف المتجر، اسم المستخدم، وكلمة المرور");
+                return;
+            }
+
+            try {
+                const waiterDoc = await db.collection("cafes").doc(cafeId).collection("waiters").doc(username).get();
+                if(waiterDoc.exists && waiterDoc.data().password === password) {
+                    currentCafeID = cafeId;
+                    currentWaiterName = waiterDoc.data().fullname || username;
+                    
+                    document.getElementById('waiter-login-screen').classList.add('hidden');
+                    document.getElementById('main-waiter-panel').classList.remove('hidden');
+                    
+                    document.getElementById('waiter-welcome-name').innerText = `النادل: ${currentWaiterName}`;
+                    document.getElementById('display-cafe-badge').innerText = `المتجر: ${currentCafeID}`;
+
+                    initWaiterSession();
+                } else {
+                    alert("بيانات دخول النادل غير صحيحة أو أن المتجر غير موجود");
+                }
+            } catch(e) {
+                console.error(e);
+                alert("حدث خطأ أثناء الاتصال بقاعدة البيانات");
+            }
+        }
+
+        function initWaiterSession() {
+            listenToWaiterLiveCalls();
+            loadWaiterMenu();
+        }
+
+        function showWaiterSection(sectionId) {
+            document.querySelectorAll('.waiter-section').forEach(s => s.classList.add('hidden'));
+            document.querySelectorAll('.waiter-tab-btn').forEach(b => b.classList.remove('active-tab'));
+
+            document.getElementById('section-' + sectionId).classList.remove('hidden');
+            document.getElementById('tab-' + sectionId).classList.add('active-tab');
+        }
+
+        function listenToWaiterLiveCalls() {
+            db.collection("cafes").doc(currentCafeID).collection("waiter_calls")
+              .where("status", "==", "pending")
+              .onSnapshot(snap => {
+                  const list = document.getElementById('waiter-live-calls-list');
+                  const badge = document.getElementById('calls-badge');
+                  if(badge) badge.innerText = snap.size;
+                  if(!list) return;
+
+                  list.innerHTML = "";
+                  if(snap.empty) {
+                      list.innerHTML = '<p class="text-xs text-slate-400 text-center py-8">لا توجد نداءات جديدة من الطاولات حالياً</p>';
+                      return;
+                  }
+
+                  snap.forEach(doc => {
+                      const call = doc.data();
+                      let timeStr = call.time && typeof call.time.toDate === 'function' ? new Date(call.time.toDate()).toLocaleTimeString('ar-EG') : '';
+                      
+                      list.innerHTML += `
+                      <div class="flex justify-between items-center p-3.5 bg-white rounded-xl border border-amber-200 shadow-sm">
+                          <div>
+                              <div class="font-black text-sm text-amber-900 flex items-center gap-1.5">
+                                  <i class="fas fa-bell text-amber-500 animate-bounce"></i> ${call.table || 'طاولة غير محددة'}
+                              </div>
+                              <div class="text-[10px] text-slate-400 mt-0.5">وقت النداء: ${timeStr}</div>
+                          </div>
+                          <button onclick="resolveWaiterCall('${doc.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer border-none shadow transition-all">
+                              تمت الاستجابة
+                          </button>
+                      </div>`;
+                  });
+              });
+        }
+
+        async function resolveWaiterCall(callId) {
+            try {
+                await db.collection("cafes").doc(currentCafeID).collection("waiter_calls").doc(callId).update({
+                    status: 'resolved',
+                    resolvedBy: currentWaiterName
+                });
+            } catch(e) {
+                alert("حدث خطأ أثناء تحديث حالة النداء");
+            }
+        }
+
+        async function loadWaiterMenu() {
+            try {
+                const snap = await db.collection("cafes").doc(currentCafeID).collection("products").orderBy("createdAt", "desc").get();
+                waiterMenuCache = [];
+                snap.forEach(doc => {
+                    waiterMenuCache.push({ id: doc.id, ...doc.data() });
+                });
+                renderWaiterMenu();
+            } catch(e) {
+                console.log("خطأ في جلب المنيو");
+            }
+        }
+
+        function renderWaiterMenu() {
+            const grid = document.getElementById('waiter-menu-grid');
+            const searchInput = document.getElementById('waiter-menu-search');
+            if(!grid) return;
+
+            const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            const filtered = waiterMenuCache.filter(p => !query || p.name.toLowerCase().includes(query) || (p.category && p.category.toLowerCase().includes(query)));
+
+            grid.innerHTML = "";
+            if(filtered.length === 0) {
+                grid.innerHTML = '<p class="text-xs text-slate-400 text-center py-6">لا توجد منتجات مطابقة في المنيو</p>';
+                return;
+            }
+
+            filtered.forEach(p => {
+                grid.innerHTML += `
+                <div onclick='addWaiterCartItem("${p.name.replace(/"/g, '&quot;')}", ${p.price})' class="menu-item-card">
+                    <img src="${p.image || 'https://via.placeholder.com/100'}" class="w-14 h-14 object-cover rounded-xl bg-slate-100 shrink-0">
+                    <div class="flex-1 text-right">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-xs text-slate-800 line-clamp-1 mb-0.5">${p.name}</h4>
+                            <span class="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md">${p.price}</span>
+                        </div>
+                        <p class="text-[10px] text-slate-500 line-clamp-1 mb-1">${p.category || 'عام'}</p>
+                        <span class="text-[10px] text-blue-600 font-bold hover:underline">
+                            <i class="fas fa-plus ml-0.5"></i> أضف للطلب
+                        </span>
+                    </div>
+                </div>`;
+            });
+        }
+
+        function addWaiterCartItem(name, price) {
+            const existing = waiterCartItems.find(i => i.name === name);
+            if(existing) {
+                existing.qty += 1;
+            } else {
+                waiterCartItems.push({ name, qty: 1, price: Number(price) || 0 });
+            }
+            renderWaiterCart();
+        }
+
+        function removeWaiterCartItem(index) {
+            waiterCartItems.splice(index, 1);
+            renderWaiterCart();
+        }
+
+        function renderWaiterCart() {
+            const container = document.getElementById('waiter-cart-items');
+            const totalEl = document.getElementById('waiter-cart-total');
+            if(!container) return;
+
+            container.innerHTML = "";
+            let total = 0;
+
+            if(waiterCartItems.length === 0) {
+                container.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">السلة فارغة. اضغط على منتج من المنيو لإضافته.</p>';
+                if(totalEl) totalEl.innerText = "0.00";
+                return;
+            }
+
+            waiterCartItems.forEach((item, index) => {
+                const itemTotal = item.qty * item.price;
+                total += itemTotal;
+
+                container.innerHTML += `
+                <div class="flex justify-between items-center p-2.5 bg-slate-50 rounded-xl border text-xs text-right">
+                    <button onclick="removeWaiterCartItem(${index})" class="text-red-500 hover:text-red-700 bg-transparent border-none cursor-pointer"><i class="fas fa-trash"></i></button>
+                    <div class="flex items-center gap-3">
+                        <span class="font-black text-emerald-600">${itemTotal.toFixed(2)}</span>
+                        <span class="text-slate-500">الكمية: ${item.qty}</span>
+                    </div>
+                    <div class="font-bold text-slate-800">${item.name}</div>
+                </div>`;
+            });
+
+            if(totalEl) totalEl.innerText = total.toFixed(2);
+        }
+
+        async function submitWaiterCartOrder() {
+            const tableInput = document.getElementById('order-table-target');
+            const table = tableInput ? tableInput.value.trim() : '';
+
+            if(!table) {
+                alert("يرجى إدخال رقم الطاولة أو اسم الزبون أولاً");
+                if(tableInput) tableInput.focus();
+                return;
+            }
+
+            if(waiterCartItems.length === 0) {
+                alert("يرجى إضافة صنف واحد على الأقل للسلة");
+                return;
+            }
+
+            let total = 0;
+            waiterCartItems.forEach(i => total += i.qty * i.price);
+            const itemsSummary = waiterCartItems.map(i => `${i.qty}x ${i.name}`).join(' - ');
+
+            try {
+                await db.collection("cafes").doc(currentCafeID).collection("customer_carts").add({
+                    table: `طاولة (نادل): ${table}`,
+                    items: waiterCartItems,
+                    itemsSummary,
+                    total,
+                    status: 'pending',
+                    waiterName: currentWaiterName,
+                    time: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                alert("تم إرسال الطلب بنجاح إلى لوحة المحاسبة لدى التاجر!");
+                waiterCartItems = [];
+                tableInput.value = "";
+                renderWaiterCart();
+            } catch(e) {
+                console.error(e);
+                alert("حدث خطأ أثناء إرسال الطلب. تأكد من الاتصال بالإنترنت.");
+            }
+        }
+    </script>
+</body>
+</html>
