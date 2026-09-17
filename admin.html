@@ -246,7 +246,7 @@
                             <input type="text" id="invoice-target" placeholder="مثال: طاولة 4 أو اسم العميل" class="font-bold text-slate-800">
                         </div>
 
-                        <!-- Interactive Invoice Items List (حسب الطلب: تصميم صف مدمج مانع للتداخل) -->
+                        <!-- Interactive Invoice Items List -->
                         <div class="mb-3">
                             <div class="flex justify-between items-center mb-1.5">
                                 <label class="text-xs font-bold text-slate-700">بنود الفاتورة</label>
@@ -926,14 +926,6 @@
             renderInvoiceItemsBuilder();
         }
 
-        function updateItemField(index, field, val) {
-            if(invoiceInteractiveItems[index]) {
-                invoiceInteractiveItems[index][field] = field === 'qty' || field === 'price' ? parseFloat(val) || 0 : val;
-                calculateInvoiceTotals();
-            }
-        }
-
-        // دالة بناء بنود الفاتورة المُحسّنة لمنع تداخل وتحديث حقول الإدخال أثناء الكتابة
         function renderInvoiceItemsBuilder() {
             const container = document.getElementById('invoice-items-builder');
             if(!container) return;
@@ -970,7 +962,6 @@
                 container.appendChild(itemDiv);
             });
 
-            // ربط أحداث الإدخال مباشرة لتجنب فقدان التركيز (Focus Loss)
             container.querySelectorAll('.invoice-item-input').forEach(input => {
                 input.addEventListener('input', (e) => {
                     const idx = parseInt(e.target.getAttribute('data-index'));
@@ -1054,6 +1045,7 @@
             window.activeCartIdToResolve = null;
         }
 
+        // --- الدالة المُصححة والمحدثة لحفظ وإصدار الفاتورة وتفادي أي أخطاء ---
         async function issueInvoice() {
             const target = document.getElementById('invoice-target').value.trim();
             const subtotal = Number(document.getElementById('invoice-subtotal').innerText) || 0;
@@ -1062,14 +1054,21 @@
             const amount = Number(document.getElementById('invoice-amount').innerText) || 0;
             const serial = document.getElementById('invoice-serial').innerText;
 
-            if(!target || amount <= 0 || invoiceInteractiveItems.length === 0) { 
-                alert("يرجى إدخال اسم الطاولة/الزبون وبنود صحيحة للفاتورة"); 
-                return; 
+            if(!target) {
+                alert("يرجى إدخال رقم الطاولة أو اسم العميل أولاً");
+                document.getElementById('invoice-target').focus();
+                return;
+            }
+
+            if(invoiceInteractiveItems.length === 0 || amount <= 0) {
+                alert("يرجى إضافة بند واحد على الأقل بفعل صالح للفاتورة");
+                return;
             }
 
             const detailsSummary = invoiceInteractiveItems.map(i => `${i.qty}x ${i.name} (${i.price})`).join(' - ');
 
             try {
+                // حفظ الفاتورة في نفس مسار قاعدة البيانات الخاص بملفات المنشأة
                 await db.collection("cafes").doc(currentCafeID).collection("invoices").add({
                     serial,
                     target,
@@ -1087,26 +1086,31 @@
                     window.activeCartIdToResolve = null;
                 }
 
-                alert("تم إصدار وحفظ الفاتورة بنجاح في النظام المحاسبي!");
+                alert("تم حفظ وإصدار الفاتورة بنجاح وتحديث النظام!");
                 clearInvoiceForm();
                 loadInvoices();
             } catch(e) {
-                console.error(e);
-                alert("حدث خطأ أثناء حفظ الفاتورة في قاعدة البيانات");
+                console.error("خطأ في حفظ الفاتورة:", e);
+                alert("حدث خطأ أثناء حفظ الفاتورة في النظام السحابي. تأكد من الاتصال بالإنترنت.");
             }
         }
 
         async function loadInvoices() {
-            const snap = await db.collection("cafes").doc(currentCafeID).collection("invoices").orderBy("date", "desc").get();
-            allInvoicesCache = [];
-            snap.forEach(doc => {
-                allInvoicesCache.push({ id: doc.id, ...doc.data() });
-            });
-            renderInvoicesList(allInvoicesCache);
+            try {
+                const snap = await db.collection("cafes").doc(currentCafeID).collection("invoices").orderBy("date", "desc").get();
+                allInvoicesCache = [];
+                snap.forEach(doc => {
+                    allInvoicesCache.push({ id: doc.id, ...doc.data() });
+                });
+                renderInvoicesList(allInvoicesCache);
+            } catch(e) {
+                console.log("جاري تهيئة سجل الفواتير...");
+            }
         }
 
         function renderInvoicesList(invoices) {
             const list = document.getElementById('invoices-list');
+            if(!list) return;
             list.innerHTML = "";
             if(invoices.length === 0) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد فواتير مسجلة مطابقة</p>'; return; }
             
