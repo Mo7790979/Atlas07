@@ -85,7 +85,7 @@
             </div>
         </div>
 
-        <!-- قسم المنيو والطلب السريع نيابة عن الزبون (مطابق للمحاسب) -->
+        <!-- قسم المنيو والطلب السريع نيابة عن الزبون -->
         <div id="section-menu" class="waiter-section hidden">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
@@ -118,7 +118,7 @@
                     </div>
                 </div>
 
-                <!-- قائمة المنيو التفاعلي مع أقسام البحث والتصفية (مطابقة تماماً للمحاسب) -->
+                <!-- قائمة المنيو التفاعلي مع أقسام البحث والتصفية -->
                 <div class="waiter-card order-1 md:order-2 bg-white">
                     <h3 class="font-black text-blue-600 mb-3 text-xs border-r-4 border-blue-600 pr-2">المنيو التفاعلي السريع</h3>
                     
@@ -154,6 +154,7 @@
         let currentCafeID = "";
         let currentWaiterName = "";
         let waiterMenuCache = [];
+        let waiterCategoriesCache = [];
         let waiterCartItems = [];
         let currentWaiterCategory = "all";
 
@@ -191,7 +192,7 @@
 
         function initWaiterSession() {
             listenToWaiterLiveCalls();
-            loadWaiterMenu();
+            loadWaiterCategoriesAndMenu();
         }
 
         function showWaiterSection(sectionId) {
@@ -248,35 +249,54 @@
             }
         }
 
-        async function loadWaiterMenu() {
+        async function loadWaiterCategoriesAndMenu() {
             try {
+                // جلب الأقسام من مجموعة مستقلة (إن وجدت)
+                const catSnap = await db.collection("cafes").doc(currentCafeID).collection("categories").get();
+                waiterCategoriesCache = [];
+                catSnap.forEach(doc => {
+                    const data = doc.data();
+                    if(data.name) waiterCategoriesCache.push(data.name);
+                });
+            } catch(e) {
+                console.log("لا توجد مجموعة أقسام مستقلة، سيتم الاعتماد على أقسام المنتجات.");
+            }
+
+            try {
+                // جلب المنتجات
                 const snap = await db.collection("cafes").doc(currentCafeID).collection("products").orderBy("createdAt", "desc").get();
                 waiterMenuCache = [];
                 snap.forEach(doc => {
-                    waiterMenuCache.push({ id: doc.id, ...doc.data() });
+                    const p = doc.data();
+                    waiterMenuCache.push({ id: doc.id, ...p });
                 });
+                
                 buildWaiterCategoriesFilter();
                 renderWaiterMenu();
             } catch(e) {
-                console.log("خطأ في جلب المنيو");
+                console.error("خطأ في جلب المنيو:", e);
+                document.getElementById('waiter-menu-grid').innerHTML = '<p class="text-xs text-red-500 text-center py-8">تعذر تحميل المنتجات</p>';
             }
         }
 
         function buildWaiterCategoriesFilter() {
             const container = document.getElementById('waiter-categories-filter');
             if(!container) return;
-            const categories = ['all'];
-            waiterMenuCache.forEach(p => {
-                const cat = p.category || 'عام';
-                if(!categories.includes(cat)) categories.push(cat);
-            });
             
+            // تجميع الأقسام من المنتجات ومن الكاش المستقل مع إزالة التكرار والمسافات
+            const catsSet = new Set(['all']);
+            waiterCategoriesCache.forEach(c => { if(c) catsSet.add(c.trim()); });
+            waiterMenuCache.forEach(p => {
+                const cat = p.category || p.section || p.cat || 'عام';
+                if(cat) catsSet.add(cat.trim());
+            });
+
             container.innerHTML = '';
-            categories.forEach(cat => {
+            catsSet.forEach(cat => {
                 const active = currentWaiterCategory === cat;
                 const label = cat === 'all' ? 'الكل' : cat;
                 container.innerHTML += `
-                <button onclick="filterWaiterByCategory('${cat}')" class="waiter-cat-btn px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer border-none ${active ? 'bg-blue-600 text-white shadow' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">${label}</button>`;
+                <button onclick="filterWaiterByCategory('${cat.replace(/'/g, "\\'")}')" class="waiter-cat-btn px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer border-none ${active ? 'bg-blue-600 text-white shadow' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">${label}</button>`;
             });
         }
 
@@ -292,9 +312,11 @@
             if(!grid) return;
 
             const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            
             const filtered = waiterMenuCache.filter(p => {
-                const matchCat = currentWaiterCategory === 'all' || (p.category || 'عام') === currentWaiterCategory;
-                const matchSearch = !query || p.name.toLowerCase().includes(query) || (p.category && p.category.toLowerCase().includes(query));
+                const pCat = (p.category || p.section || p.cat || 'عام').trim();
+                const matchCat = currentWaiterCategory === 'all' || pCat === currentWaiterCategory;
+                const matchSearch = !query || p.name.toLowerCase().includes(query) || pCat.toLowerCase().includes(query);
                 return matchCat && matchSearch;
             });
 
@@ -305,6 +327,7 @@
             }
 
             filtered.forEach(p => {
+                const prodCategory = p.category || p.section || p.cat || 'مشروبات ومأكولات';
                 grid.innerHTML += `
                 <div onclick='addWaiterCartItem("${p.name.replace(/"/g, '&quot;')}", ${p.price})' class="pos-menu-card">
                     <img src="${p.image || 'https://via.placeholder.com/150'}" class="w-16 h-16 object-cover rounded-xl bg-slate-100 shrink-0">
@@ -313,7 +336,7 @@
                             <h4 class="font-bold text-xs text-slate-800 line-clamp-1 mb-0.5">${p.name}</h4>
                             <span class="bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow">${p.price}</span>
                         </div>
-                        <p class="text-[10px] text-slate-500 line-clamp-1 mb-1.5">${p.description || p.category || 'مشروبات ومأكولات'}</p>
+                        <p class="text-[10px] text-slate-500 line-clamp-1 mb-1.5">${p.description || prodCategory}</p>
                         <span class="bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white px-2.5 py-1 rounded-lg text-[10px] font-bold inline-flex items-center gap-1 transition-all">
                             <i class="fas fa-plus"></i> إضافة للطلب
                         </span>
