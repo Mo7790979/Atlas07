@@ -251,6 +251,12 @@
                             <input type="text" id="invoice-target" placeholder="مثال: طاولة 4 أو اسم العميل" class="font-bold text-slate-800">
                         </div>
 
+                        <!-- خانة ملاحظات الفاتورة المرتبطة بالعميل -->
+                        <div class="mb-3">
+                            <label class="text-xs font-bold text-slate-500 mb-1 block">ملاحظات الطلب (من العميل)</label>
+                            <textarea id="invoice-notes-input" placeholder="ملاحظات العميل ستظهر هنا تلقائياً..." rows="2" class="w-full p-2.5 border rounded-xl bg-slate-50 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500 resize-none text-slate-700"></textarea>
+                        </div>
+
                         <!-- Interactive Invoice Items List -->
                         <div class="mb-3">
                             <div class="flex justify-between items-center mb-1.5">
@@ -761,7 +767,8 @@
             listenToWaiterCalls();
             listenToCustomerCarts();
             loadTaxesCheckboxes();
-            listenToInvoicesLive(); // يتضمن استماع الفواتير وصوت الجرس الخاص بالفواتير الجديدة
+            listenToInvoicesLive();
+            listenToCustomerInvoicesLive();
             generateCafeQR();
             startTimer();
             loadAdminBankInfo();
@@ -1004,11 +1011,15 @@
                     window._tempCarts = window._tempCarts || {};
                     window._tempCarts[doc.id] = cart;
 
+                    // عرض الملاحظات داخل البطاقة إذا وجدت
+                    const notesHtml = cart.notes ? `<div class="text-[10px] text-amber-600 font-bold mt-0.5"><i class="fas fa-sticky-note ml-0.5"></i> ملاحظات: ${cart.notes}</div>` : '';
+
                     list.innerHTML += `
                     <div onclick='loadCartToInvoiceById("${doc.id}")' class="interactive-item flex justify-between items-center p-3 bg-white rounded-xl border border-blue-200 shadow-sm hover:bg-blue-50 text-right">
                         <div>
                             <div class="font-bold text-xs text-blue-900"><i class="fas fa-utensils text-blue-500 ml-1"></i> ${cart.table || 'طاولة عامة'} - <span class="text-emerald-600 font-black">${cart.total}</span></div>
                             <div class="text-[10px] text-slate-500 mt-0.5 line-clamp-1">${cart.itemsSummary || 'تفاصيل الطلبات'}</div>
+                            ${notesHtml}
                         </div>
                         <span class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shadow">تحميل للفاتورة</span>
                     </div>`;
@@ -1023,6 +1034,10 @@
             const targetEl = document.getElementById('invoice-target');
             if(targetEl) targetEl.value = cart.table || 'طاولة الزبون';
 
+            // تعبئة حقل الملاحظات في واجهة المحاسبة تلقائياً بملاحظات العميل
+            const notesInputEl = document.getElementById('invoice-notes-input');
+            if(notesInputEl) notesInputEl.value = cart.notes || '';
+
             if(cart.items && Array.isArray(cart.items) && cart.items.length > 0) {
                 invoiceInteractiveItems = cart.items.map(i => ({ name: i.name, qty: Number(i.qty) || 1, price: Number(i.price) || 0 }));
             } else {
@@ -1031,6 +1046,78 @@
             renderInvoiceItemsBuilder();
             showSection('pos');
             window.activeCartIdToResolve = cartId;
+        }
+
+        // الاستماع للفواتير الصفرية الواردة من صفحة العميل (INV-000)
+        function listenToCustomerInvoicesLive() {
+            let isFirstLoad = true;
+            db.collection("cafes").doc(currentCafeID).collection("invoices")
+              .where("serial", "==", "INV-000")
+              .onSnapshot(snap => {
+                const list = document.getElementById('customer-invoices-list');
+                const countBadge = document.getElementById('customer-invoices-count');
+                if(countBadge) countBadge.innerText = snap.size;
+                if(!list) return;
+
+                if (!isFirstLoad && snap.docChanges().some(change => change.type === 'added')) {
+                    playInvoiceAlertSound();
+                }
+                isFirstLoad = false;
+
+                list.innerHTML = "";
+                if(snap.empty) {
+                    list.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">لا توجد فواتير قادمة من صفحة العملاء حالياً</p>';
+                    return;
+                }
+
+                window._tempCustomerInvoices = window._tempCustomerInvoices || {};
+                snap.forEach(doc => {
+                    const inv = doc.data();
+                    window._tempCustomerInvoices[doc.id] = inv;
+
+                    const notesHtml = inv.notes ? `<div class="text-[10px] text-amber-600 font-bold mt-0.5"><i class="fas fa-sticky-note ml-0.5"></i> ملاحظات: ${inv.notes}</div>` : '';
+
+                    list.innerHTML += `
+                    <div class="flex justify-between items-center p-3 bg-white rounded-xl border border-emerald-200 shadow-sm text-right">
+                        <div>
+                            <div class="font-bold text-xs text-emerald-900"><i class="fas fa-receipt text-emerald-600 ml-1"></i> ${inv.target || 'طاولة'} - الإجمالي: <span class="font-black text-emerald-700">${inv.amount}</span></div>
+                            <div class="text-[10px] text-slate-500 mt-0.5">${inv.details || ''}</div>
+                            ${notesHtml}
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick='loadZeroInvoiceToPOS("${doc.id}")' class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer border-none shadow">مراجعة وإصدار</button>
+                            <button onclick='deleteZeroInvoice("${doc.id}")' class="text-red-500 hover:bg-red-50 p-2 rounded-lg cursor-pointer border border-red-200 bg-white" title="حذف الفاتورة"><i class="fas fa-trash-alt text-xs"></i></button>
+                        </div>
+                    </div>`;
+                });
+            });
+        }
+
+        function loadZeroInvoiceToPOS(docId) {
+            const inv = window._tempCustomerInvoices && window._tempCustomerInvoices[docId];
+            if(!inv) return;
+
+            const targetEl = document.getElementById('invoice-target');
+            if(targetEl) targetEl.value = inv.target || '';
+
+            const notesInputEl = document.getElementById('invoice-notes-input');
+            if(notesInputEl) notesInputEl.value = inv.notes || '';
+
+            if(inv.items && Array.isArray(inv.items)) {
+                invoiceInteractiveItems = inv.items.map(i => ({ name: i.name, qty: Number(i.qty) || 1, price: Number(i.price) || 0 }));
+            } else {
+                invoiceInteractiveItems = [{ name: inv.details || 'طلب زبون', qty: 1, price: Number(inv.amount) || 0 }];
+            }
+
+            renderInvoiceItemsBuilder();
+            showSection('pos');
+            window.activeZeroInvoiceId = docId;
+        }
+
+        async function deleteZeroInvoice(docId) {
+            if(confirm("هل أنت متأكد من حذف هذه الفاتورة المعلقة؟")) {
+                await db.collection("cafes").doc(currentCafeID).collection("invoices").doc(docId).delete();
+            }
         }
 
         async function openTaxManager() {
@@ -1237,6 +1324,8 @@
         function clearInvoiceForm() {
             const targetEl = document.getElementById('invoice-target');
             if(targetEl) targetEl.value = "";
+            const notesInputEl = document.getElementById('invoice-notes-input');
+            if(notesInputEl) notesInputEl.value = "";
             invoiceInteractiveItems = [];
             document.querySelectorAll('.pos-tax-checkbox').forEach(cb => cb.checked = false);
             renderInvoiceItemsBuilder();
@@ -1247,6 +1336,7 @@
 
         async function issueInvoice() {
             const targetEl = document.getElementById('invoice-target');
+            const notesInputEl = document.getElementById('invoice-notes-input');
             const subtotalEl = document.getElementById('invoice-subtotal');
             const taxEl = document.getElementById('invoice-total-tax-val');
             const amountEl = document.getElementById('invoice-amount');
@@ -1255,6 +1345,7 @@
             if(!targetEl || !subtotalEl || !amountEl || !serialEl) return;
 
             const target = targetEl.value.trim();
+            const notes = notesInputEl ? notesInputEl.value.trim() : '';
             const subtotal = Number(subtotalEl.innerText) || 0;
             const tax = Number(taxEl ? taxEl.innerText : 0) || 0;
             const appliedTaxes = window.activeAppliedTaxes || [];
@@ -1275,9 +1366,11 @@
             const detailsSummary = invoiceInteractiveItems.map(i => `${i.qty}x ${i.name} (${i.price})`).join(' - ');
 
             try {
+                // حفظ الفاتورة في قاعدة البيانات مع تضمين حقل الملاحظات (notes)
                 await db.collection("cafes").doc(currentCafeID).collection("invoices").add({
                     serial,
                     target,
+                    notes, // حفظ الملاحظات الواردة أو المضافة يدوياً
                     items: invoiceInteractiveItems,
                     details: detailsSummary,
                     subtotal,
@@ -1305,113 +1398,171 @@
             }
         }
 
-        // --- التحديث الجديد: تشغيل صوت جرس الفاتورة الجديدة تلقائياً عند ورود فاتورة من العميل ---
         function listenToInvoicesLive() {
-            let isFirstLoad = true;
             db.collection("cafes").doc(currentCafeID).collection("invoices")
               .orderBy("date", "desc")
               .onSnapshot(snap => {
-                // إذا تمت إضافة فاتورة جديدة بعد التحميل الأول، يتم تشغيل صوت الجرس المختلف (جرس الفواتير)
-                if (!isFirstLoad && snap.docChanges().some(change => change.type === 'added')) {
-                    playInvoiceAlertSound();
-                }
-                isFirstLoad = false;
-
+                const list = document.getElementById('invoices-list');
+                if(!list) return;
                 allInvoicesCache = [];
                 snap.forEach(doc => {
                     allInvoicesCache.push({ id: doc.id, ...doc.data() });
                 });
-                renderSeparatedInvoicesLists(allInvoicesCache);
-                applyGeneralFilterAndRender();
-            }, error => {
-                console.log("مستمع الفواتير يعمل:", error);
+                renderInvoicesList(allInvoicesCache);
+                renderGeneralLogList(allInvoicesCache);
             });
         }
 
-        async function deleteZeroInvoiceDirectly(invId) {
-            if(confirm("هل أنت متأكد من حذف هذه الفاتورة نهائياً؟")) {
-                try {
-                    await db.collection("cafes").doc(currentCafeID).collection("invoices").doc(invId).delete();
-                } catch(e) { console.error(e); }
-            }
-        }
-
-        function renderSeparatedInvoicesLists(invoices) {
-            const adminInvoicesList = document.getElementById('invoices-list');
-            const customerInvoicesList = document.getElementById('customer-invoices-list');
-            const customerInvoicesCount = document.getElementById('customer-invoices-count');
+        function renderInvoicesList(invoices) {
+            const list = document.getElementById('invoices-list');
+            if(!list) return;
+            list.innerHTML = "";
             
-            if(!adminInvoicesList || !customerInvoicesList) return;
+            const filtered = invoices.filter(inv => inv.serial !== "INV-000");
 
-            adminInvoicesList.innerHTML = "";
-            customerInvoicesList.innerHTML = "";
+            if(filtered.length === 0) {
+                list.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">لا توجد فواتير إدارية مسجلة بعد</p>';
+                return;
+            }
 
-            let customerInvoices = [];
-            let adminInvoices = [];
-
-            invoices.forEach(inv => {
-                const serial = (inv.serial || '').trim().toUpperCase();
-                if (serial === 'INV-000' || serial === '0' || serial === '000' || serial === '' || serial.includes('000')) {
-                    customerInvoices.push(inv);
-                } else {
-                    adminInvoices.push(inv);
-                }
+            filtered.forEach(inv => {
+                const dateStr = inv.date ? new Date(inv.date.toDate()).toLocaleString('ar-EG') : 'وقت غير متوفر';
+                const notesHtml = inv.notes ? `<div class="text-[10px] text-amber-600 font-bold mt-0.5"><i class="fas fa-sticky-note ml-0.5"></i> ملاحظات: ${inv.notes}</div>` : '';
+                
+                list.innerHTML += `
+                <div onclick='printExistingInvoice("${inv.serial}", "${inv.target}", "${inv.details}", ${inv.amount}, "${dateStr}", ${inv.tax || 0}, ${JSON.stringify(inv.appliedTaxes || []).replace(/"/g, '&quot;')})' class="customer-row flex justify-between items-center p-3 bg-white rounded-xl border shadow-sm text-right">
+                    <div>
+                        <div class="font-bold text-xs text-slate-800">${inv.serial} - <span class="text-blue-600">${inv.target}</span></div>
+                        <div class="text-[10px] text-slate-500 mt-0.5">${inv.details || ''}</div>
+                        ${notesHtml}
+                        <div class="text-[9px] text-slate-400 font-mono mt-0.5">${dateStr}</div>
+                    </div>
+                    <div class="text-left">
+                        <span class="font-black text-xs text-emerald-600 block">${inv.amount}</span>
+                        <span class="text-[9px] text-slate-400 underline">طباعة / معاينة</span>
+                    </div>
+                </div>`;
             });
+        }
 
-            if(customerInvoicesCount) customerInvoicesCount.innerText = customerInvoices.length;
+        function filterInvoices() {
+            const query = document.getElementById('invoice-search-input').value.toLowerCase().trim();
+            if(!query) {
+                renderInvoicesList(allInvoicesCache);
+                return;
+            }
+            const filtered = allInvoicesCache.filter(inv => 
+                inv.serial !== "INV-000" && (
+                    inv.serial.toLowerCase().includes(query) || 
+                    inv.target.toLowerCase().includes(query) || 
+                    (inv.details && inv.details.toLowerCase().includes(query)) ||
+                    (inv.notes && inv.notes.toLowerCase().includes(query))
+                )
+            );
+            renderInvoicesList(filtered);
+        }
 
-            window._tempCustomerInvoices = window._tempCustomerInvoices || {};
-            window._tempAdminInvoices = window._tempAdminInvoices || {};
-
-            if(customerInvoices.length === 0) {
-                customerInvoicesList.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">لا توجد فواتير قادمة من صفحة العملاء حالياً</p>';
-            } else {
-                customerInvoices.forEach(inv => {
-                    window._tempCustomerInvoices[inv.id] = inv;
-                    let taxDesc = inv.appliedTaxes && inv.appliedTaxes.length > 0 ? ` | الضريبة: ${inv.appliedTaxes.reduce((a,b)=>a+b.value,0).toFixed(2)}` : '';
-                    let timeStr = inv.date && typeof inv.date.toDate === 'function' ? new Date(inv.date.toDate()).toLocaleTimeString('ar-EG') : '';
-
-                    customerInvoicesList.innerHTML += `
-                    <div class="flex justify-between items-center p-3 bg-white rounded-xl border border-emerald-200 mb-2 shadow-sm text-right">
-                        <div class="flex items-center gap-1.5">
-                            <button onclick='printCustomerInvoicePrintView("${inv.id}")' class="bg-emerald-600 text-white px-2.5 py-1.5 rounded-lg text-xs shadow cursor-pointer border-none" title="طباعة"><i class="fas fa-print"></i></button>
-                            <button onclick='deleteZeroInvoiceDirectly("${inv.id}")' class="bg-red-500 text-white px-2.5 py-1.5 rounded-lg text-xs shadow cursor-pointer border-none" title="حذف"><i class="fas fa-trash-alt"></i></button>
-                            <span class="text-[10px] text-slate-400 mr-1">${timeStr}</span>
-                        </div>
-                        <div onclick='loadInvoiceToPOS("${inv.id}")' class="customer-row text-right flex-1 mr-2">
-                            <div class="font-bold text-xs text-slate-800">
-                                <span class="text-emerald-700 font-bold ml-2">(${inv.amount})</span> - ${inv.target} 
-                                <span class="text-emerald-600 font-mono mr-2">${inv.serial || 'INV-000'}</span>
-                            </div>
-                            <div class="text-[10px] text-slate-500">${inv.details || 'بدون تفاصيل'}${taxDesc}</div>
-                        </div>
-                    </div>`;
+        function printExistingInvoice(serial, target, details, amount, dateStr, taxVal, appliedTaxes) {
+            let taxesHtml = '';
+            if(appliedTaxes && Array.isArray(appliedTaxes) && appliedTaxes.length > 0) {
+                appliedTaxes.forEach(t => {
+                    taxesHtml += `<div style="display: flex; justify-content: space-between; font-size: 12px; color: #555; margin-top: 3px;"><span>${t.name} (${t.rate}%):</span><span>${Number(t.value).toFixed(2)}</span></div>`;
                 });
+            } else if(taxVal > 0) {
+                taxesHtml += `<div style="display: flex; justify-content: space-between; font-size: 12px; color: #555; margin-top: 3px;"><span>الضرائب والخدمات:</span><span>${Number(taxVal).toFixed(2)}</span></div>`;
             }
 
-            if(adminInvoices.length === 0) {
-                adminInvoicesList.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد فواتير إدارية مسجلة</p>';
-            } else {
-                adminInvoices.forEach(inv => {
-                    window._tempAdminInvoices[inv.id] = inv;
-                    let timeStr = inv.date && typeof inv.date.toDate === 'function' ? new Date(inv.date.toDate()).toLocaleTimeString('ar-EG') : '';
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html lang="ar" dir="rtl">
+                <head>
+                    <title>فاتورة رقم ${serial}</title>
+                    <style>
+                        body { font-family: 'Cairo', Tahoma, sans-serif; padding: 20px; direction: rtl; text-align: right; color: #111; max-width: 400px; margin: auto; }
+                        .header { text-align: center; border-bottom: 2px dashed #333; padding-bottom: 10px; margin-bottom: 15px; }
+                        .details { font-size: 13px; margin-bottom: 15px; }
+                        .items-box { border-top: 1px solid #ddd; border-bottom: 1px solid #ddd; padding: 10px 0; margin-bottom: 15px; font-size: 13px; }
+                        .total-box { font-size: 16px; font-weight: bold; text-align: left; margin-top: 15px; border-top: 2px solid #333; padding-top: 10px; }
+                        .footer { text-align: center; font-size: 11px; margin-top: 30px; color: #666; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h2 style="margin: 0; font-size: 20px;">فاتورة مبيعات</h2>
+                        <p style="margin: 5px 0 0; font-size: 12px; color: #555;">رقم الفاتورة: ${serial}</p>
+                    </div>
+                    <div class="details">
+                        <p style="margin: 4px 0;"><strong>العميل / الطاولة:</strong> ${target}</p>
+                        <p style="margin: 4px 0;"><strong>التاريخ والوقت:</strong> ${dateStr}</p>
+                    </div>
+                    <div class="items-box">
+                        <p style="margin: 0 0 5px; font-weight: bold;">بنود الطلب:</p>
+                        <p style="margin: 0; line-height: 1.6;">${details}</p>
+                    </div>
+                    <div>
+                        ${taxesHtml}
+                    </div>
+                    <div class="total-box">
+                        الإجمالي النهائي: ${amount}
+                    </div>
+                    <div class="footer">
+                        <p>شكراً لزيارتكم!</p>
+                    </div>
+                    <script>
+                        window.onload = function() { window.print(); window.close(); }
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
 
-                    adminInvoicesList.innerHTML += `
-                    <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm text-right">
-                        <div class="flex items-center gap-2">
-                            <button onclick='printSpecificInvoicePrintView("${inv.id}")' class="bg-blue-600 text-white px-2.5 py-1.5 rounded-lg text-xs shadow cursor-pointer border-none"><i class="fas fa-print"></i></button>
-                            <span class="text-[10px] text-slate-400">${timeStr}</span>
-                        </div>
-                        <div onclick='loadInvoiceToPOS("${inv.id}")' class="customer-row text-right flex-1">
-                            <div class="font-bold text-xs text-slate-800">
-                                <span class="text-emerald-600 font-bold ml-2">(${inv.amount})</span> - ${inv.target} 
-                                <span class="text-blue-600 font-mono mr-2">${inv.serial || 'INV-000'}</span>
-                            </div>
-                            <div class="text-[10px] text-slate-500">${inv.details || 'بدون تفاصيل'}</div>
-                        </div>
-                    </div>`;
-                });
+        // إضافات السجل العام المتقدم وتقارير المبيعات
+        function renderGeneralLogList(invoices) {
+            const list = document.getElementById('general-log-list');
+            if(!list) return;
+            list.innerHTML = "";
+            const filtered = invoices.filter(inv => inv.serial !== "INV-000");
+
+            if(filtered.length === 0) {
+                list.innerHTML = '<p class="text-xs text-slate-400 text-center py-8">لا توجد سجلات مطابقة في النظام</p>';
+                return;
             }
+
+            filtered.forEach(inv => {
+                const dateStr = inv.date ? new Date(inv.date.toDate()).toLocaleString('ar-EG') : 'وقت غير متوفر';
+                const notesHtml = inv.notes ? `<div class="text-[10px] text-amber-600 font-bold mt-0.5"><i class="fas fa-sticky-note ml-0.5"></i> ملاحظات: ${inv.notes}</div>` : '';
+                
+                list.innerHTML += `
+                <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs shadow-sm">
+                    <div>
+                        <div class="font-black text-slate-800">${inv.serial} | <span class="text-blue-600">${inv.target}</span></div>
+                        <div class="text-[11px] text-slate-600 mt-0.5">${inv.details || ''}</div>
+                        ${notesHtml}
+                        <div class="text-[9px] text-slate-400 font-mono mt-0.5">${dateStr}</div>
+                    </div>
+                    <div class="text-left font-black text-emerald-700">
+                        ${inv.amount}
+                    </div>
+                </div>`;
+            });
+            updateGeneralSummaryStats(filtered);
+        }
+
+        function filterGeneralLog() {
+            const query = document.getElementById('general-log-search').value.toLowerCase().trim();
+            const period = document.getElementById('general-report-period').value;
+            let list = filterInvoicesByPeriod(allInvoicesCache.filter(i => i.serial !== "INV-000"), period);
+
+            if(query) {
+                list = list.filter(inv => 
+                    inv.serial.toLowerCase().includes(query) || 
+                    inv.target.toLowerCase().includes(query) || 
+                    (inv.details && inv.details.toLowerCase().includes(query)) ||
+                    (inv.notes && inv.notes.toLowerCase().includes(query))
+                );
+            }
+            renderGeneralLogList(list);
         }
 
         function toggleCustomDateInputs() {
@@ -1420,290 +1571,307 @@
             const toContainer = document.getElementById('custom-date-to-container');
             if(period === 'custom') {
                 if(fromContainer) fromContainer.classList.remove('hidden');
-                if(toContainer) toContainer.classList.add('hidden');
+                if(toContainer) toContainer.classList.remove('hidden');
             } else {
                 if(fromContainer) fromContainer.classList.add('hidden');
                 if(toContainer) toContainer.classList.add('hidden');
             }
         }
 
-        function getFilteredInvoicesForGeneralReport() {
-            const period = document.getElementById('general-report-period').value;
-            const searchInput = document.getElementById('general-log-search');
-            const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-
+        function filterInvoicesByPeriod(invoices, period) {
             const now = new Date();
-            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-            return allInvoicesCache.filter(inv => {
-                if (!inv.date || typeof inv.date.toDate !== 'function') return false;
+            return invoices.filter(inv => {
+                if(!inv.date) return false;
                 const d = inv.date.toDate();
-
-                if (period === 'today' && d < todayStart) return false;
-                if (period === 'month' && (d.getMonth() !== now.getMonth() || d.getFullYear() !== now.getFullYear())) return false;
-                if (period === 'year' && d.getFullYear() !== now.getFullYear()) return false;
-
-                if (query) {
-                    const matchSerial = inv.serial && inv.serial.toLowerCase().includes(query);
-                    const matchTarget = inv.target && inv.target.toLowerCase().includes(query);
-                    const matchDetails = inv.details && inv.details.toLowerCase().includes(query);
-                    if (!matchSerial && !matchTarget && !matchDetails) return false;
+                if(period === 'today') {
+                    return d.toDateString() === now.toDateString();
+                } else if(period === 'week') {
+                    const diff = now - d;
+                    return diff <= 7 * 24 * 60 * 60 * 1000;
+                } else if(period === 'month') {
+                    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                } else if(period === 'quarter') {
+                    const diff = now - d;
+                    return diff <= 90 * 24 * 60 * 60 * 1000;
+                } else if(period === 'year') {
+                    return d.getFullYear() === now.getFullYear();
+                } else if(period === 'custom') {
+                    const fromStr = document.getElementById('general-date-from').value;
+                    const toStr = document.getElementById('general-date-to').value;
+                    let match = true;
+                    if(fromStr) match = match && d >= new Date(fromStr);
+                    if(toStr) match = match && d <= new Date(toStr + 'T23:59:59');
+                    return match;
                 }
                 return true;
             });
         }
 
         function applyGeneralFilterAndRender() {
-            const filtered = getFilteredInvoicesForGeneralReport();
-            renderGeneralLogList(filtered);
-            updateGeneralReportSummary(filtered);
+            const period = document.getElementById('general-report-period').value;
+            let list = filterInvoicesByPeriod(allInvoicesCache.filter(i => i.serial !== "INV-000"), period);
+            renderGeneralLogList(list);
         }
 
-        function updateGeneralReportSummary(invoices) {
-            let totalCount = invoices.length;
-            let totalSub = 0;
-            let totalTax = 0;
-            let totalAmount = 0;
+        function updateGeneralSummaryStats(invoices) {
+            let count = invoices.length;
+            let subtotal = 0;
+            let tax = 0;
+            let total = 0;
 
             invoices.forEach(inv => {
-                const sub = Number(inv.subtotal) || Number(inv.amount) || 0;
-                let tax = Number(inv.tax) || 0;
-                if(inv.appliedTaxes && inv.appliedTaxes.length > 0) {
-                    tax = inv.appliedTaxes.reduce((acc, t) => acc + (Number(t.value) || 0), 0);
-                }
-                totalSub += sub;
-                totalTax += tax;
-                totalAmount += (Number(inv.amount) || (sub + tax));
+                subtotal += Number(inv.subtotal) || Number(inv.amount) || 0;
+                tax += Number(inv.tax) || 0;
+                total += Number(inv.amount) || 0;
             });
 
-            document.getElementById('sum-count').innerText = totalCount;
-            document.getElementById('sum-subtotal').innerText = totalSub.toFixed(2);
-            document.getElementById('sum-tax').innerText = totalTax.toFixed(2);
-            document.getElementById('sum-total').innerText = totalAmount.toFixed(2);
+            const cEl = document.getElementById('sum-count');
+            const sEl = document.getElementById('sum-subtotal');
+            const tEl = document.getElementById('sum-tax');
+            const totEl = document.getElementById('sum-total');
+
+            if(cEl) cEl.innerText = count;
+            if(sEl) sEl.innerText = subtotal.toFixed(2);
+            if(tEl) tEl.innerText = tax.toFixed(2);
+            if(totEl) totEl.innerText = total.toFixed(2);
         }
 
-        function renderGeneralLogList(invoices) {
-            const container = document.getElementById('general-log-list');
-            if(!container) return;
-            container.innerHTML = "";
+        function printGeneralDetailedReport() {
+            const period = document.getElementById('general-report-period').value;
+            let invoices = filterInvoicesByPeriod(allInvoicesCache.filter(i => i.serial !== "INV-000"), period);
+            
+            let count = invoices.length;
+            let subtotal = 0;
+            let tax = 0;
+            let total = 0;
 
-            if(invoices.length === 0) {
-                container.innerHTML = '<p class="text-xs text-slate-400 text-center py-8">لا توجد أي فواتير مسجلة مطابقة للفلتر الحالي</p>';
-                return;
-            }
-
-            invoices.forEach(inv => {
-                container.innerHTML += `
-                <div class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 text-right">
-                    <button onclick='printSpecificInvoicePrintView("${inv.id}")' class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs"><i class="fas fa-print"></i></button>
-                    <div class="flex-1 mr-3 text-right">
-                        <div class="font-bold text-xs">${inv.target} - <span class="text-blue-600 font-mono">${inv.serial || 'INV-000'}</span></div>
-                        <div class="text-[10px] text-slate-500">${inv.details || ''} | الإجمالي: ${inv.amount}</div>
-                    </div>
-                </div>`;
+            let rowsHtml = '';
+            invoices.forEach((inv, index) => {
+                subtotal += Number(inv.subtotal) || Number(inv.amount) || 0;
+                tax += Number(inv.tax) || 0;
+                total += Number(inv.amount) || 0;
+                const dateStr = inv.date ? new Date(inv.date.toDate()).toLocaleString('ar-EG') : '';
+                const notesText = inv.notes ? `ملاحظات: ${inv.notes}` : '';
+                rowsHtml += `
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">${index + 1}</td>
+                    <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">${inv.serial}</td>
+                    <td style="border: 1px solid #ddd; padding: 6px;">${inv.target}</td>
+                    <td style="border: 1px solid #ddd; padding: 6px;">${inv.details || ''} ${notesText ? '<br><span style="color:#d97706; font-size:10px;">'+notesText+'</span>' : ''}</td>
+                    <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">${Number(inv.amount).toFixed(2)}</td>
+                    <td style="border: 1px solid #ddd; padding: 6px; text-align: center; font-size: 10px;">${dateStr}</td>
+                </tr>`;
             });
-        }
 
-        function filterGeneralLog() { applyGeneralFilterAndRender(); }
-        async function printGeneralDetailedReport() { printCurrentSalesReport(); }
-
-        function loadInvoiceToPOS(invId) {
-            const isCustomerInvoice = window._tempCustomerInvoices && window._tempCustomerInvoices[invId];
-            const inv = (window._tempAdminInvoices && window._tempAdminInvoices[invId]) || (window._tempGeneralInvoices && window._tempGeneralInvoices[invId]) || isCustomerInvoice;
-            if(!inv) return;
-
-            if(isCustomerInvoice) {
-                window.activeZeroInvoiceId = invId;
-            } else {
-                window.activeZeroInvoiceId = null;
-            }
-
-            const serialEl = document.getElementById('invoice-serial');
-            const targetEl = document.getElementById('invoice-target');
-
-            if(serialEl) serialEl.innerText = inv.serial && inv.serial !== 'INV-000' && !inv.serial.includes('000') ? inv.serial : ('INV-' + Math.floor(100000 + Math.random() * 900000));
-            if(targetEl) targetEl.value = inv.target || '';
-
-            if(inv.items && Array.isArray(inv.items) && inv.items.length > 0) {
-                invoiceInteractiveItems = JSON.parse(JSON.stringify(inv.items));
-            } else {
-                invoiceInteractiveItems = [{ name: inv.details || 'بند الفاتورة', qty: 1, price: inv.subtotal || inv.amount || 0 }];
-            }
-
-            renderInvoiceItemsBuilder();
-            showSection('pos');
-        }
-
-        function filterInvoices() {
-            const q = document.getElementById('invoice-search-input').value.toLowerCase().trim();
-            if(!q) { renderSeparatedInvoicesLists(allInvoicesCache); return; }
-            const filtered = allInvoicesCache.filter(i => (i.serial && i.serial.toLowerCase().includes(q)) || (i.target && i.target.toLowerCase().includes(q)));
-            renderSeparatedInvoicesLists(filtered);
-        }
-
-        async function executePrintWindow(invoiceData) {
-            let cafeName = await getCafeNameForReport();
-            let itemsHTML = '';
-            invoiceData.items.forEach(i => {
-                itemsHTML += `<tr><td style="text-align:right;">${i.name}</td><td style="text-align:center;">${i.qty}</td><td style="text-align:left;">${i.price}</td></tr>`;
-            });
             const printWindow = window.open('', '_blank');
-            if(!printWindow) return;
-            printWindow.document.write(`<html dir="rtl"><head><title>فاتورة</title></head><body style="font-family:Cairo;padding:20px;"><h2>${cafeName}</h2><p>الطاولة: ${invoiceData.target}</p><hr><table width="100%"><tr><th>البند</th><th>الكمية</th><th>السعر</th></tr>${itemsHTML}</table><h3>الإجمالي: ${invoiceData.amount}</h3><script>window.onload=()=>window.print();<\/script></body></html>`);
+            printWindow.document.write(`
+                <html lang="ar" dir="rtl">
+                <head>
+                    <title>التقرير المفصل للمبيعات</title>
+                    <style>
+                        body { font-family: 'Cairo', Tahoma, sans-serif; padding: 20px; direction: rtl; text-align: right; color: #111; }
+                        h2 { text-align: center; margin-bottom: 5px; }
+                        .summary { background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-around; font-size: 13px; font-weight: bold; }
+                        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
+                        th { background: #2563eb; color: white; border: 1px solid #2563eb; padding: 6px; }
+                    </style>
+                </head>
+                <body>
+                    <h2>التقرير المالي والمبيعات الشامل</h2>
+                    <p style="text-align: center; font-size: 12px; color: #555;">الفترة: ${period}</p>
+                    <div class="summary">
+                        <div>عدد الفواتير: ${count}</div>
+                        <div>الإيرادات الفرعية: ${subtotal.toFixed(2)}</div>
+                        <div>الضرائب: ${tax.toFixed(2)}</div>
+                        <div>الإجمالي الصافي: ${total.toFixed(2)}</div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>رقم الفاتورة</th>
+                                <th>العميل / الطاولة</th>
+                                <th>التفاصيل والملاحظات</th>
+                                <th>المبلغ</th>
+                                <th>التاريخ والوقت</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+                    <script>
+                        window.onload = function() { window.print(); window.close(); }
+                    <\/script>
+                </body>
+                </html>
+            `);
             printWindow.document.close();
         }
 
-        async function getCafeNameForReport() {
-            const brandInput = document.getElementById('set-brand-name');
-            if(brandInput && brandInput.value.trim() && brandInput.value !== "--") return brandInput.value.trim();
-            return currentCafeID || 'المنشأة';
+        // وظائف تقارير المبيعات السريعة (يومي، شهري، سنوي)
+        function generateDailySalesReport() {
+            openSalesReportModal('التقرير اليومي للمبيعات', filterInvoicesByPeriod(allInvoicesCache.filter(i => i.serial !== "INV-000"), 'today'));
+        }
+        function generateMonthlySalesReport() {
+            openSalesReportModal('التقرير الشهري للمبيعات', filterInvoicesByPeriod(allInvoicesCache.filter(i => i.serial !== "INV-000"), 'month'));
+        }
+        function generateYearlySalesReport() {
+            openSalesReportModal('التقرير السنوي للمبيعات', filterInvoicesByPeriod(allInvoicesCache.filter(i => i.serial !== "INV-000"), 'year'));
         }
 
-        function printSpecificInvoicePrintView(invId) {
-            const inv = (window._tempAdminInvoices && window._tempAdminInvoices[invId]) || (window._tempGeneralInvoices && window._tempGeneralInvoices[invId]) || (window._tempCustomerInvoices && window._tempCustomerInvoices[invId]);
-            if(!inv) return;
-            executePrintWindow({ serial: inv.serial || 'INV-000', target: inv.target || 'عام', items: inv.items || [{name: inv.details, qty:1, price: inv.amount}], amount: inv.amount });
+        function openSalesReportModal(title, invoices) {
+            const modal = document.getElementById('sales-report-modal');
+            const titleEl = document.getElementById('sales-report-title');
+            const contentEl = document.getElementById('sales-report-content');
+            if(!modal || !titleEl || !contentEl) return;
+
+            titleEl.innerText = title;
+            let count = invoices.length;
+            let total = 0;
+            let rows = '';
+
+            invoices.forEach(inv => {
+                total += Number(inv.amount) || 0;
+                const notesText = inv.notes ? `<div style="color: #d97706; font-size: 10px;">ملاحظات: ${inv.notes}</div>` : '';
+                rows += `<div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee;">
+                    <div><strong>${inv.serial} - ${inv.target}</strong><br><span style="color:#666; font-size:11px;">${inv.details || ''}</span>${notesText}</div>
+                    <div style="font-weight: bold; color: #059669;">${inv.amount}</div>
+                </div>`;
+            });
+
+            contentEl.innerHTML = `
+                <div style="background: #f1f5f9; padding: 10px; border-radius: 8px; font-weight: bold; margin-bottom: 10px; display: flex; justify-content: space-between;">
+                    <span>عدد الفواتير: ${count}</span>
+                    <span style="color: #059669;">إجمالي المبيعات: ${total.toFixed(2)}</span>
+                </div>
+                <div style="max-height: 300px; overflow-y: auto;">
+                    ${rows || '<p style="text-align: center; color: #888;">لا توجد مبيعات مسجلة في هذه الفترة</p>'}
+                </div>
+            `;
+
+            currentReportPrintFunction = () => {
+                printExistingInvoice("تقرير مبيعات", title, `إجمالي الفواتير: ${count}`, total.toFixed(2), new Date().toLocaleString('ar-EG'), 0, []);
+            };
+
+            modal.classList.remove('hidden');
         }
 
-        function printCustomerInvoicePrintView(invId) { printSpecificInvoicePrintView(invId); }
+        function closeSalesReportModal() {
+            const modal = document.getElementById('sales-report-modal');
+            if(modal) modal.classList.add('hidden');
+        }
 
-        async function generateDailySalesReport() { alert("تم فتح التقرير اليومي"); }
-        async function generateMonthlySalesReport() { alert("تم فتح التقرير الشهري"); }
-        async function generateYearlySalesReport() { alert("تم فتح التقرير السنوي"); }
-        function closeSalesReportModal() { document.getElementById('sales-report-modal').classList.add('hidden'); }
-        function printCurrentSalesReport() { window.print(); }
+        function printCurrentSalesReport() {
+            if(currentReportPrintFunction) currentReportPrintFunction();
+        }
 
         function showSection(sectionId) {
             document.querySelectorAll('.section-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active-tab'));
-            document.getElementById('section-' + sectionId).classList.remove('hidden');
-            document.getElementById('tab-' + sectionId).classList.add('active-tab');
             
-            if(sectionId !== 'scan' && isScannerRunning && html5QrCode) {
-                html5QrCode.stop().then(() => { isScannerRunning = false; }).catch(err => console.log(err));
+            const targetSec = document.getElementById(`section-${sectionId}`);
+            const targetTab = document.getElementById(`tab-${sectionId}`);
+            if(targetSec) targetSec.classList.remove('hidden');
+            if(targetTab) targetTab.classList.add('active-tab');
+
+            if(sectionId === 'scan' && isScannerRunning) {
+                // Keep running if active
             }
         }
 
         async function loadCustomers() {
             const list = document.getElementById('customers-list');
+            const countEl = document.getElementById('customer-count');
             if(!list) return;
             const snap = await db.collection("cafes").doc(currentCafeID).collection("customers").get();
             list.innerHTML = "";
-            document.getElementById('customer-count').innerText = snap.size;
+            if(countEl) countEl.innerText = snap.size;
             if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد عملاء مسجلين بعد</p>'; return; }
-            
             snap.forEach(doc => {
                 const c = doc.data();
-                const custName = doc.id;
-                const points = c.points || 0;
-                
                 list.innerHTML += `
-                <div onclick='selectCustomerFromList("${custName.replace(/"/g, '&quot;')}")' class="flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm customer-row hover:bg-blue-50 transition-all cursor-pointer">
+                <div onclick='selectCustomerFromList("${c.name}")' class="customer-row flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm text-right">
                     <div>
-                        <div class="font-bold text-xs text-slate-800">${c.name || custName}</div>
-                        <div class="text-[10px] text-slate-400 font-mono">ID: ${custName}</div>
+                        <div class="font-bold text-xs text-slate-800">${c.name}</div>
+                        <div class="text-[10px] text-slate-400">الرصيد: ${c.points || 0}</div>
                     </div>
-                    <div class="text-blue-600 font-black text-xs bg-blue-50 px-2.5 py-1 rounded-lg">${points}</div>
+                    <span class="text-xs text-blue-600 font-bold underline">إدارة الحساب</span>
                 </div>`;
             });
         }
 
-        async function selectCustomerFromList(custName) {
-            activeCustomerName = custName;
+        function selectCustomerFromList(name) {
+            activeCustomerName = name;
             showSection('scan');
-            await fetchAndDisplayCustomerData(custName);
+            fetchCustomerData(name);
         }
 
-        async function startScanner() {
+        function startScanner() {
             const readerDiv = document.getElementById('reader');
-            if(!html5QrCode) {
-                html5QrCode = new Html5Qrcode("reader");
-            }
+            if(isScannerRunning) return;
+            readerDiv.style.display = "block";
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                async (decodedText) => {
+                    stopScanner();
+                    activeCustomerName = decodedText.trim();
+                    fetchCustomerData(activeCustomerName);
+                },
+                (error) => {}
+            ).then(() => { isScannerRunning = true; });
+        }
 
-            if(isScannerRunning) {
-                await html5QrCode.stop();
-                isScannerRunning = false;
-                document.getElementById('start-scan-btn').innerHTML = '<i class="fas fa-qrcode ml-2"></i> مسح كود الزبون';
-                return;
-            }
-
-            try {
-                isScannerRunning = true;
-                document.getElementById('start-scan-btn').innerHTML = '<i class="fas fa-stop ml-2"></i> إيقاف الكاميرا';
-                await html5QrCode.start(
-                    { facingMode: "environment" },
-                    { fps: 10, qrbox: { width: 250, height: 250 } },
-                    async (decodedText) => {
-                        await html5QrCode.stop();
-                        isScannerRunning = false;
-                        document.getElementById('start-scan-btn').innerHTML = '<i class="fas fa-qrcode ml-2"></i> مسح كود الزبون';
-                        await fetchAndDisplayCustomerData(decodedText.trim());
-                    },
-                    (errorMessage) => {}
-                );
-            } catch(err) {
-                isScannerRunning = false;
-                document.getElementById('start-scan-btn').innerHTML = '<i class="fas fa-qrcode ml-2"></i> مسح كود الزبون';
-                alert("تعذر تشغيل الكاميرا. يرجى التأكد من إعطاء الصلاحية أو استخدام متصفح مدعوم.");
-                console.error(err);
+        function stopScanner() {
+            if(html5QrCode && isScannerRunning) {
+                html5QrCode.stop().then(() => {
+                    isScannerRunning = false;
+                    document.getElementById('reader').style.display = "none";
+                }).catch(err => console.log(err));
+            } else {
+                document.getElementById('reader').style.display = "none";
             }
         }
 
-        async function fetchAndDisplayCustomerData(custName) {
-            try {
-                const docRef = db.collection("cafes").doc(currentCafeID).collection("customers").doc(custName);
-                const doc = await docRef.get();
-                
-                const userActions = document.getElementById('user-actions');
-                userActions.classList.remove('hidden');
-
-                if(doc.exists) {
-                    activeCustomerName = custName;
-                    const data = doc.data();
-                    document.getElementById('cur-name').innerText = data.name || custName;
-                    document.getElementById('cur-phone-display').innerText = `المعرف: ${custName}`;
-                    document.getElementById('cur-points').innerText = data.points || 0;
-                    
-                    const brandingDoc = await db.collection("cafes").doc(currentCafeID).collection("settings").doc("branding").get();
-                    const sysType = brandingDoc.exists ? (brandingDoc.data().systemType || 'stamps') : 'stamps';
-                    document.getElementById('points-label-view').innerText = sysType === 'stamps' ? 'الأختام الحالية' : 'النقاط الحالية';
-                } else {
-                    if(confirm(`العميل "${custName}" غير مسجل بعد. هل تريد إنشاء حساب له؟`)) {
-                        await docRef.set({ name: custName, points: 0, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-                        activeCustomerName = custName;
-                        document.getElementById('cur-name').innerText = custName;
-                        document.getElementById('cur-phone-display').innerText = `المعرف: ${custName}`;
-                        document.getElementById('cur-points').innerText = 0;
-                    } else {
-                        userActions.classList.add('hidden');
-                    }
-                }
-            } catch(e) {
-                console.error(e);
-                alert("حدث خطأ أثناء جلب بيانات العميل.");
+        async function fetchCustomerData(name) {
+            const docRef = db.collection("cafes").doc(currentCafeID).collection("customers").doc(name);
+            const doc = await docRef.get();
+            if(!doc.exists) {
+                await docRef.set({ name: name, points: 0, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                displayCustomerActions(name, 0);
+            } else {
+                displayCustomerActions(name, doc.data().points || 0);
             }
         }
 
-        async function updatePoints(val) {
+        function displayCustomerActions(name, points) {
+            document.getElementById('user-actions').classList.remove('hidden');
+            document.getElementById('cur-name').innerText = name;
+            document.getElementById('cur-points').innerText = points;
+            document.getElementById('points-label-view').innerText = selectedSystem === 'stamps' ? 'الأختام الحالية' : 'النقاط الحالية';
+        }
+
+        async function updatePoints(delta) {
             if(!activeCustomerName) return;
-            const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeCustomerName);
-            await db.runTransaction(async (transaction) => {
-                const doc = await transaction.get(ref);
-                if (!doc.exists) throw "العميل غير موجود!";
-                const newPoints = Math.max(0, (doc.data().points || 0) + val);
-                transaction.update(ref, { points: newPoints });
-                document.getElementById('cur-points').innerText = newPoints;
-            });
-            loadCustomers();
+            const docRef = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeCustomerName);
+            const doc = await docRef.get();
+            if(doc.exists) {
+                let current = doc.data().points || 0;
+                let updated = current + delta;
+                if(updated < 0) updated = 0;
+                await docRef.update({ points: updated });
+                document.getElementById('cur-points').innerText = updated;
+            }
         }
 
         async function resetPoints() {
             if(!activeCustomerName) return;
-            if(confirm("هل أنت متأكد من تصفير رصيد هذا العميل / تسليم الهدية؟")) {
-                const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeCustomerName);
-                await ref.update({ points: 0 });
+            if(confirm("هل أنت متأكد من تصفير رصيد العميل (تسليم الهدية)؟")) {
+                const docRef = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeCustomerName);
+                await docRef.update({ points: 0 });
                 document.getElementById('cur-points').innerText = 0;
-                loadCustomers();
                 alert("تم تصفير الحساب بنجاح!");
             }
         }
@@ -1717,33 +1885,37 @@
             const container = document.getElementById('qrcode-container');
             if(!container) return;
             container.innerHTML = "";
-            const clientUrl = `https://mo7790979.github.io/Atlas07/index.html?id=${currentCafeID}`;
-            new QRCode(container, { text: clientUrl, width: 128, height: 128 });
+            const clientUrl = window.location.origin + window.location.pathname.replace('admin.html', 'index.html') + `?id=${currentCafeID}`;
+            new QRCode(container, { text: clientUrl, width: 140, height: 140 });
         }
 
         function downloadQR() {
-            const img = document.querySelector('#qrcode-container img');
-            if(!img) return;
-            const a = document.createElement('a');
-            a.href = img.src;
-            a.download = currentCafeID + '-qr.png';
-            a.click();
+            const canvas = document.querySelector('#qrcode-container canvas');
+            if(!canvas) return;
+            const link = document.createElement('a');
+            link.download = `QR-${currentCafeID}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
         }
 
         function startTimer() {
             if(!expiryDateGlobal) return;
+            const timerEl = document.getElementById('countdown-timer');
+            const expiryTextEl = document.getElementById('expiry-date-text');
+            if(expiryTextEl) expiryTextEl.innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
+
             setInterval(() => {
                 const now = new Date();
                 const diff = expiryDateGlobal - now;
                 if(diff <= 0) {
-                    document.getElementById('countdown-timer').innerText = "انتهى الاشتراك";
+                    if(timerEl) timerEl.innerText = "انتهى الاشتراك";
                     return;
                 }
                 const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-                const mins = Math.floor((diff / 1000 / 60) % 60);
-                const secs = Math.floor((diff / 1000) % 60);
-                document.getElementById('countdown-timer').innerText = `${days}ي ${hours}س ${mins}د ${secs}ث`;
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                if(timerEl) timerEl.innerText = `${days} يوم و ${hours}:${minutes}:${seconds}`;
             }, 1000);
         }
     </script>
