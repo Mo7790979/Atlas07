@@ -26,6 +26,22 @@
         #menu-modal { transition: 0.3s; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* === إضافات التفاعل الحركي للأيقونات والأزرار دون تعديل الوظائف الأساسية === */
+        button, .interactive-icon {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        button:active {
+            transform: scale(0.94) !important;
+        }
+        /* تأثير اهتزاز خفيف للأيقونات عند التمرير أو التركيز */
+        @keyframes iconBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+        .hover-bounce:hover i {
+            animation: iconBounce 0.6s ease infinite;
+        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
@@ -34,21 +50,21 @@
 
     <!-- شاشة تسجيل الدخول -->
     <div id="auth-screen" class="w-full max-w-sm card-glass p-8 rounded-[2.5rem] shadow-2xl text-center">
-        <img id="client-logo" src="" class="w-24 h-24 mx-auto mb-6 rounded-full object-cover hidden" alt="Logo">
+        <img id="client-logo" src="" class="w-24 h-24 mx-auto mb-6 rounded-full object-cover hidden shadow-md transition-transform hover:scale-105 duration-300" alt="Logo">
         <h2 id="brand-name-display" class="text-2xl font-black mb-2 text-slate-800 italic">مرحباً بك</h2>
         <p id="welcome-msg" class="text-sm text-slate-500 mb-8 font-bold">يرجى إدخال اسمك لمتابعة مكافآتك</p>
         
         <div class="space-y-4">
-            <input type="text" id="cust-name" placeholder="اكتب اسمك هنا..." class="w-full p-4 rounded-2xl border bg-white/50 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-center font-bold">
-            <button onclick="handleAuth()" id="main-btn" class="w-full py-4 rounded-2xl text-white font-bold shadow-lg transition-transform active:scale-95">دخول الحساب</button>
+            <input type="text" id="cust-name" placeholder="اكتب اسمك هنا..." class="w-full p-4 rounded-2xl border bg-white/50 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-center font-bold shadow-inner">
+            <button onclick="handleAuth()" id="main-btn" class="w-full py-4 rounded-2xl text-white font-bold shadow-lg transition-transform hover:brightness-110">دخول الحساب</button>
         </div>
     </div>
 
     <!-- الشاشة الرئيسية للعميل -->
     <div id="status-screen" class="w-full max-w-sm card-glass p-6 rounded-[2.5rem] shadow-2xl text-center hidden">
         <header class="flex justify-between items-center mb-6">
-            <button onclick="logout()" class="text-slate-400 hover:text-red-500 transition-colors"><i class="fas fa-sign-out-alt"></i></button>
-            <h3 id="user-display-name" class="font-bold text-slate-700">--</h3>
+            <button onclick="logout()" class="text-slate-400 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-red-50 active:scale-90" title="تسجيل الخروج"><i class="fas fa-sign-out-alt fa-lg"></i></button>
+            <h3 id="user-display-name" class="font-bold text-slate-700 text-base">--</h3>
         </header>
 
         <!-- نظام الأختام -->
@@ -60,45 +76,45 @@
         <!-- نظام النقاط -->
         <div id="points-area" class="hidden py-10">
             <p id="points-title" class="text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">إجمالي الرصيد</p>
-            <div class="text-6xl font-black mb-2" id="points-value">0</div>
+            <div class="text-6xl font-black mb-2 transition-transform hover:scale-105 duration-300" id="points-value">0</div>
             <p id="points-unit" class="text-sm font-bold opacity-60">نقطة</p>
         </div>
 
         <!-- رمز QR الخاص بالعميل -->
-        <div class="bg-white/50 p-4 rounded-3xl border border-white mb-6">
+        <div class="bg-white/50 p-4 rounded-3xl border border-white mb-6 shadow-sm hover:shadow-md transition-shadow">
             <div id="user-qr" class="flex justify-center mb-2"></div>
             <p class="text-[10px] text-slate-400 font-bold">أبرز الكود للموظف عند الدفع</p>
         </div>
 
         <!-- زر المنيو التفاعلي -->
-        <button id="view-menu-btn" onclick="toggleMenu(true)" class="w-full py-3 mb-3 bg-slate-800 text-white rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all text-xs">
+        <button id="view-menu-btn" onclick="toggleMenu(true)" class="w-full py-3 mb-3 bg-slate-800 text-white rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2 hover-bounce hover:bg-slate-900 transition-all text-xs">
             <i class="fas fa-utensils"></i> تصفح المنيو التفاعلي والطلب
         </button>
 
         <!-- أزرار السلة ونداء النادل -->
         <div class="grid grid-cols-2 gap-2 mb-3">
-            <button onclick="toggleCartModal(true)" class="py-3 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2 text-xs relative active:scale-95 transition-all">
+            <button onclick="toggleCartModal(true)" class="py-3 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2 text-xs relative hover-bounce hover:bg-emerald-700 transition-all">
                 <i class="fas fa-shopping-cart"></i> سلة المشتريات
-                <span id="cart-badge" class="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold hidden">0</span>
+                <span id="cart-badge" class="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold hidden animate-pulse">0</span>
             </button>
-            <button onclick="callWaiter()" class="py-3 bg-amber-500 text-white rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2 text-xs active:scale-95 transition-all">
+            <button onclick="callWaiter()" class="py-3 bg-amber-500 text-white rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2 text-xs hover-bounce hover:bg-amber-600 transition-all">
                 <i class="fas fa-bell"></i> نداء النادل
             </button>
         </div>
 
         <!-- زر تثبيت التطبيق PWA -->
-        <button onclick="showInstallGuide()" class="flex items-center justify-center gap-2 w-full py-3 bg-white/40 border border-white/60 rounded-2xl text-xs font-bold text-slate-600 mb-4 active:scale-95 transition-all">
-            <i class="fas fa-download"></i> تثبيت التطبيق على الجوال
+        <button onclick="showInstallGuide()" class="flex items-center justify-center gap-2 w-full py-3 bg-white/40 border border-white/60 rounded-2xl text-xs font-bold text-slate-600 mb-4 hover-bounce hover:bg-white/70 transition-all">
+            <i class="fas fa-download text-blue-600"></i> تثبيت التطبيق على الجوال
         </button>
 
         <p id="bye-msg" class="text-xs text-slate-400 italic">شكراً لزيارتك!</p>
     </div>
 
     <!-- نافذة المنيو التفاعلي والأقسام -->
-    <div id="menu-modal" class="hidden fixed inset-0 bg-black/90 z-[1000] flex flex-col p-4">
+    <div id="menu-modal" class="hidden fixed inset-0 bg-black/90 z-[1000] flex flex-col p-4 backdrop-blur-md">
         <div class="flex justify-between items-center text-white mb-3">
-            <h2 class="text-lg font-black"><i class="fas fa-utensils ml-1"></i> قائمة الطعام التفاعلية</h2>
-            <button onclick="toggleMenu(false)" class="text-white text-3xl">&times;</button>
+            <h2 class="text-lg font-black"><i class="fas fa-utensils ml-1 text-amber-400"></i> قائمة الطعام التفاعلية</h2>
+            <button onclick="toggleMenu(false)" class="text-white text-3xl hover:rotate-90 transition-transform">&times;</button>
         </div>
         
         <!-- شريط الأقسام التفاعلي -->
@@ -107,7 +123,7 @@
         <div id="interactive-menu-list" class="flex-1 overflow-auto space-y-3 pb-20"></div>
         
         <div class="absolute bottom-4 left-4 right-4 max-w-sm mx-auto">
-            <button onclick="toggleMenu(false); toggleCartModal(true);" class="w-full py-3 bg-emerald-600 text-white rounded-2xl font-bold shadow-xl flex items-center justify-center gap-2">
+            <button onclick="toggleMenu(false); toggleCartModal(true);" class="w-full py-3 bg-emerald-600 text-white rounded-2xl font-bold shadow-xl flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors">
                 <i class="fas fa-shopping-cart"></i> عرض السلة وإتمام الطلب
             </button>
         </div>
@@ -115,21 +131,21 @@
 
     <!-- نافذة سلة المشتريات -->
     <div id="cart-modal" class="hidden fixed inset-0 bg-black/70 z-[1001] flex items-end">
-        <div class="w-full bg-white rounded-t-[2.5rem] p-6 max-h-[85vh] overflow-y-auto animate-slide-up">
+        <div class="w-full bg-white rounded-t-[2.5rem] p-6 max-h-[85vh] overflow-y-auto animate-slide-up shadow-2xl">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-black text-slate-800">سلة المشتريات</h3>
-                <button onclick="toggleCartModal(false)" class="text-slate-400 text-2xl">&times;</button>
+                <h3 class="text-lg font-black text-slate-800 flex items-center gap-2"><i class="fas fa-shopping-bag text-emerald-600"></i> سلة المشتريات</h3>
+                <button onclick="toggleCartModal(false)" class="text-slate-400 text-2xl hover:rotate-90 transition-transform">&times;</button>
             </div>
             
             <div class="mb-3">
                 <label class="text-xs font-bold text-slate-500 mb-1 block">رقم الطاولة أو المكان</label>
-                <input type="text" id="table-number-input" placeholder="مثال: طاولة رقم 4" class="w-full p-3 border rounded-xl bg-slate-50 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="text" id="table-number-input" placeholder="مثال: طاولة رقم 4" class="w-full p-3 border rounded-xl bg-slate-50 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 transition-all">
             </div>
 
-            <!-- خانة الملاحظات الاختيارية الجديدة -->
+            <!-- خانة الملاحظات الاختيارية -->
             <div class="mb-3">
                 <label class="text-xs font-bold text-slate-500 mb-1 block">ملاحظات على الطلب (اختياري)</label>
-                <textarea id="order-notes-input" placeholder="مثال: بدون سكر، زيادة صوص..." rows="2" class="w-full p-3 border rounded-xl bg-slate-50 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+                <textarea id="order-notes-input" placeholder="مثال: بدون سكر، زيادة صوص..." rows="2" class="w-full p-3 border rounded-xl bg-slate-50 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 resize-none transition-all"></textarea>
             </div>
 
             <div id="cart-items-list" class="space-y-3 mb-4 max-h-40 overflow-y-auto border-t border-b py-3"></div>
@@ -139,13 +155,13 @@
                 <span id="cart-total-price" class="text-blue-600">0</span>
             </div>
             
-            <button onclick="submitOrder()" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-lg active:scale-95 transition-all">إرسال الطلب للمطعم</button>
+            <button onclick="submitOrder()" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-lg hover:bg-blue-700 transition-colors">إرسال الطلب للمطعم</button>
         </div>
     </div>
 
     <!-- نافذة تثبيت التطبيق (PWA) -->
     <div id="pwa-modal" class="hidden fixed inset-0 bg-black/60 flex items-end z-[999]" onclick="this.classList.add('hidden')">
-        <div class="w-full bg-white rounded-t-[2.5rem] p-8 animate-slide-up" onclick="event.stopPropagation()">
+        <div class="w-full bg-white rounded-t-[2.5rem] p-8 animate-slide-up shadow-2xl" onclick="event.stopPropagation()">
             <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6"></div>
             
             <div id="ios-guide" class="hidden text-center">
@@ -153,11 +169,11 @@
                 <p class="text-slate-500 mb-6 text-sm font-bold">اتبع الخطوات لإضافة التطبيق لشاشتك:</p>
                 <div class="bg-blue-50 p-6 rounded-[2rem] text-right space-y-4">
                     <div class="flex items-center gap-3">
-                        <span class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">1</span>
+                        <span class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-sm">1</span>
                         <p class="text-sm">اضغط على زر المشاركة <i class="fas fa-share-square text-blue-600 mx-1 text-lg"></i> أسفل الشاشة.</p>
                     </div>
                     <div class="flex items-center gap-3">
-                        <span class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">2</span>
+                        <span class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-sm">2</span>
                         <p class="text-sm">اسحب القائمة للأعلى واختر <span class="font-black text-blue-700">"إضافة للشاشة الرئيسية"</span>.</p>
                     </div>
                 </div>
@@ -168,17 +184,17 @@
                 <p class="text-slate-500 mb-6 text-sm font-bold">أضف التطبيق لشاشة جوالك بسهولة:</p>
                 <div class="bg-green-50 p-6 rounded-[2rem] text-right space-y-4">
                     <div class="flex items-center gap-3">
-                        <span class="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold">1</span>
+                        <span class="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-sm">1</span>
                         <p class="text-sm">اضغط على النقاط الثلاث <i class="fas fa-ellipsis-v text-green-600 mx-1"></i> أعلى المتصفح.</p>
                     </div>
                     <div class="flex items-center gap-3">
-                        <span class="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold">2</span>
+                        <span class="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-sm">2</span>
                         <p class="text-sm">اختر <span class="font-black text-green-700">"تثبيت التطبيق"</span> أو <span class="font-black text-green-700">"Add to Home Screen"</span>.</p>
                     </div>
                 </div>
             </div>
 
-            <button onclick="document.getElementById('pwa-modal').classList.add('hidden')" class="w-full mt-8 py-4 bg-slate-900 text-white rounded-2xl font-bold">فهمت ذلك</button>
+            <button onclick="document.getElementById('pwa-modal').classList.add('hidden')" class="w-full mt-8 py-4 bg-slate-900 text-white rounded-2xl font-bold shadow-lg hover:bg-black transition-colors">فهمت ذلك</button>
         </div>
     </div>
 
@@ -287,7 +303,7 @@
                 const displayName = cat === 'all' ? 'الكل' : cat;
                 const isActive = currentCategory === cat;
                 categoriesBar.innerHTML += `
-                    <button onclick="filterCategory('${cat}')" class="px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${isActive ? 'bg-blue-600 text-white shadow-lg' : 'bg-white/20 text-white hover:bg-white/30'}">
+                    <button onclick="filterCategory('${cat}')" class="px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-200 ${isActive ? 'bg-blue-600 text-white shadow-lg scale-105' : 'bg-white/20 text-white hover:bg-white/30'}">
                         ${displayName}
                     </button>
                 `;
@@ -316,16 +332,16 @@
             filtered.forEach(p => {
                 const currency = cafeSettings.currency || '';
                 menuContainer.innerHTML += `
-                <div class="bg-white/90 p-4 rounded-2xl flex justify-between items-center shadow-md">
+                <div class="bg-white/90 p-4 rounded-2xl flex justify-between items-center shadow-md hover:shadow-lg transition-shadow">
                     <div class="flex items-center gap-3">
-                        <img src="${p.image || 'https://via.placeholder.com/60'}" class="w-14 h-14 object-cover rounded-xl">
+                        <img src="${p.image || 'https://via.placeholder.com/60'}" class="w-14 h-14 object-cover rounded-xl shadow-sm">
                         <div>
                             <h4 class="font-black text-slate-800 text-sm">${p.name}</h4>
                             <p class="text-[10px] text-slate-500">${p.description || ''}</p>
                             <span class="text-xs font-black text-blue-600">${p.price} ${currency}</span>
                         </div>
                     </div>
-                    <button onclick="addToCart('${p.id}', '${p.name.replace(/'/g, "\\'")}', ${p.price})" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow active:scale-95 transition-all"><i class="fas fa-plus"></i> إضافة</button>
+                    <button onclick="addToCart('${p.id}', '${p.name.replace(/'/g, "\\'")}', ${p.price})" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow hover:bg-blue-700 active:scale-95 transition-all"><i class="fas fa-plus"></i> إضافة</button>
                 </div>`;
             });
         }
@@ -368,9 +384,9 @@
                             <div class="text-[10px] text-slate-500">${item.price} ${currency} × ${item.qty}</div>
                         </div>
                         <div class="flex items-center gap-2">
-                            <button onclick="changeQty(${index}, 1)" class="w-6 h-6 bg-slate-100 rounded-full font-bold text-xs hover:bg-slate-200 transition-colors">+</button>
-                            <span class="text-xs font-bold">${item.qty}</span>
-                            <button onclick="changeQty(${index}, -1)" class="w-6 h-6 bg-slate-100 rounded-full font-bold text-xs hover:bg-slate-200 transition-colors">-</button>
+                            <button onclick="changeQty(${index}, 1)" class="w-6 h-6 bg-slate-100 rounded-full font-bold text-xs hover:bg-slate-200 active:scale-90 transition-all">+</button>
+                            <span class="text-xs font-bold w-4 text-center">${item.qty}</span>
+                            <button onclick="changeQty(${index}, -1)" class="w-6 h-6 bg-slate-100 rounded-full font-bold text-xs hover:bg-slate-200 active:scale-90 transition-all">-</button>
                         </div>
                     </div>`;
                 });
@@ -394,7 +410,7 @@
 
         async function submitOrder() {
             const table = document.getElementById('table-number-input').value.trim();
-            const notes = document.getElementById('order-notes-input').value.trim(); // جلب قيمة الملاحظات الاختيارية
+            const notes = document.getElementById('order-notes-input').value.trim();
             
             if(!table) { alert("يرجى إدخال رقم الطاولة أو المكان"); return; }
             if(cart.length === 0) { alert("السلة فارغة"); return; }
@@ -403,10 +419,9 @@
             const detailsText = cart.map(i => `${i.qty}x ${i.name} (${i.price})`).join(' - ');
 
             try {
-                // إرسال سلة الطلبات لتظهر في لوحة التحكم (customer_carts) مع تضمين الملاحظات
                 await db.collection("cafes").doc(cafeID).collection("customer_carts").add({
                     table: table,
-                    notes: notes, // حفظ الملاحظات
+                    notes: notes,
                     items: cart,
                     itemsSummary: detailsText,
                     total: total,
@@ -415,11 +430,10 @@
                     time: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                // إرسال كفاتورة صفرية تلقائية (INV-000) لتظهر مباشرة في مبيعات الفواتير الصفرية مع تضمين الملاحظات
                 await db.collection("cafes").doc(cafeID).collection("invoices").add({
                     serial: "INV-000",
                     target: table,
-                    notes: notes, // حفظ الملاحظات في الفاتورة أيضاً
+                    notes: notes,
                     items: cart,
                     details: detailsText,
                     subtotal: total,
@@ -431,7 +445,7 @@
 
                 alert("تم إرسال الطلب بنجاح إلى المطعم!");
                 cart = [];
-                document.getElementById('order-notes-input').value = ""; // تفريغ حقل الملاحظات بعد الإرسال
+                document.getElementById('order-notes-input').value = "";
                 updateCartUI();
                 toggleCartModal(false);
             } catch(e) {
@@ -529,5 +543,3 @@
     </script>
 </body>
 </html>
- 
-
