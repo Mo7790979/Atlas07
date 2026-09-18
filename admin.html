@@ -1315,6 +1315,9 @@
             calculateInvoiceTotals();
         }
 
+        // ==========================================
+        // تعديل دالة حساب الضرائب والمجاميع (تم الإصلاح هنا)
+        // ==========================================
         function calculateInvoiceTotals() {
             let subtotal = 0;
             invoiceInteractiveItems.forEach(item => {
@@ -1839,115 +1842,99 @@
             const snap = await db.collection("cafes").doc(currentCafeID).collection("customers").get();
             list.innerHTML = "";
             if(countEl) countEl.innerText = snap.size;
-            if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا توجد عملاء مسجلين بعد</p>'; return; }
+            if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا يوجد عملاء مسجلون حالياً</p>'; return; }
             snap.forEach(doc => {
                 const c = doc.data();
                 list.innerHTML += `
-                <div onclick='selectCustomerFromList("${c.name}")' class="customer-row flex justify-between items-center p-3 bg-white rounded-xl border mb-2 shadow-sm text-right">
+                <div onclick='openCustomerActions("${doc.id}", "${c.name || ''}", "${c.phone || ''}", ${c.points || 0})' class="customer-row flex justify-between items-center p-3 bg-slate-50 rounded-xl border mb-2 text-xs">
                     <div>
-                        <div class="font-bold text-xs text-slate-800">${c.name}</div>
-                        <div class="text-[10px] text-slate-400">الرصيد: ${c.points || 0}</div>
+                        <div class="font-black text-slate-800">${c.name || 'بدون اسم'}</div>
+                        <div class="text-[10px] text-slate-400 font-mono">${c.phone || doc.id}</div>
                     </div>
-                    <span class="text-xs text-blue-600 font-bold underline">إدارة الحساب</span>
+                    <span class="bg-blue-100 text-blue-700 px-2.5 py-1 rounded-lg font-bold">${c.points || 0}</span>
                 </div>`;
             });
         }
 
-        function selectCustomerFromList(name) {
-            activeCustomerName = name;
+        function openCustomerActions(phone, name, phoneNum, points) {
+            activeCustomerName = phone;
+            const actDiv = document.getElementById('user-actions');
+            if(actDiv) actDiv.classList.remove('hidden');
+            document.getElementById('cur-name').innerText = name || phone;
+            document.getElementById('cur-phone-display').innerText = phoneNum || phone;
+            document.getElementById('cur-points').innerText = points;
             showSection('scan');
-            fetchCustomerData(name);
-        }
-
-        function startScanner() {
-            const readerDiv = document.getElementById('reader');
-            if(!readerDiv) return;
-
-            if (isScannerRunning) {
-                stopScanner();
-                return;
-            }
-
-            html5QrCode = new Html5Qrcode("reader");
-            const qrCodeSuccessCallback = (decodedText, decodedResult) => {
-                stopScanner();
-                fetchCustomerData(decodedText);
-            };
-            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
-            html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback)
-                .then(() => {
-                    isScannerRunning = true;
-                    document.getElementById('start-scan-btn').innerText = "إيقاف الكاميرا";
-                })
-                .catch(err => {
-                    console.error("فشل بدء تشغيل الكاميرا", err);
-                    alert("تعذر الوصول إلى الكاميرا. يرجى التأكد من الأذونات.");
-                });
-        }
-
-        function stopScanner() {
-            if (html5QrCode && isScannerRunning) {
-                html5QrCode.stop().then(() => {
-                    isScannerRunning = false;
-                    document.getElementById('start-scan-btn').innerHTML = '<i class="fas fa-qrcode ml-2"></i> مسح كود الزبون';
-                }).catch(err => console.log(err));
-            }
-        }
-
-        async function fetchCustomerData(nameOrPhone) {
-            try {
-                let snap = await db.collection("cafes").doc(currentCafeID).collection("customers").where("name", "==", nameOrPhone).get();
-                if(snap.empty) {
-                    snap = await db.collection("cafes").doc(currentCafeID).collection("customers").where("phone", "==", nameOrPhone).get();
-                }
-
-                if(!snap.empty) {
-                    const doc = snap.docs[0];
-                    window.activeCustomerDocId = doc.id;
-                    const data = doc.data();
-                    
-                    document.getElementById('cur-name').innerText = data.name || "زبون";
-                    document.getElementById('cur-phone-display').innerText = data.phone || "";
-                    document.getElementById('cur-points').innerText = data.points || 0;
-                    document.getElementById('user-actions').classList.remove('hidden');
-                } else {
-                    alert("لم يتم العثور على بيانات هذا العميل في النظام");
-                }
-            } catch(e) {
-                console.error(e);
-                alert("حدث خطأ أثناء جلب بيانات العميل");
-            }
         }
 
         function closeUserActions() {
-            document.getElementById('user-actions').classList.add('hidden');
-            window.activeCustomerDocId = null;
+            const actDiv = document.getElementById('user-actions');
+            if(actDiv) actDiv.classList.add('hidden');
+            activeCustomerName = "";
         }
 
         async function updatePoints(val) {
-            if(!window.activeCustomerDocId) return;
-            const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(window.activeCustomerDocId);
+            if(!activeCustomerName) return;
+            const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeCustomerName);
             const doc = await ref.get();
             if(doc.exists) {
-                let current = Number(doc.data().points) || 0;
-                let updated = current + val;
-                if(updated < 0) updated = 0;
-                await ref.update({ points: updated });
-                document.getElementById('cur-points').innerText = updated;
+                let cur = Number(doc.data().points) || 0;
+                let nw = cur + val;
+                if(nw < 0) nw = 0;
+                await ref.update({ points: nw });
+                document.getElementById('cur-points').innerText = nw;
                 loadCustomers();
             }
         }
 
         async function resetPoints() {
-            if(!window.activeCustomerDocId) return;
+            if(!activeCustomerName) return;
             if(confirm("هل أنت متأكد من تصفير رصيد العميل / تسليم الهدية؟")) {
-                const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(window.activeCustomerDocId);
+                const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeCustomerName);
                 await ref.update({ points: 0 });
                 document.getElementById('cur-points').innerText = 0;
                 loadCustomers();
-                alert("تم تصفير الحساب بنجاح!");
+                alert("تم تصفير رصيد العميل بنجاح!");
             }
+        }
+
+        function startScanner() {
+            const scanBtn = document.getElementById('start-scan-btn');
+            if(isScannerRunning) {
+                if(html5QrCode) {
+                    html5QrCode.stop().then(() => {
+                        isScannerRunning = false;
+                        if(scanBtn) scanBtn.innerHTML = '<i class="fas fa-qrcode ml-2"></i> مسح كود الزبون';
+                    }).catch(err => console.log(err));
+                }
+                return;
+            }
+
+            html5QrCode = new Html5Qrcode("reader");
+            isScannerRunning = true;
+            if(scanBtn) scanBtn.innerHTML = '<i class="fas fa-stop ml-2"></i> إيقاف الكاميرا';
+
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                async (decodedText) => {
+                    await html5QrCode.stop();
+                    isScannerRunning = false;
+                    if(scanBtn) scanBtn.innerHTML = '<i class="fas fa-qrcode ml-2"></i> مسح كود الزبون';
+                    
+                    const phone = decodedText.trim();
+                    const doc = await db.collection("cafes").doc(currentCafeID).collection("customers").doc(phone).get();
+                    if(doc.exists) {
+                        openCustomerActions(phone, doc.data().name, doc.data().phone, doc.data().points || 0);
+                    } else {
+                        alert("العميل غير مسجل في القائمة");
+                    }
+                },
+                (errorMessage) => {}
+            ).catch(err => {
+                isScannerRunning = false;
+                if(scanBtn) scanBtn.innerHTML = '<i class="fas fa-qrcode ml-2"></i> مسح كود الزبون';
+                alert("تعذر تشغيل الكاميرا، يجدر التحقق من صلاحيات المتصفح");
+            });
         }
 
         function generateCafeQR() {
@@ -1955,9 +1942,9 @@
             if(!container) return;
             container.innerHTML = "";
             new QRCode(container, {
-                text: `https://mo7790979.github.io/Atlas07/customer.html?cafe=${currentCafeID}`,
-                width: 150,
-                height: 150,
+                text: "https://mo7790979.github.io/Atlas07/client.html?cafe=" + currentCafeID,
+                width: 160,
+                height: 160,
                 colorDark: "#000000",
                 colorLight: "#ffffff",
                 correctLevel: QRCode.CorrectLevel.H
@@ -1977,7 +1964,7 @@
             }
             if(dataUrl) {
                 const link = document.createElement('a');
-                link.download = `${currentCafeID}-qrcode.png`;
+                link.download = currentCafeID + '-qrcode.png';
                 link.href = dataUrl;
                 link.click();
             } else {
@@ -1997,19 +1984,19 @@
                 const now = new Date();
                 const diff = expiryDateGlobal - now;
                 if(diff <= 0) {
-                    if(timerEl) timerEl.innerText = "منتهي الصلاحية";
+                    if(timerEl) timerEl.innerText = "انتهى الاشتراك";
                     return;
                 }
                 const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-                
+                const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+                const minutes = Math.floor((diff / 1000 / 60) % 60);
+                const seconds = Math.floor((diff / 1000) % 60);
                 if(timerEl) {
-                    timerEl.innerText = `${days} يوم ${hours}:${minutes}:${seconds}`;
+                    timerEl.innerText = `${days}ي ${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
                 }
             }, 1000);
         }
     </script>
 </body>
 </html>
+ 
