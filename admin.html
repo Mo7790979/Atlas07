@@ -165,6 +165,15 @@
                     <p class="text-xs text-slate-400 text-center py-4">لا توجد نداءات جديدة حالياً</p>
                 </div>
             </div>
+            
+            <!-- قسم QR Code لصفحة الندل -->
+            <div class="admin-card text-center bg-white border shadow-sm">
+                <h3 class="font-black text-blue-600 mb-3 text-right border-r-4 border-blue-600 pr-3"><i class="fas fa-qrcode ml-1"></i> QR Code صفحة النُدل</h3>
+                <p class="text-[11px] text-slate-500 mb-3 text-right">امسح الكود أدناه أو قم بطباعته ليصل النُدل مباشرة إلى صفحة النعس والنداء.</p>
+                <div id="waiter-qrcode-container" class="flex justify-center p-4 bg-white border rounded-2xl mx-auto w-fit mb-3 shadow-inner"></div>
+                <button onclick="downloadWaiterQR()" class="text-xs text-blue-600 font-bold underline bg-transparent border-none cursor-pointer">تحميل صورة QR Code للنُدل</button>
+            </div>
+
             <div class="admin-card">
                 <h3 class="font-black text-blue-600 mb-4 border-r-4 border-blue-600 pr-3">إضافة حساب نادل جديد</h3>
                 <div class="space-y-4">
@@ -770,12 +779,50 @@
             listenToInvoicesLive();
             listenToCustomerInvoicesLive();
             generateCafeQR();
+            generateWaiterQR(); // توليد QR Code الخاص بصفحة النُدل
             startTimer();
             loadAdminBankInfo();
             generateNewSerial();
             
             invoiceInteractiveItems = [];
             renderInvoiceItemsBuilder();
+        }
+
+        // دالة توليد QR Code لصفحة النُدل
+        function generateWaiterQR() {
+            const container = document.getElementById('waiter-qrcode-container');
+            if(!container) return;
+            container.innerHTML = "";
+            new QRCode(container, {
+                text: "https://mo7790979.github.io/Atlas07/waiter.html",
+                width: 150,
+                height: 150,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+
+        // دالة تحميل صورة QR Code للنُدل
+        function downloadWaiterQR() {
+            const container = document.getElementById('waiter-qrcode-container');
+            if(!container) return;
+            const img = container.querySelector('img');
+            const canvas = container.querySelector('canvas');
+            let dataUrl = "";
+            if(img && img.src) {
+                dataUrl = img.src;
+            } else if(canvas) {
+                dataUrl = canvas.toDataURL("image/png");
+            }
+            if(dataUrl) {
+                const link = document.createElement('a');
+                link.download = 'waiter-qrcode.png';
+                link.href = dataUrl;
+                link.click();
+            } else {
+                alert("لم يتم إنشاء الصورة بعد، يرجى الانتظار قليلاً");
+            }
         }
 
         function generateNewSerial() {
@@ -1011,10 +1058,8 @@
                     window._tempCarts = window._tempCarts || {};
                     window._tempCarts[doc.id] = cart;
 
-                    // عرض الملاحظات داخل البطاقة إذا وجدت
                     const notesHtml = cart.notes ? `<div class="text-[10px] text-amber-600 font-bold mt-0.5"><i class="fas fa-sticky-note ml-0.5"></i> ملاحظات: ${cart.notes}</div>` : '';
 
-                    // تحديث البطاقة لإضافة زر الحذف بجانب زر التحميل للفاتورة
                     list.innerHTML += `
                     <div class="flex justify-between items-center p-3 bg-white rounded-xl border border-blue-200 shadow-sm text-right">
                         <div>
@@ -1031,7 +1076,6 @@
             });
         }
 
-        // دالة حذف طلب السلة الواردة
         async function deleteCustomerCart(cartId) {
             if(confirm("هل أنت متأكد من حذف طلب السلة هذا؟")) {
                 await db.collection("cafes").doc(currentCafeID).collection("customer_carts").doc(cartId).delete();
@@ -1045,7 +1089,6 @@
             const targetEl = document.getElementById('invoice-target');
             if(targetEl) targetEl.value = cart.table || 'طاولة الزبون';
 
-            // تعبئة حقل الملاحظات في واجهة المحاسبة تلقائياً بملاحظات العميل
             const notesInputEl = document.getElementById('invoice-notes-input');
             if(notesInputEl) notesInputEl.value = cart.notes || '';
 
@@ -1059,7 +1102,6 @@
             window.activeCartIdToResolve = cartId;
         }
 
-        // الاستماع للفواتير الصفرية الواردة من صفحة العميل (INV-000)
         function listenToCustomerInvoicesLive() {
             let isFirstLoad = true;
             db.collection("cafes").doc(currentCafeID).collection("invoices")
@@ -1377,11 +1419,10 @@
             const detailsSummary = invoiceInteractiveItems.map(i => `${i.qty}x ${i.name} (${i.price})`).join(' - ');
 
             try {
-                // حفظ الفاتورة في قاعدة البيانات مع تضمين حقل الملاحظات (notes)
                 await db.collection("cafes").doc(currentCafeID).collection("invoices").add({
                     serial,
                     target,
-                    notes, // حفظ الملاحظات الواردة أو المضافة يدوياً
+                    notes,
                     items: invoiceInteractiveItems,
                     details: detailsSummary,
                     subtotal,
@@ -1528,7 +1569,6 @@
             printWindow.document.close();
         }
 
-        // إضافات السجل العام المتقدم وتقارير المبيعات
         function renderGeneralLogList(invoices) {
             const list = document.getElementById('general-log-list');
             if(!list) return;
@@ -1720,7 +1760,6 @@
             printWindow.document.close();
         }
 
-        // وظائف تقارير المبيعات السريعة (يومي، شهري، سنوي)
         function generateDailySalesReport() {
             openSalesReportModal('التقرير اليومي للمبيعات', filterInvoicesByPeriod(allInvoicesCache.filter(i => i.serial !== "INV-000"), 'today'));
         }
@@ -1785,10 +1824,6 @@
             const targetTab = document.getElementById(`tab-${sectionId}`);
             if(targetSec) targetSec.classList.remove('hidden');
             if(targetTab) targetTab.classList.add('active-tab');
-
-            if(sectionId === 'scan' && isScannerRunning) {
-                // Keep running if active
-            }
         }
 
         async function loadCustomers() {
@@ -1861,30 +1896,6 @@
             document.getElementById('user-actions').classList.remove('hidden');
             document.getElementById('cur-name').innerText = name;
             document.getElementById('cur-points').innerText = points;
-            document.getElementById('points-label-view').innerText = selectedSystem === 'stamps' ? 'الأختام الحالية' : 'النقاط الحالية';
-        }
-
-        async function updatePoints(delta) {
-            if(!activeCustomerName) return;
-            const docRef = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeCustomerName);
-            const doc = await docRef.get();
-            if(doc.exists) {
-                let current = doc.data().points || 0;
-                let updated = current + delta;
-                if(updated < 0) updated = 0;
-                await docRef.update({ points: updated });
-                document.getElementById('cur-points').innerText = updated;
-            }
-        }
-
-        async function resetPoints() {
-            if(!activeCustomerName) return;
-            if(confirm("هل أنت متأكد من تصفير رصيد العميل (تسليم الهدية)؟")) {
-                const docRef = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeCustomerName);
-                await docRef.update({ points: 0 });
-                document.getElementById('cur-points').innerText = 0;
-                alert("تم تصفير الحساب بنجاح!");
-            }
         }
 
         function closeUserActions() {
@@ -1892,30 +1903,73 @@
             activeCustomerName = "";
         }
 
+        async function updatePoints(val) {
+            if(!activeCustomerName) return;
+            const docRef = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeCustomerName);
+            const doc = await docRef.get();
+            let current = doc.exists ? (doc.data().points || 0) : 0;
+            let updated = current + val;
+            if(updated < 0) updated = 0;
+            await docRef.update({ points: updated });
+            document.getElementById('cur-points').innerText = updated;
+            loadCustomers();
+        }
+
+        async function resetPoints() {
+            if(!activeCustomerName) return;
+            if(confirm("هل تريد تصفير الحساب أو تسليم الهدية للعميل؟")) {
+                const docRef = db.collection("cafes").doc(currentCafeID).collection("customers").doc(activeCustomerName);
+                await docRef.update({ points: 0 });
+                document.getElementById('cur-points').innerText = 0;
+                loadCustomers();
+                alert("تم تصفير الحساب بنجاح!");
+            }
+        }
+
         function generateCafeQR() {
             const container = document.getElementById('qrcode-container');
             if(!container) return;
             container.innerHTML = "";
-            const clientUrl = window.location.origin + window.location.pathname.replace('admin.html', 'index.html') + `?id=${currentCafeID}`;
-            new QRCode(container, { text: clientUrl, width: 140, height: 140 });
+            new QRCode(container, {
+                text: currentCafeID,
+                width: 140,
+                height: 140,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
         }
 
         function downloadQR() {
-            const canvas = document.querySelector('#qrcode-container canvas');
-            if(!canvas) return;
-            const link = document.createElement('a');
-            link.download = `QR-${currentCafeID}.png`;
-            link.href = canvas.toDataURL("image/png");
-            link.click();
+            const container = document.getElementById('qrcode-container');
+            if(!container) return;
+            const img = container.querySelector('img');
+            const canvas = container.querySelector('canvas');
+            let dataUrl = "";
+            if(img && img.src) {
+                dataUrl = img.src;
+            } else if(canvas) {
+                dataUrl = canvas.toDataURL("image/png");
+            }
+            if(dataUrl) {
+                const link = document.createElement('a');
+                link.download = 'cafe-qr.png';
+                link.href = dataUrl;
+                link.click();
+            } else {
+                alert("يرجى الانتظار حتى يتم توليد الكود بشكل كامل");
+            }
         }
 
         function startTimer() {
-            if(!expiryDateGlobal) return;
             const timerEl = document.getElementById('countdown-timer');
-            const expiryTextEl = document.getElementById('expiry-date-text');
-            if(expiryTextEl) expiryTextEl.innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
-
+            const expiryEl = document.getElementById('expiry-date-text');
+            if(expiryDateGlobal && expiryEl) {
+                expiryEl.innerText = expiryDateGlobal.toLocaleDateString('ar-EG');
+            }
+            
             setInterval(() => {
+                if(!expiryDateGlobal) return;
                 const now = new Date();
                 const diff = expiryDateGlobal - now;
                 if(diff <= 0) {
@@ -1926,7 +1980,9 @@
                 const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                 const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-                if(timerEl) timerEl.innerText = `${days} يوم - ${hours}:${minutes}:${seconds}`;
+                if(timerEl) {
+                    timerEl.innerText = `${days} يوم - ${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
+                }
             }, 1000);
         }
     </script>
