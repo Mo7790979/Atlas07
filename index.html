@@ -115,20 +115,30 @@
 
     <!-- نافذة سلة المشتريات -->
     <div id="cart-modal" class="hidden fixed inset-0 bg-black/70 z-[1001] flex items-end">
-        <div class="w-full bg-white rounded-t-[2.5rem] p-6 max-h-[80vh] overflow-y-auto animate-slide-up">
+        <div class="w-full bg-white rounded-t-[2.5rem] p-6 max-h-[85vh] overflow-y-auto animate-slide-up">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-black text-slate-800">سلة المشتريات</h3>
                 <button onclick="toggleCartModal(false)" class="text-slate-400 text-2xl">&times;</button>
             </div>
-            <div class="mb-4">
-                <label class="text-xs font-bold text-slate-500 mb-1">رقم الطاولة أو المكان</label>
+            
+            <div class="mb-3">
+                <label class="text-xs font-bold text-slate-500 mb-1 block">رقم الطاولة أو المكان</label>
                 <input type="text" id="table-number-input" placeholder="مثال: طاولة رقم 4" class="w-full p-3 border rounded-xl bg-slate-50 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500">
             </div>
-            <div id="cart-items-list" class="space-y-3 mb-4 max-h-48 overflow-y-auto border-t border-b py-3"></div>
-            <div class="flex justify-between items-center mb-6 font-black text-slate-800 text-base">
+
+            <!-- خانة الملاحظات الاختيارية الجديدة -->
+            <div class="mb-3">
+                <label class="text-xs font-bold text-slate-500 mb-1 block">ملاحظات على الطلب (اختياري)</label>
+                <textarea id="order-notes-input" placeholder="مثال: بدون سكر، زيادة صوص..." rows="2" class="w-full p-3 border rounded-xl bg-slate-50 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+            </div>
+
+            <div id="cart-items-list" class="space-y-3 mb-4 max-h-40 overflow-y-auto border-t border-b py-3"></div>
+            
+            <div class="flex justify-between items-center mb-4 font-black text-slate-800 text-base">
                 <span>المبلغ الإجمالي:</span>
                 <span id="cart-total-price" class="text-blue-600">0</span>
             </div>
+            
             <button onclick="submitOrder()" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-lg active:scale-95 transition-all">إرسال الطلب للمطعم</button>
         </div>
     </div>
@@ -384,6 +394,8 @@
 
         async function submitOrder() {
             const table = document.getElementById('table-number-input').value.trim();
+            const notes = document.getElementById('order-notes-input').value.trim(); // جلب قيمة الملاحظات الاختيارية
+            
             if(!table) { alert("يرجى إدخال رقم الطاولة أو المكان"); return; }
             if(cart.length === 0) { alert("السلة فارغة"); return; }
 
@@ -391,9 +403,10 @@
             const detailsText = cart.map(i => `${i.qty}x ${i.name} (${i.price})`).join(' - ');
 
             try {
-                // إرسال سلة الطلبات لتظهر في لوحة التحكم (customer_carts)
+                // إرسال سلة الطلبات لتظهر في لوحة التحكم (customer_carts) مع تضمين الملاحظات
                 await db.collection("cafes").doc(cafeID).collection("customer_carts").add({
                     table: table,
+                    notes: notes, // حفظ الملاحظات
                     items: cart,
                     itemsSummary: detailsText,
                     total: total,
@@ -402,10 +415,11 @@
                     time: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                // إرسال كفاتورة صفرية تلقائية (INV-000) لتظهر مباشرة في مبيعات الفواتير الصفرية
+                // إرسال كفاتورة صفرية تلقائية (INV-000) لتظهر مباشرة في مبيعات الفواتير الصفرية مع تضمين الملاحظات
                 await db.collection("cafes").doc(cafeID).collection("invoices").add({
                     serial: "INV-000",
                     target: table,
+                    notes: notes, // حفظ الملاحظات في الفاتورة أيضاً
                     items: cart,
                     details: detailsText,
                     subtotal: total,
@@ -417,6 +431,7 @@
 
                 alert("تم إرسال الطلب بنجاح إلى المطعم!");
                 cart = [];
+                document.getElementById('order-notes-input').value = ""; // تفريغ حقل الملاحظات بعد الإرسال
                 updateCartUI();
                 toggleCartModal(false);
             } catch(e) {
