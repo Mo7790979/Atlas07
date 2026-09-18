@@ -613,7 +613,6 @@
         let cachedTaxesList = []; 
         let currentReportPrintFunction = null;
 
-        // صوت نداء النادل (نغمة صفير مزدوجة هادئة)
         function playAlertSound() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -638,17 +637,15 @@
             } catch(e) { console.log(e); }
         }
 
-        // صوت جرس الفاتورة الجديدة القادمة من العميل (نغمة جرس كاشير / رنين مميز وثلاثي)
         function playInvoiceAlertSound() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const now = audioCtx.currentTime;
 
-                // رنين جرس أول
                 const osc1 = audioCtx.createOscillator();
                 const gain1 = audioCtx.createGain();
                 osc1.type = 'triangle';
-                osc1.frequency.setValueAtTime(1046.50, now); // نوتة C6 (رنين جرس)
+                osc1.frequency.setValueAtTime(1046.50, now);
                 gain1.gain.setValueAtTime(0.2, now);
                 gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
                 osc1.connect(gain1);
@@ -656,11 +653,10 @@
                 osc1.start(now);
                 osc1.stop(now + 0.5);
 
-                // رنين جرس ثاني أعلى
                 const osc2 = audioCtx.createOscillator();
                 const gain2 = audioCtx.createGain();
                 osc2.type = 'triangle';
-                osc2.frequency.setValueAtTime(1318.51, now + 0.2); // نوتة E6
+                osc2.frequency.setValueAtTime(1318.51, now + 0.2);
                 gain2.gain.setValueAtTime(0.2, now + 0.2);
                 gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
                 osc2.connect(gain2);
@@ -668,11 +664,10 @@
                 osc2.start(now + 0.2);
                 osc2.stop(now + 0.7);
 
-                // رنين جرس ثالث (إكمال نغمة الجرس الاحترافي)
                 const osc3 = audioCtx.createOscillator();
                 const gain3 = audioCtx.createGain();
                 osc3.type = 'triangle';
-                osc3.frequency.setValueAtTime(1567.98, now + 0.4); // نوتة G6
+                osc3.frequency.setValueAtTime(1567.98, now + 0.4);
                 gain3.gain.setValueAtTime(0.25, now + 0.4);
                 gain3.gain.exponentialRampToValueAtTime(0.001, now + 1.1);
                 osc3.connect(gain3);
@@ -779,7 +774,7 @@
             listenToInvoicesLive();
             listenToCustomerInvoicesLive();
             generateCafeQR();
-            generateWaiterQR(); // توليد QR Code الخاص بصفحة النُدل
+            generateWaiterQR();
             startTimer();
             loadAdminBankInfo();
             generateNewSerial();
@@ -788,7 +783,6 @@
             renderInvoiceItemsBuilder();
         }
 
-        // دالة توليد QR Code لصفحة النُدل
         function generateWaiterQR() {
             const container = document.getElementById('waiter-qrcode-container');
             if(!container) return;
@@ -803,7 +797,6 @@
             });
         }
 
-        // دالة تحميل صورة QR Code للنُدل
         function downloadWaiterQR() {
             const container = document.getElementById('waiter-qrcode-container');
             if(!container) return;
@@ -1854,12 +1847,45 @@
             }, 1000);
         }
 
+        async function loadCustomers() {
+            const list = document.getElementById('customers-list');
+            const countEl = document.getElementById('customer-count');
+            if(!list) return;
+            const snap = await db.collection("cafes").doc(currentCafeID).collection("customers").get();
+            list.innerHTML = "";
+            if(countEl) countEl.innerText = snap.size;
+            if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">لا توجد عملاء مسجلين بعد</p>'; return; }
+            snap.forEach(doc => {
+                const c = doc.data();
+                list.innerHTML += `
+                <div onclick='openCustomerProfile("${doc.id}", "${c.name}", ${c.points || 0})' class="customer-row flex justify-between items-center p-3 bg-white rounded-xl border shadow-sm">
+                    <div class="text-right">
+                        <div class="font-bold text-xs text-slate-800">${c.name || 'بدون اسم'}</div>
+                        <div class="text-[10px] text-slate-400 font-mono">${c.phone || ''}</div>
+                    </div>
+                    <span class="bg-blue-50 text-blue-700 text-xs font-black px-2.5 py-1 rounded-lg">${c.points || 0}</span>
+                </div>`;
+            });
+        }
+
+        function openCustomerProfile(id, name, points) {
+            window.activeCustomerID = id;
+            activeCustomerName = name;
+            showSection('scan');
+            const actions = document.getElementById('user-actions');
+            if(actions) {
+                actions.classList.remove('hidden');
+                document.getElementById('cur-name').innerText = name;
+                document.getElementById('cur-points').innerText = points;
+            }
+        }
+
         function generateCafeQR() {
             const container = document.getElementById('qrcode-container');
             if(!container) return;
             container.innerHTML = "";
             new QRCode(container, {
-                text: "https://mo7790979.github.io/Atlas07/index.html?cafe=" + currentCafeID,
+                text: "https://mo7790979.github.io/Atlas07/client.html?cafe=" + currentCafeID,
                 width: 150,
                 height: 150,
                 colorDark: "#000000",
@@ -1874,149 +1900,105 @@
             const img = container.querySelector('img');
             const canvas = container.querySelector('canvas');
             let dataUrl = "";
-            if(img && img.src) {
-                dataUrl = img.src;
-            } else if(canvas) {
-                dataUrl = canvas.toDataURL("image/png");
-            }
+            if(img && img.src) dataUrl = img.src;
+            else if(canvas) dataUrl = canvas.toDataURL("image/png");
             if(dataUrl) {
                 const link = document.createElement('a');
-                link.download = 'cafe-qrcode.png';
+                link.download = currentCafeID + '-qr.png';
                 link.href = dataUrl;
                 link.click();
             }
         }
 
-        async function loadCustomers() {
-            const list = document.getElementById('customers-list');
-            const countEl = document.getElementById('customer-count');
-            if(!list) return;
-            const snap = await db.collection("cafes").doc(currentCafeID).collection("customers").get();
-            list.innerHTML = "";
-            if(countEl) countEl.innerText = snap.size;
-            if(snap.empty) { list.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">لا يوجد عملاء مسجلين بعد</p>'; return; }
-            snap.forEach(doc => {
-                const c = doc.data();
-                list.innerHTML += `
-                <div onclick='openCustomerActionsByPhone("${doc.id}", "${c.name}", ${c.points || 0})' class="customer-row flex justify-between items-center p-3 bg-slate-50 rounded-xl border text-xs shadow-sm">
-                    <div>
-                        <div class="font-bold text-slate-800">${c.name || 'بدون اسم'}</div>
-                        <div class="text-[10px] text-slate-400 font-mono">${doc.id}</div>
-                    </div>
-                    <span class="bg-blue-600 text-white font-black px-2.5 py-1 rounded-lg">${c.points || 0}</span>
-                </div>`;
-            });
-        }
-
-        function openCustomerActionsByPhone(phone, name, points) {
-            window.currentScannedPhone = phone;
-            activeCustomerName = name;
-            const actionsEl = document.getElementById('user-actions');
-            const nameEl = document.getElementById('cur-name');
-            const phoneEl = document.getElementById('cur-phone-display');
-            const pointsEl = document.getElementById('cur-points');
-
-            if(actionsEl) actionsEl.classList.remove('hidden');
-            if(nameEl) nameEl.innerText = name;
-            if(phoneEl) phoneEl.innerText = phone;
-            if(pointsEl) pointsEl.innerText = points;
-            showSection('scan');
-        }
-
         function startScanner() {
-            const scannerDiv = document.getElementById('reader');
-            if(!scannerDiv) return;
-            scannerDiv.style.display = 'block';
-            document.getElementById('start-scan-btn').classList.add('hidden');
-            
+            const readerDiv = document.getElementById('reader');
+            if(!readerDiv) return;
+            if(isScannerRunning) return;
             html5QrCode = new Html5Qrcode("reader");
+            isScannerRunning = true;
+            document.getElementById('start-scan-btn').innerText = "إيقاف الكاميرا";
+            document.getElementById('start-scan-btn').onclick = stopScanner;
+
             html5QrCode.start(
                 { facingMode: "environment" },
                 { fps: 10, qrbox: { width: 250, height: 250 } },
                 async (decodedText) => {
                     stopScanner();
-                    let phone = decodedText.trim();
-                    if(phone.includes('?phone=')) {
-                        phone = phone.split('?phone=')[1].split('&')[0];
+                    let customerId = decodedText;
+                    if(decodedText.includes("?id=")) {
+                        customerId = decodedText.split("?id=")[1];
                     }
-                    await fetchCustomerData(phone);
+                    await fetchCustomerById(customerId);
                 },
-                (error) => {}
+                (errorMessage) => {}
             ).catch(err => {
-                console.log(err);
-                alert("تعذر تشغيل كاميرا الماسح الضوئي");
-                document.getElementById('start-scan-btn').classList.remove('hidden');
+                isScannerRunning = false;
+                document.getElementById('start-scan-btn').innerText = "مسح كود الزبون";
+                document.getElementById('start-scan-btn').onclick = startScanner;
+                alert("تعذر تشغيل الكاميرا: " + err);
             });
-            isScannerRunning = true;
         }
 
         function stopScanner() {
             if(html5QrCode && isScannerRunning) {
                 html5QrCode.stop().then(() => {
                     isScannerRunning = false;
-                    const scannerDiv = document.getElementById('reader');
-                    if(scannerDiv) scannerDiv.style.display = 'none';
-                    document.getElementById('start-scan-btn').classList.remove('hidden');
+                    document.getElementById('start-scan-btn').innerText = "مسح كود الزبون";
+                    document.getElementById('start-scan-btn').onclick = startScanner;
                 }).catch(err => console.log(err));
-            }
-        }
-
-        async function fetchCustomerData(phone) {
-            window.currentScannedPhone = phone;
-            const docRef = db.collection("cafes").doc(currentCafeID).collection("customers").doc(phone);
-            const doc = await docRef.get();
-            
-            const actionsEl = document.getElementById('user-actions');
-            const nameEl = document.getElementById('cur-name');
-            const phoneEl = document.getElementById('cur-phone-display');
-            const pointsEl = document.getElementById('cur-points');
-
-            if(actionsEl) actionsEl.classList.remove('hidden');
-            if(phoneEl) phoneEl.innerText = phone;
-
-            if(doc.exists) {
-                const data = doc.data();
-                activeCustomerName = data.name || "عميل مميز";
-                if(nameEl) nameEl.innerText = activeCustomerName;
-                if(pointsEl) pointsEl.innerText = data.points || 0;
             } else {
-                activeCustomerName = "عميل جديد";
-                if(nameEl) nameEl.innerText = activeCustomerName;
-                if(pointsEl) pointsEl.innerText = 0;
-                await docRef.set({ name: "عميل جديد", points: 0, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                isScannerRunning = false;
+                document.getElementById('start-scan-btn').innerText = "مسح كود الزبون";
+                document.getElementById('start-scan-btn').onclick = startScanner;
             }
         }
 
-        async function updatePoints(delta) {
-            if(!window.currentScannedPhone) return;
-            const docRef = db.collection("cafes").doc(currentCafeID).collection("customers").doc(window.currentScannedPhone);
-            const doc = await docRef.get();
-            let current = doc.exists ? (doc.data().points || 0) : 0;
-            let updated = current + delta;
-            if(updated < 0) updated = 0;
+        async function fetchCustomerById(id) {
+            try {
+                const doc = await db.collection("cafes").doc(currentCafeID).collection("customers").doc(id).get();
+                if(doc.exists) {
+                    window.activeCustomerID = id;
+                    const c = doc.data();
+                    document.getElementById('user-actions').classList.remove('hidden');
+                    document.getElementById('cur-name').innerText = c.name || "زبون";
+                    document.getElementById('cur-phone-display').innerText = c.phone || id;
+                    document.getElementById('cur-points').innerText = c.points || 0;
+                } else {
+                    alert("لم يتم العثور على العميل في قاعدة البيانات");
+                }
+            } catch(e) {
+                alert("حدث خطأ أثناء جلب بيانات العميل");
+            }
+        }
 
-            await docRef.set({ points: updated }, { merge: true });
-            const pointsEl = document.getElementById('cur-points');
-            if(pointsEl) pointsEl.innerText = updated;
+        async function updatePoints(val) {
+            if(!window.activeCustomerID) return;
+            const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(window.activeCustomerID);
+            await db.runTransaction(async (transaction) => {
+                const doc = await transaction.get(ref);
+                if (!doc.exists) throw "العميل غير موجود!";
+                let newPts = (doc.data().points || 0) + val;
+                if(newPts < 0) newPts = 0;
+                transaction.update(ref, { points: newPts });
+                document.getElementById('cur-points').innerText = newPts;
+            });
             loadCustomers();
         }
 
         async function resetPoints() {
-            if(!window.currentScannedPhone) return;
-            if(confirm("هل أنت متأكد من تصفير رصيد هذا العميل (أو تسليمه الهدية)؟")) {
-                const docRef = db.collection("cafes").doc(currentCafeID).collection("customers").doc(window.currentScannedPhone);
-                await docRef.set({ points: 0 }, { merge: true });
-                const pointsEl = document.getElementById('cur-points');
-                if(pointsEl) pointsEl.innerText = 0;
+            if(!window.activeCustomerID) return;
+            if(confirm("هل تريد تصفير الحساب أو تسليم الهدية؟")) {
+                const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(window.activeCustomerID);
+                await ref.update({ points: 0 });
+                document.getElementById('cur-points').innerText = 0;
                 loadCustomers();
-                alert("تم تصفير الحساب بنجاح!");
+                alert("تم التصفير بنجاح!");
             }
         }
 
         function closeUserActions() {
-            const actionsEl = document.getElementById('user-actions');
-            if(actionsEl) actionsEl.classList.add('hidden');
-            window.currentScannedPhone = null;
+            document.getElementById('user-actions').classList.add('hidden');
+            window.activeCustomerID = null;
         }
     </script>
 </body>
