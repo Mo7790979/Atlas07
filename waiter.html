@@ -69,6 +69,7 @@
         <!-- التنقل بين الأقسام -->
         <div class="flex gap-2 mb-6 overflow-x-auto no-scrollbar py-1">
             <button onclick="showWaiterSection('calls')" id="tab-calls" class="waiter-tab-btn active-tab bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">نداءات الطاولات <span id="calls-badge" class="bg-red-500 text-white px-1.5 py-0.5 rounded-full text-[10px] mr-1">0</span></button>
+            <button onclick="showWaiterSection('invoices')" id="tab-invoices" class="waiter-tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">متابعة الفواتير <span id="invoices-badge" class="bg-blue-500 text-white px-1.5 py-0.5 rounded-full text-[10px] mr-1">0</span></button>
             <button onclick="showWaiterSection('menu')" id="tab-menu" class="waiter-tab-btn bg-white border px-4 py-3 rounded-xl font-bold text-xs whitespace-nowrap shadow-sm flex-1 cursor-pointer">المنيو والطلب السريع</button>
         </div>
 
@@ -81,6 +82,23 @@
                 </h3>
                 <div id="waiter-live-calls-list" class="space-y-2.5 max-h-[500px] overflow-y-auto">
                     <p class="text-xs text-slate-400 text-center py-8">لا توجد نداءات جديدة من الطاولات حالياً</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- قسم متابعة الفواتير (للقراءة فقط - مع زر تنظيف الشاشة محلياً) -->
+        <div id="section-invoices" class="waiter-section hidden">
+            <div class="waiter-card border-blue-200 bg-blue-50/20">
+                <div class="flex justify-between items-center mb-3 border-b pb-2">
+                    <h3 class="font-black text-blue-900 text-sm flex items-center gap-1">
+                        <i class="fas fa-file-invoice-dollar"></i> فواتير الطاولات النشطة (للمتابعة فقط)
+                    </h3>
+                    <button onclick="clearWaiterInvoicesView()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer border-none transition-all flex items-center gap-1.5">
+                        <i class="fas fa-eraser text-slate-500"></i> تنظيف الشاشة محلياً
+                    </button>
+                </div>
+                <div id="waiter-live-invoices-list" class="space-y-3 max-h-[500px] overflow-y-auto">
+                    <p class="text-xs text-slate-400 text-center py-8">لا توجد فواتير أو طلبات نشطة حالياً</p>
                 </div>
             </div>
         </div>
@@ -157,6 +175,30 @@
         let waiterCategoriesCache = [];
         let waiterCartItems = [];
         let currentWaiterCategory = "all";
+        let previousCallsCount = -1;
+
+        function playAlertSound() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15);
+                
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.5);
+            } catch(e) {
+                console.log("تعذر تشغيل الصوت تلقائياً:", e);
+            }
+        }
 
         async function waiterLogin() {
             const cafeId = document.getElementById('cafe-id-input').value.trim();
@@ -192,6 +234,7 @@
 
         function initWaiterSession() {
             listenToWaiterLiveCalls();
+            listenToWaiterLiveInvoices();
             loadWaiterCategoriesAndMenu();
         }
 
@@ -209,7 +252,14 @@
               .onSnapshot(snap => {
                   const list = document.getElementById('waiter-live-calls-list');
                   const badge = document.getElementById('calls-badge');
-                  if(badge) badge.innerText = snap.size;
+                  
+                  const currentSize = snap.size;
+                  if (previousCallsCount !== -1 && currentSize > previousCallsCount) {
+                      playAlertSound();
+                  }
+                  previousCallsCount = currentSize;
+
+                  if(badge) badge.innerText = currentSize;
                   if(!list) return;
 
                   list.innerHTML = "";
@@ -238,6 +288,94 @@
               });
         }
 
+        // جلب معرفات الفواتير المخفية محلياً للنادل الحالي
+        function getHiddenInvoices() {
+            const key = `hidden_invoices_${currentCafeID}_${currentWaiterName}`;
+            try {
+                return JSON.parse(localStorage.getItem(key)) || [];
+            } catch(e) {
+                return [];
+            }
+        }
+
+        // زر لتنظيف/إخفاء الفواتير الظاهرة على شاشة النادل فقط محلياً
+        function clearWaiterInvoicesView() {
+            if(!confirm("هل تريد حقاً مسح وعرض شاشة الفواتير فارغة لديك؟ (لن يتأثر حساب التاجر أو الفواتير الفعلية)")) return;
+            
+            db.collection("cafes").doc(currentCafeID).collection("customer_carts").get().then(snap => {
+                const allIds = [];
+                snap.forEach(doc => allIds.push(doc.id));
+                
+                const key = `hidden_invoices_${currentCafeID}_${currentWaiterName}`;
+                localStorage.setItem(key, JSON.stringify(allIds));
+                
+                // إعادة رسم الشاشة لتصبح فارغة
+                listenToWaiterLiveInvoices();
+                alert("تم تنظيف شاشة الفواتير الخاصة بك بنجاح!");
+            }).catch(e => {
+                console.error(e);
+                alert("حدث خطأ أثناء التنظيف");
+            });
+        }
+
+        // الاستماع للفواتير/الطلبات الجديدة (مع تصفية ما تم إخفاؤه محلياً)
+        function listenToWaiterLiveInvoices() {
+            db.collection("cafes").doc(currentCafeID).collection("customer_carts")
+              .onSnapshot(snap => {
+                  const list = document.getElementById('waiter-live-invoices-list');
+                  const badge = document.getElementById('invoices-badge');
+                  
+                  const hiddenIds = getHiddenInvoices();
+                  let visibleCount = 0;
+
+                  if(!list) return;
+                  list.innerHTML = "";
+
+                  snap.forEach(doc => {
+                      // تخطي الفواتير التي قام النادل بإخفائها محلياً من شاشته
+                      if(hiddenIds.includes(doc.id)) return;
+
+                      visibleCount++;
+                      const inv = doc.data();
+                      let timeStr = inv.time && typeof inv.time.toDate === 'function' ? new Date(inv.time.toDate()).toLocaleTimeString('ar-EG') : 'وقت غير محدد';
+                      let statusBadge = inv.status === 'pending' ? '<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px] font-bold">قيد الانتظار</span>' : '<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-bold">مكتمل/مؤكد</span>';
+
+                      let itemsHtml = '';
+                      if(inv.items && Array.isArray(inv.items)) {
+                          inv.items.forEach(item => {
+                              itemsHtml += `<div class="flex justify-between text-[11px] text-slate-600 pr-2 border-r-2 border-slate-200 my-0.5">
+                                  <span>${item.qty}x ${item.name}</span>
+                                  <span>${(item.qty * item.price).toFixed(2)}</span>
+                              </div>`;
+                          });
+                      }
+
+                      list.innerHTML += `
+                      <div class="p-3.5 bg-white rounded-xl border border-blue-100 shadow-sm text-right">
+                          <div class="flex justify-between items-start border-b pb-2 mb-2">
+                              <div>
+                                  <span class="font-black text-xs text-blue-900">${inv.table || 'طاولة'}</span>
+                                  <div class="text-[10px] text-slate-400">الوقت: ${timeStr} | بواسطة: ${inv.waiterName || 'الزبون مباشرة'}</div>
+                              </div>
+                              <div class="text-left">
+                                  <span class="font-black text-emerald-700 text-xs block mb-1">${Number(inv.total || 0).toFixed(2)}</span>
+                                  ${statusBadge}
+                              </div>
+                          </div>
+                          <div class="space-y-1 mb-1">
+                              ${itemsHtml || `<p class="text-[11px] text-slate-500">${inv.itemsSummary || 'لا توجد تفاصيل أصناف'}</p>`}
+                          </div>
+                      </div>`;
+                  });
+
+                  if(badge) badge.innerText = visibleCount;
+
+                  if(visibleCount === 0) {
+                      list.innerHTML = '<p class="text-xs text-slate-400 text-center py-8">لا توجد فواتير أو طلبات نشطة حالياً</p>';
+                  }
+              });
+        }
+
         async function resolveWaiterCall(callId) {
             try {
                 await db.collection("cafes").doc(currentCafeID).collection("waiter_calls").doc(callId).update({
@@ -251,7 +389,6 @@
 
         async function loadWaiterCategoriesAndMenu() {
             try {
-                // جلب الأقسام من مجموعة مستقلة (إن وجدت)
                 const catSnap = await db.collection("cafes").doc(currentCafeID).collection("categories").get();
                 waiterCategoriesCache = [];
                 catSnap.forEach(doc => {
@@ -259,11 +396,10 @@
                     if(data.name) waiterCategoriesCache.push(data.name);
                 });
             } catch(e) {
-                console.log("لا توجد مجموعة أقسام مستقلة، سيتم الاعتماد على أقسام المنتجات.");
+                console.log("لا توجد مجموعة أقسام مستقلة");
             }
 
             try {
-                // جلب المنتجات
                 const snap = await db.collection("cafes").doc(currentCafeID).collection("products").orderBy("createdAt", "desc").get();
                 waiterMenuCache = [];
                 snap.forEach(doc => {
@@ -283,7 +419,6 @@
             const container = document.getElementById('waiter-categories-filter');
             if(!container) return;
             
-            // تجميع الأقسام من المنتجات ومن الكاش المستقل مع إزالة التكرار والمسافات
             const catsSet = new Set(['all']);
             waiterCategoriesCache.forEach(c => { if(c) catsSet.add(c.trim()); });
             waiterMenuCache.forEach(p => {
@@ -434,4 +569,3 @@
     </script>
 </body>
 </html>
- 
