@@ -598,6 +598,75 @@
         let cachedTaxesList = []; 
         let currentReportPrintFunction = null;
 
+        // صوت نداء النادل (نغمة صفير مزدوجة هادئة)
+        function playAlertSound() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.4);
+                
+                setTimeout(() => {
+                    const osc2 = audioCtx.createOscillator();
+                    osc2.type = 'sine';
+                    osc2.frequency.setValueAtTime(880, audioCtx.currentTime);
+                    osc2.connect(gain);
+                    osc2.start();
+                    osc2.stop(audioCtx.currentTime + 0.4);
+                }, 200);
+            } catch(e) { console.log(e); }
+        }
+
+        // صوت جرس الفاتورة الجديدة القادمة من العميل (نغمة جرس كاشير / رنين مميز وثلاثي)
+        function playInvoiceAlertSound() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const now = audioCtx.currentTime;
+
+                // رنين جرس أول
+                const osc1 = audioCtx.createOscillator();
+                const gain1 = audioCtx.createGain();
+                osc1.type = 'triangle';
+                osc1.frequency.setValueAtTime(1046.50, now); // نوتة C6 (رنين جرس)
+                gain1.gain.setValueAtTime(0.2, now);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+                osc1.connect(gain1);
+                gain1.connect(audioCtx.destination);
+                osc1.start(now);
+                osc1.stop(now + 0.5);
+
+                // رنين جرس ثاني أعلى
+                const osc2 = audioCtx.createOscillator();
+                const gain2 = audioCtx.createGain();
+                osc2.type = 'triangle';
+                osc2.frequency.setValueAtTime(1318.51, now + 0.2); // نوتة E6
+                gain2.gain.setValueAtTime(0.2, now + 0.2);
+                gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+                osc2.connect(gain2);
+                gain2.connect(audioCtx.destination);
+                osc2.start(now + 0.2);
+                osc2.stop(now + 0.7);
+
+                // رنين جرس ثالث (إكمال نغمة الجرس الاحترافي)
+                const osc3 = audioCtx.createOscillator();
+                const gain3 = audioCtx.createGain();
+                osc3.type = 'triangle';
+                osc3.frequency.setValueAtTime(1567.98, now + 0.4); // نوتة G6
+                gain3.gain.setValueAtTime(0.25, now + 0.4);
+                gain3.gain.exponentialRampToValueAtTime(0.001, now + 1.1);
+                osc3.connect(gain3);
+                gain3.connect(audioCtx.destination);
+                osc3.start(now + 0.4);
+                osc3.stop(now + 1.1);
+            } catch(e) { console.log(e); }
+        }
+
         async function login() {
             const user = document.getElementById('admin-user-input').value.trim();
             const pass = document.getElementById('admin-pass-input').value;
@@ -692,7 +761,7 @@
             listenToWaiterCalls();
             listenToCustomerCarts();
             loadTaxesCheckboxes();
-            loadInvoices();
+            listenToInvoicesLive(); // يتضمن استماع الفواتير وصوت الجرس الخاص بالفواتير الجديدة
             generateCafeQR();
             startTimer();
             loadAdminBankInfo();
@@ -882,11 +951,18 @@
         }
 
         function listenToWaiterCalls() {
+            let isFirstLoad = true;
             db.collection("cafes").doc(currentCafeID).collection("waiter_calls")
               .where("status", "==", "pending")
               .onSnapshot(snap => {
                 const list = document.getElementById('waiter-calls-list');
                 if(!list) return;
+                
+                if (!isFirstLoad && snap.docChanges().some(change => change.type === 'added')) {
+                    playAlertSound();
+                }
+                isFirstLoad = false;
+
                 list.innerHTML = "";
                 if(snap.empty) {
                     list.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">لا توجد نداءات جديدة حالياً</p>';
@@ -1223,32 +1299,39 @@
 
                 alert("تم حفظ وإصدار الفاتورة بنجاح!");
                 clearInvoiceForm();
-                loadInvoices();
             } catch(e) {
                 console.error("خطأ في حفظ الفاتورة:", e);
                 alert("حدث خطأ أثناء حفظ الفاتورة في النظام السحابي.");
             }
         }
 
-        async function loadInvoices() {
-            try {
-                const snap = await db.collection("cafes").doc(currentCafeID).collection("invoices").orderBy("date", "desc").get();
+        // --- التحديث الجديد: تشغيل صوت جرس الفاتورة الجديدة تلقائياً عند ورود فاتورة من العميل ---
+        function listenToInvoicesLive() {
+            let isFirstLoad = true;
+            db.collection("cafes").doc(currentCafeID).collection("invoices")
+              .orderBy("date", "desc")
+              .onSnapshot(snap => {
+                // إذا تمت إضافة فاتورة جديدة بعد التحميل الأول، يتم تشغيل صوت الجرس المختلف (جرس الفواتير)
+                if (!isFirstLoad && snap.docChanges().some(change => change.type === 'added')) {
+                    playInvoiceAlertSound();
+                }
+                isFirstLoad = false;
+
                 allInvoicesCache = [];
                 snap.forEach(doc => {
                     allInvoicesCache.push({ id: doc.id, ...doc.data() });
                 });
                 renderSeparatedInvoicesLists(allInvoicesCache);
                 applyGeneralFilterAndRender();
-            } catch(e) {
-                console.log("جاري تهيئة سجل الفواتير...");
-            }
+            }, error => {
+                console.log("مستمع الفواتير يعمل:", error);
+            });
         }
 
         async function deleteZeroInvoiceDirectly(invId) {
             if(confirm("هل أنت متأكد من حذف هذه الفاتورة نهائياً؟")) {
                 try {
                     await db.collection("cafes").doc(currentCafeID).collection("invoices").doc(invId).delete();
-                    loadInvoices();
                 } catch(e) { console.error(e); }
             }
         }
@@ -1337,7 +1420,7 @@
             const toContainer = document.getElementById('custom-date-to-container');
             if(period === 'custom') {
                 if(fromContainer) fromContainer.classList.remove('hidden');
-                if(toContainer) toContainer.classList.remove('hidden');
+                if(toContainer) toContainer.classList.add('hidden');
             } else {
                 if(fromContainer) fromContainer.classList.add('hidden');
                 if(toContainer) toContainer.classList.add('hidden');
@@ -1496,13 +1579,11 @@
             document.getElementById('section-' + sectionId).classList.remove('hidden');
             document.getElementById('tab-' + sectionId).classList.add('active-tab');
             
-            // إيقاف الكاميرا إذا خرج المستخدم من قسم المسح
             if(sectionId !== 'scan' && isScannerRunning && html5QrCode) {
                 html5QrCode.stop().then(() => { isScannerRunning = false; }).catch(err => console.log(err));
             }
         }
 
-        // --- إصلاح وتفعيل وظيفة استدعاء بيانات العملاء وعرضها ---
         async function loadCustomers() {
             const list = document.getElementById('customers-list');
             if(!list) return;
@@ -1527,14 +1608,12 @@
             });
         }
 
-        // عند الضغط على العميل من القائمة يتم الانتقال لشاشة التحكم به تلقائياً
         async function selectCustomerFromList(custName) {
             activeCustomerName = custName;
             showSection('scan');
             await fetchAndDisplayCustomerData(custName);
         }
 
-        // --- إصلاح وتفعيل الماسح الضوئي QR Scanner ---
         async function startScanner() {
             const readerDiv = document.getElementById('reader');
             if(!html5QrCode) {
@@ -1555,7 +1634,6 @@
                     { facingMode: "environment" },
                     { fps: 10, qrbox: { width: 250, height: 250 } },
                     async (decodedText) => {
-                        // عند قراءة الكود بنجاح
                         await html5QrCode.stop();
                         isScannerRunning = false;
                         document.getElementById('start-scan-btn').innerHTML = '<i class="fas fa-qrcode ml-2"></i> مسح كود الزبون';
