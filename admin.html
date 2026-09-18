@@ -1308,9 +1308,6 @@
             calculateInvoiceTotals();
         }
 
-        // ==========================================
-        // دالة حساب الضرائب والمجاميع المحدثة والصحيحة 100%
-        // ==========================================
         function calculateInvoiceTotals() {
             let subtotal = 0;
             invoiceInteractiveItems.forEach(item => {
@@ -1383,22 +1380,18 @@
             window.activeZeroInvoiceId = null;
         }
 
+        // ==========================================
+        // الحل الجذري لمشكلة الضرائب الصفرية في دالة الإصدار
+        // ==========================================
         async function issueInvoice() {
             const targetEl = document.getElementById('invoice-target');
             const notesInputEl = document.getElementById('invoice-notes-input');
-            const subtotalEl = document.getElementById('invoice-subtotal');
-            const taxEl = document.getElementById('invoice-total-tax-val');
-            const amountEl = document.getElementById('invoice-amount');
             const serialEl = document.getElementById('invoice-serial');
 
-            if(!targetEl || !subtotalEl || !amountEl || !serialEl) return;
+            if(!targetEl || !serialEl) return;
 
             const target = targetEl.value.trim();
             const notes = notesInputEl ? notesInputEl.value.trim() : '';
-            const subtotal = Number(subtotalEl.innerText) || 0;
-            const tax = Number(taxEl ? taxEl.innerText : 0) || 0;
-            const appliedTaxes = window.activeAppliedTaxes || [];
-            const amount = Number(amountEl.innerText) || 0;
             const serial = serialEl.innerText;
 
             if(!target) {
@@ -1407,8 +1400,42 @@
                 return;
             }
 
-            if(invoiceInteractiveItems.length === 0 || amount <= 0) {
-                alert("يرجى إضافة بند واحد على الأقل بفعل صالح للفاتورة");
+            if(invoiceInteractiveItems.length === 0) {
+                alert("يرجى إضافة بند واحد على الأقل للفاتورة");
+                return;
+            }
+
+            // إعادة حساب المبلغ الفرعي والضرائب بدقة تامة لضمان عدم وصول قيم صفرية نهائياً للتقارير
+            let subtotal = 0;
+            invoiceInteractiveItems.forEach(item => {
+                subtotal += (Number(item.qty) || 0) * (Number(item.price) || 0);
+            });
+
+            const checkboxes = document.querySelectorAll('.pos-tax-checkbox:checked');
+            let tax = 0;
+            let appliedTaxes = [];
+
+            checkboxes.forEach(cb => {
+                const rate = Number(cb.getAttribute('data-rate')) || 0;
+                const name = cb.getAttribute('data-name') || 'ضريبة';
+                const taxVal = (subtotal * rate) / 100;
+                tax += taxVal;
+                appliedTaxes.push({ name, rate, value: taxVal });
+            });
+
+            // إذا لم يتم تحديد مربعات اختيار ولكن يوجد مصفوفة ضرائب مخزنة سابقة أو محسوبة
+            if (appliedTaxes.length === 0 && window.activeAppliedTaxes && window.activeAppliedTaxes.length > 0) {
+                appliedTaxes = window.activeAppliedTaxes;
+                appliedTaxes.forEach(t => {
+                    t.value = (subtotal * Number(t.rate)) / 100;
+                    tax += t.value;
+                });
+            }
+
+            let amount = subtotal + tax;
+
+            if(amount <= 0) {
+                alert("إجمالي الفاتورة يجب أن يكون أكبر من الصفر");
                 return;
             }
 
@@ -1858,25 +1885,54 @@
             snap.forEach(doc => {
                 const c = doc.data();
                 list.innerHTML += `
-                <div onclick='openCustomerProfile("${doc.id}", "${c.name}", ${c.points || 0})' class="customer-row flex justify-between items-center p-3 bg-white rounded-xl border shadow-sm">
-                    <div class="text-right">
-                        <div class="font-bold text-xs text-slate-800">${c.name || 'بدون اسم'}</div>
-                        <div class="text-[10px] text-slate-400 font-mono">${c.phone || ''}</div>
+                <div onclick='openCustomerActions("${doc.id}", "${c.name || 'عميل'}", "${c.phone || ''}", ${c.points || 0})' class="customer-row flex justify-between items-center p-3 bg-slate-50 rounded-xl border text-xs shadow-sm">
+                    <div>
+                        <div class="font-bold text-slate-800">${c.name || 'بدون اسم'}</div>
+                        <div class="text-[10px] text-slate-400 font-mono">${c.phone || 'بدون هاتف'}</div>
                     </div>
-                    <span class="bg-blue-50 text-blue-700 text-xs font-black px-2.5 py-1 rounded-lg">${c.points || 0}</span>
+                    <div class="font-black text-blue-600">
+                        ${c.points || 0} ${selectedSystem === 'stamps' ? 'ختم' : 'نقطة'}
+                    </div>
                 </div>`;
             });
         }
 
-        function openCustomerProfile(id, name, points) {
+        function openCustomerActions(id, name, phone, points) {
             window.activeCustomerID = id;
-            activeCustomerName = name;
-            showSection('scan');
-            const actions = document.getElementById('user-actions');
-            if(actions) {
-                actions.classList.remove('hidden');
-                document.getElementById('cur-name').innerText = name;
-                document.getElementById('cur-points').innerText = points;
+            document.getElementById('cur-name').innerText = name;
+            document.getElementById('cur-phone-display').innerText = phone;
+            document.getElementById('cur-points').innerText = points;
+            document.getElementById('points-label-view').innerText = selectedSystem === 'stamps' ? 'الأختام الحالية' : 'النقاط الحالية';
+            document.getElementById('user-actions').classList.remove('hidden');
+        }
+
+        function closeUserActions() {
+            document.getElementById('user-actions').classList.add('hidden');
+            window.activeCustomerID = null;
+        }
+
+        async function updatePoints(delta) {
+            if(!window.activeCustomerID) return;
+            const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(window.activeCustomerID);
+            const doc = await ref.get();
+            if(!doc.exists) return;
+            let current = Number(doc.data().points) || 0;
+            let updated = current + delta;
+            if(updated < 0) updated = 0;
+            
+            await ref.update({ points: updated });
+            document.getElementById('cur-points').innerText = updated;
+            loadCustomers();
+        }
+
+        async function resetPoints() {
+            if(!window.activeCustomerID) return;
+            if(confirm("هل أنت متأكد من تصفير رصيد العميل / تسليم الهدية؟")) {
+                const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(window.activeCustomerID);
+                await ref.update({ points: 0 });
+                document.getElementById('cur-points').innerText = 0;
+                loadCustomers();
+                alert("تم تصفير الرصيد بنجاح!");
             }
         }
 
@@ -1885,7 +1941,7 @@
             if(!container) return;
             container.innerHTML = "";
             new QRCode(container, {
-                text: "https://mo7790979.github.io/Atlas07/client.html?cafe=" + currentCafeID,
+                text: "https://mo7790979.github.io/Atlas07/index.html?cafe=" + currentCafeID,
                 width: 150,
                 height: 150,
                 colorDark: "#000000",
@@ -1900,105 +1956,69 @@
             const img = container.querySelector('img');
             const canvas = container.querySelector('canvas');
             let dataUrl = "";
-            if(img && img.src) dataUrl = img.src;
-            else if(canvas) dataUrl = canvas.toDataURL("image/png");
+            if(img && img.src) {
+                dataUrl = img.src;
+            } else if(canvas) {
+                dataUrl = canvas.toDataURL("image/png");
+            }
             if(dataUrl) {
                 const link = document.createElement('a');
-                link.download = currentCafeID + '-qr.png';
+                link.download = 'cafe-qrcode.png';
                 link.href = dataUrl;
                 link.click();
+            } else {
+                alert("لم يتم إنشاء الصورة بعد");
             }
         }
 
         function startScanner() {
-            const readerDiv = document.getElementById('reader');
-            if(!readerDiv) return;
-            if(isScannerRunning) return;
-            html5QrCode = new Html5Qrcode("reader");
-            isScannerRunning = true;
-            document.getElementById('start-scan-btn').innerText = "إيقاف الكاميرا";
-            document.getElementById('start-scan-btn').onclick = stopScanner;
+            const btn = document.getElementById('start-scan-btn');
+            if(isScannerRunning) {
+                if(html5QrCode) {
+                    html5QrCode.stop().then(() => {
+                        isScannerRunning = false;
+                        if(btn) btn.innerHTML = '<i class="fas fa-qrcode ml-2"></i> مسح كود الزبون';
+                    });
+                }
+                return;
+            }
 
+            html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start(
                 { facingMode: "environment" },
-                { fps: 10, qrbox: { width: 250, height: 250 } },
+                { fps: 10, qrbox: 250 },
                 async (decodedText) => {
-                    stopScanner();
                     let customerId = decodedText;
                     if(decodedText.includes("?id=")) {
                         customerId = decodedText.split("?id=")[1];
                     }
-                    await fetchCustomerById(customerId);
+                    await handleScannedCustomer(customerId);
+                    html5QrCode.stop().then(() => {
+                        isScannerRunning = false;
+                        if(btn) btn.innerHTML = '<i class="fas fa-qrcode ml-2"></i> مسح كود الزبون';
+                    });
                 },
-                (errorMessage) => {}
-            ).catch(err => {
-                isScannerRunning = false;
-                document.getElementById('start-scan-btn').innerText = "مسح كود الزبون";
-                document.getElementById('start-scan-btn').onclick = startScanner;
-                alert("تعذر تشغيل الكاميرا: " + err);
+                (error) => {}
+            ).then(() => {
+                isScannerRunning = true;
+                if(btn) btn.innerHTML = '<i class="fas fa-stop ml-2"></i> إيقاف المسح';
+            }).catch(err => {
+                alert("تعذر فتح الكاميرا، يرجى التأكد من صلاحيات المتصفح.");
             });
         }
 
-        function stopScanner() {
-            if(html5QrCode && isScannerRunning) {
-                html5QrCode.stop().then(() => {
-                    isScannerRunning = false;
-                    document.getElementById('start-scan-btn').innerText = "مسح كود الزبون";
-                    document.getElementById('start-scan-btn').onclick = startScanner;
-                }).catch(err => console.log(err));
-            } else {
-                isScannerRunning = false;
-                document.getElementById('start-scan-btn').innerText = "مسح كود الزبون";
-                document.getElementById('start-scan-btn').onclick = startScanner;
-            }
-        }
-
-        async function fetchCustomerById(id) {
+        async function handleScannedCustomer(id) {
             try {
                 const doc = await db.collection("cafes").doc(currentCafeID).collection("customers").doc(id).get();
                 if(doc.exists) {
-                    window.activeCustomerID = id;
                     const c = doc.data();
-                    document.getElementById('user-actions').classList.remove('hidden');
-                    document.getElementById('cur-name').innerText = c.name || "زبون";
-                    document.getElementById('cur-phone-display').innerText = c.phone || id;
-                    document.getElementById('cur-points').innerText = c.points || 0;
+                    openCustomerActions(id, c.name || 'عميل', c.phone || '', c.points || 0);
                 } else {
                     alert("لم يتم العثور على العميل في قاعدة البيانات");
                 }
             } catch(e) {
-                alert("حدث خطأ أثناء جلب بيانات العميل");
+                alert("حدث خطأ أثناء قراءة الكود");
             }
-        }
-
-        async function updatePoints(val) {
-            if(!window.activeCustomerID) return;
-            const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(window.activeCustomerID);
-            await db.runTransaction(async (transaction) => {
-                const doc = await transaction.get(ref);
-                if (!doc.exists) throw "العميل غير موجود!";
-                let newPts = (doc.data().points || 0) + val;
-                if(newPts < 0) newPts = 0;
-                transaction.update(ref, { points: newPts });
-                document.getElementById('cur-points').innerText = newPts;
-            });
-            loadCustomers();
-        }
-
-        async function resetPoints() {
-            if(!window.activeCustomerID) return;
-            if(confirm("هل تريد تصفير الحساب أو تسليم الهدية؟")) {
-                const ref = db.collection("cafes").doc(currentCafeID).collection("customers").doc(window.activeCustomerID);
-                await ref.update({ points: 0 });
-                document.getElementById('cur-points').innerText = 0;
-                loadCustomers();
-                alert("تم التصفير بنجاح!");
-            }
-        }
-
-        function closeUserActions() {
-            document.getElementById('user-actions').classList.add('hidden');
-            window.activeCustomerID = null;
         }
     </script>
 </body>
