@@ -1014,17 +1014,28 @@
                     // عرض الملاحظات داخل البطاقة إذا وجدت
                     const notesHtml = cart.notes ? `<div class="text-[10px] text-amber-600 font-bold mt-0.5"><i class="fas fa-sticky-note ml-0.5"></i> ملاحظات: ${cart.notes}</div>` : '';
 
+                    // تحديث البطاقة لإضافة زر الحذف بجانب زر التحميل للفاتورة
                     list.innerHTML += `
-                    <div onclick='loadCartToInvoiceById("${doc.id}")' class="interactive-item flex justify-between items-center p-3 bg-white rounded-xl border border-blue-200 shadow-sm hover:bg-blue-50 text-right">
+                    <div class="flex justify-between items-center p-3 bg-white rounded-xl border border-blue-200 shadow-sm text-right">
                         <div>
                             <div class="font-bold text-xs text-blue-900"><i class="fas fa-utensils text-blue-500 ml-1"></i> ${cart.table || 'طاولة عامة'} - <span class="text-emerald-600 font-black">${cart.total}</span></div>
                             <div class="text-[10px] text-slate-500 mt-0.5 line-clamp-1">${cart.itemsSummary || 'تفاصيل الطلبات'}</div>
                             ${notesHtml}
                         </div>
-                        <span class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shadow">تحميل للفاتورة</span>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick='loadCartToInvoiceById("${doc.id}")' class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer border-none shadow">تحميل للفاتورة</button>
+                            <button onclick='deleteCustomerCart("${doc.id}")' class="text-red-500 hover:bg-red-50 p-2 rounded-lg cursor-pointer border border-red-200 bg-white" title="حذف طلب السلة"><i class="fas fa-trash-alt text-xs"></i></button>
+                        </div>
                     </div>`;
                 });
             });
+        }
+
+        // دالة حذف طلب السلة الواردة
+        async function deleteCustomerCart(cartId) {
+            if(confirm("هل أنت متأكد من حذف طلب السلة هذا؟")) {
+                await db.collection("cafes").doc(currentCafeID).collection("customer_carts").doc(cartId).delete();
+            }
         }
 
         function loadCartToInvoiceById(cartId) {
@@ -1915,7 +1926,7 @@
                 const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                 const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-                if(timerEl) timerEl.innerText = `${days} يوم و ${hours}:${minutes}:${seconds}`;
+                if(timerEl) timerEl.innerText = `${days} يوم - ${hours}:${minutes}:${seconds}`;
             }, 1000);
         }
     </script>
