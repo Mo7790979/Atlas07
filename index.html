@@ -172,9 +172,9 @@
         </div>
     </div>
 
-    <!-- Firebase SDK 8.x Compat Scripts -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <!-- Firebase SDK Compat Scripts المتوافقة مع لوحة التحكم -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
     <script>
         const firebaseConfig = { 
@@ -192,7 +192,7 @@
         const db = firebase.firestore();
 
         const urlParams = new URLSearchParams(window.location.search);
-        const cafeID = urlParams.get('id') || 'atlas07';
+        const cafeID = urlParams.get('id');
 
         let cafeSettings = {};
         let userData = null;
@@ -201,7 +201,7 @@
         let currentCategory = 'all';
 
         if (!cafeID) {
-            document.body.innerHTML = "<div class='text-center font-bold p-10'>خطأ: الرابط غير صحيح.</div>";
+            document.body.innerHTML = "<div class='text-center font-bold p-10'>خطأ: الرابط غير صحيح. يرجى التأكد من رابط المتجر.</div>";
         } else {
             checkExistingLogin();
             listenToCafeSettings();
@@ -315,7 +315,7 @@
                             <span class="text-xs font-black text-blue-600">${p.price} ${currency}</span>
                         </div>
                     </div>
-                    <button onclick="addToCart('${p.id}', '${p.name}', ${p.price})" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow active:scale-95 transition-all"><i class="fas fa-plus"></i> إضافة</button>
+                    <button onclick="addToCart('${p.id}', '${p.name.replace(/'/g, "\\'")}', ${p.price})" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow active:scale-95 transition-all"><i class="fas fa-plus"></i> إضافة</button>
                 </div>`;
             });
         }
@@ -383,28 +383,45 @@
         }
 
         async function submitOrder() {
-            const table = document.getElementById('table-number-input').value;
-            if(!table) { alert("يرجى إدخال رقم الطاولة"); return; }
+            const table = document.getElementById('table-number-input').value.trim();
+            if(!table) { alert("يرجى إدخال رقم الطاولة أو المكان"); return; }
             if(cart.length === 0) { alert("السلة فارغة"); return; }
 
             const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-            const detailsText = cart.map(i => `${i.name} (عدد: ${i.qty})`).join('، ');
+            const detailsText = cart.map(i => `${i.qty}x ${i.name} (${i.price})`).join(' - ');
 
             try {
-                await db.collection("cafes").doc(cafeID).collection("invoices").add({
-                    target: table,
-                    details: detailsText,
-                    amount: total,
+                // إرسال سلة الطلبات لتظهر في لوحة التحكم (customer_carts)
+                await db.collection("cafes").doc(cafeID).collection("customer_carts").add({
+                    table: table,
+                    items: cart,
+                    itemsSummary: detailsText,
+                    total: total,
                     customerName: userData ? userData.name : "زائر",
                     status: "pending",
+                    time: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                // إرسال كفاتورة صفرية تلقائية (INV-000) لتظهر مباشرة في مبيعات الفواتير الصفرية
+                await db.collection("cafes").doc(cafeID).collection("invoices").add({
+                    serial: "INV-000",
+                    target: table,
+                    items: cart,
+                    details: detailsText,
+                    subtotal: total,
+                    tax: 0,
+                    appliedTaxes: [],
+                    amount: total,
                     date: firebase.firestore.FieldValue.serverTimestamp()
                 });
+
                 alert("تم إرسال الطلب بنجاح إلى المطعم!");
                 cart = [];
                 updateCartUI();
                 toggleCartModal(false);
             } catch(e) {
-                alert("حدث خطأ أثناء إرسال الطلب");
+                console.error(e);
+                alert("حدث خطأ أثناء إرسال الطلب. تأكد من اتصال الإنترنت.");
             }
         }
 
